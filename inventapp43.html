@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>生活ログMVP</title>
+  <style>
+    :root { --main:#8b0026; --sub:#74001f; --bg:#f5f6fa; --text:#222; --muted:#666; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif; background:var(--bg); color:var(--text); }
+    header { background:var(--main); color:#fff; padding:18px 14px 10px; text-align:center; font-size:23px; font-weight:800; }
+    .today-bar { background:var(--sub); color:#fff; text-align:center; padding:0 14px 14px; font-size:14px; font-weight:600; }
+    main { max-width:1180px; margin:0 auto; padding:18px; }
+    .layout { display:grid; grid-template-columns:1fr 1fr; gap:18px; align-items:start; }
+    .card { background:#fff; border-radius:16px; padding:18px; box-shadow:0 2px 10px rgba(0,0,0,.08); margin-bottom:16px; }
+    h2 { margin:0 0 14px; font-size:20px; }
+    .small { font-size:13px; color:var(--muted); line-height:1.7; }
+    .empty { color:#777; line-height:1.7; background:#fafafa; border-radius:12px; padding:14px; }
+    .notice { background:#fff6d6; border-left:7px solid #f1c40f; border-radius:10px; padding:12px; margin-top:12px; line-height:1.6; }
+    button { border:none; border-radius:12px; padding:13px 12px; font-size:15px; font-weight:700; cursor:pointer; background:var(--main); color:#fff; }
+    button.secondary { background:#444; } button.light { background:#eee; color:#222; } button.danger { background:#c0392b; } button.green { background:#27ae60; } button.blue { background:#3498db; }
+    .menu { display:grid; gap:10px; }
+    .actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; }
+    .actions button { flex:1; min-width:130px; }
+    label { display:block; margin:12px 0 6px; font-weight:700; }
+    input, select, textarea { width:100%; padding:12px; border:1px solid #ccc; border-radius:10px; font-size:16px; background:#fff; }
+    textarea { min-height:58px; resize:vertical; }
+    .row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .inline-row, .category-row, .template-row, .tag-template-row { display:flex; gap:8px; align-items:center; margin-top:8px; }
+    .inline-row select, .category-row select, .template-row select, .tag-template-row select { flex:1; }
+    .mini-button { flex:0 0 auto; padding:10px 11px; font-size:13px; border-radius:10px; background:#eee; color:#222; min-width:66px; }
+    .mini-button.danger { background:#c0392b; color:#fff; }
+    .calendar-header { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:12px; position:relative; }
+    .hamburger-btn, .month-btn { width:44px; height:38px; padding:0; border-radius:10px; }
+    .hamburger-btn { background:var(--main); color:#fff; font-size:20px; }
+    .month-btn { background:#eee; color:#222; font-size:20px; }
+    .calendar-title { font-size:21px; font-weight:800; flex:1; text-align:center; }
+    .quick-menu { display:none; position:absolute; left:0; top:46px; z-index:50; width:235px; background:#fff; border:1px solid #ddd; border-radius:12px; box-shadow:0 8px 22px rgba(0,0,0,.16); padding:8px; }
+    .quick-menu.show { display:block; }
+    .quick-menu button { width:100%; text-align:left; padding:10px 12px; margin:2px 0; font-size:13px; border-radius:9px; background:#fff; color:#222; }
+    .quick-menu button:hover { background:#f3f3f3; }
+    .calendar-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+    .weekday { text-align:center; font-size:13px; font-weight:800; color:#666; padding:6px 0; }
+    .day-cell { min-height:72px; border-radius:12px; background:#fafafa; border:1px solid #e3e3e3; padding:7px; cursor:pointer; }
+    .day-cell:hover { background:#f1f1f1; } .day-cell.outside { opacity:.28; } .day-cell.today { border:2px solid var(--main); background:#fff4f7; } .day-cell.selected { background:var(--main); color:#fff; border-color:var(--main); }
+    .day-number { font-weight:800; font-size:15px; }
+    .badges { display:flex; gap:4px; flex-wrap:wrap; margin-top:8px; }
+    .badge { font-size:10px; border-radius:999px; padding:2px 5px; color:#fff; font-weight:800; }
+    .plan-badge { background:#3498db; } .actual-badge { background:#27ae60; } .selected .badge { background:#fff; color:var(--main); }
+    .log-item, .score-row, .notebook-result, .gap-card { background:#fafafa; border-radius:12px; padding:12px; margin-bottom:10px; border-left:7px solid #ccc; }
+    .plan { border-left-color:#3498db; } .actual { border-left-color:#27ae60; }
+    .log-content-row { display:flex; justify-content:space-between; gap:12px; align-items:center; }
+    .log-main { flex:1; min-width:0; }
+    .log-meta { font-size:13px; color:#666; margin-bottom:5px; }
+    .log-title { font-size:17px; font-weight:800; white-space:pre-wrap; word-break:break-word; }
+    .mini-actions { display:flex; gap:6px; flex:0 0 auto; }
+    .mini-actions button { padding:8px 10px; min-width:54px; font-size:12px; border-radius:10px; }
+    .detail-badge { display:inline-block; margin-top:8px; font-size:11px; background:#eee; color:#444; border-radius:999px; padding:3px 8px; font-weight:800; }
+    .category-pill { display:inline-flex; align-items:center; gap:6px; margin-top:7px; font-size:11px; background:#eee; color:#333; border-radius:999px; padding:3px 8px; font-weight:800; }
+    .category-dot { width:9px; height:9px; border-radius:50%; display:inline-block; }
+    .pie-wrap, .clock-wrap, .gap-wrap { margin:18px 0; background:#fafafa; border-radius:16px; padding:16px; }
+    .pie-area { display:flex; gap:18px; align-items:center; flex-wrap:wrap; }
+    .pie-chart { width:180px; height:180px; border-radius:50%; box-shadow:inset 0 0 0 1px rgba(0,0,0,.08); flex:0 0 auto; }
+    .pie-legend { flex:1; min-width:220px; display:grid; gap:8px; }
+    .legend-item { display:flex; align-items:center; gap:8px; font-size:13px; line-height:1.4; }
+    .legend-color { width:12px; height:12px; border-radius:3px; flex:0 0 auto; }
+    .clock-ring-area { display:flex; justify-content:center; align-items:center; padding:12px 0; }
+    .clock-wrapper { position:relative; width:320px; height:320px; display:flex; justify-content:center; align-items:center; }
+    .clock-hour-label { position:absolute; font-size:10px; color:#666; font-weight:800; transform:translate(-50%,-50%); pointer-events:none; }
+    .clock-ring { width:240px; height:240px; border-radius:50%; position:relative; box-shadow:inset 0 0 0 1px rgba(0,0,0,.08),0 2px 10px rgba(0,0,0,.08); }
+    .clock-ring:before { content:""; position:absolute; inset:0; border-radius:50%; background:repeating-conic-gradient(rgba(255,255,255,.95) 0deg .55deg, transparent .55deg 15deg); pointer-events:none; }
+    .clock-ring:after { content:""; position:absolute; inset:54px; border-radius:50%; background:#fafafa; box-shadow:0 0 0 1px rgba(0,0,0,.08); pointer-events:none; }
+    .tag-cloud, .notebook-tags { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
+    .tag-chip { border:1px solid #ddd; background:#fafafa; color:#333; padding:7px 10px; border-radius:999px; font-size:13px; cursor:pointer; }
+    .notebook-result { border-left-color:var(--main); }
+    .notebook-detail { margin-top:8px; white-space:pre-wrap; line-height:1.7; }
+    .score-row { border-left-color:var(--main); }
+    .score-title { font-weight:800; margin:12px 0 8px; }
+    .score-bar { display:flex; gap:4px; flex-wrap:wrap; }
+    .score-cell { width:28px; height:28px; border-radius:8px; border:1px solid #ccc; background:#fff; display:flex; justify-content:center; align-items:center; cursor:pointer; font-size:12px; font-weight:800; transition:.15s; }
+    .score-cell:hover { transform:scale(1.08); } .score-cell.active { background:var(--main); color:#fff; border-color:var(--main); }
+    .score-result { margin-top:24px; padding:24px; border-radius:18px; background:linear-gradient(135deg,#8b0026,#b8003c); color:#fff; text-align:center; }
+    .score-result-value { font-size:52px; font-weight:900; margin-top:8px; }
+    .mini-reflect-box { margin-top:14px; padding-top:10px; border-top:1px dashed #ddd; }
+    .mini-reflect-text { font-size:13px; color:#666; margin-bottom:8px; line-height:1.6; }
+    .mini-reflect-btn { background:#f3f3f3; color:#333; border:none; border-radius:999px; padding:8px 14px; font-size:13px; cursor:pointer; }
+    .mini-reflect-btn:hover { background:#e7e7e7; }
+    .mini-reflect-input { display:none; margin-top:10px; }
+    .mini-reflect-input textarea { width:100%; min-height:72px; border-radius:12px; border:1px solid #ddd; padding:10px; resize:vertical; }
+    .chart-range-tabs { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 16px; }
+    .chart-range-tabs button { flex:0 0 auto; padding:8px 10px; font-size:13px; border-radius:999px; background:#eee; color:#222; }
+    .chart-range-tabs button.active { background:var(--main); color:#fff; }
+    .line-chart-wrap { background:#fafafa; border-radius:16px; padding:14px; margin-top:14px; overflow-x:auto; }
+    .line-chart { width:100%; min-width:520px; height:280px; }
+    .chart-axis-text { font-size:11px; fill:#666; }
+    .chart-grid-line { stroke:#ddd; stroke-width:1; }
+    .chart-line { fill:none; stroke:var(--main); stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
+    .chart-dot { fill:var(--main); stroke:white; stroke-width:2; }
+    .summary-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:12px; }
+    .summary-box { background:#fafafa; border-radius:12px; padding:12px; text-align:center; }
+    .summary-num { font-size:24px; font-weight:900; color:#8b0026; }
+    .highlight-list { display:grid; gap:10px; margin-top:14px; }
+    .highlight-card { background:#fafafa; border-left:7px solid var(--main); border-radius:12px; padding:12px; }
+    .highlight-date { font-size:13px; color:#666; font-weight:800; margin-bottom:4px; }
+    .highlight-title { font-size:16px; font-weight:900; line-height:1.5; }
+    .backup-file { display:none; }
+    @media(max-width:850px){ main{padding:12px}.layout{grid-template-columns:1fr}.day-cell{min-height:58px;padding:5px}.clock-wrapper{width:280px;height:280px}.clock-ring{width:210px;height:210px}.clock-ring:after{inset:47px}.row{grid-template-columns:1fr}.log-content-row{align-items:flex-start}.mini-actions{flex-direction:column}.weekday-checks{grid-template-columns:repeat(4,1fr)} }
+  </style>
+</head>
+<body>
+  <header>生活ログMVP</header>
+  <div id="todayBar" class="today-bar"></div>
+
+  <main>
+    <div class="layout">
+      <section class="card">
+        <div class="calendar-header">
+          <button class="hamburger-btn" onclick="toggleQuickMenu()">☰</button>
+          <div id="quickMenu" class="quick-menu">
+            <button onclick="showPlanForm(); closeQuickMenu();">今日の予定の入力</button>
+            <button onclick="showActualForm(); closeQuickMenu();">行動の事後報告</button>
+            <button onclick="showStopwatch(); closeQuickMenu();">ストップウォッチで記録</button>
+            <button onclick="showRepeatForm(); closeQuickMenu();">繰り返し予定の登録</button>
+            <button onclick="showDailyFulfillment(); closeQuickMenu();">本日の充実ポイント</button>
+            <button onclick="showReflectionNotebook(); closeQuickMenu();">振り返りノート</button>
+            <button onclick="showFulfillmentTrend(); closeQuickMenu();">充実度の推移</button>
+            <button onclick="showBackupMenu(); closeQuickMenu();">データ保存/復元</button>
+          </div>
+          <button class="month-btn" onclick="moveMonth(-1)">‹</button>
+          <div id="calendarTitle" class="calendar-title"></div>
+          <button class="month-btn" onclick="moveMonth(1)">›</button>
+        </div>
+        <div id="calendarGrid" class="calendar-grid"></div>
+        <p class="small">日付をクリックすると、その日の予定・事後報告を時系列で表示します。</p>
+      </section>
+
+      <div>
+        <section id="menuScreen" class="card">
+          <h2>何をしますか？</h2>
+          <div class="menu">
+            <button onclick="showPlanForm()">今日の予定の入力</button>
+            <button onclick="showActualForm()">行動の事後報告</button>
+            <button class="green" onclick="showStopwatch()">ストップウォッチで記録</button>
+            <button class="secondary" onclick="showRepeatForm()">繰り返し予定の登録</button>
+            <button class="blue" onclick="showDailyFulfillment()">本日の充実ポイントをつける</button>
+            <button class="light" onclick="showReflectionNotebook()">振り返りノート</button>
+            <button class="light" onclick="showFulfillmentTrend()">充実度の推移</button>
+            <button class="light" onclick="showBackupMenu()">データの書き出し/読み込み</button>
+          </div>
+          <p class="small">データはこのブラウザ内に保存されます。定期的にバックアップしてください。</p>
+        </section>
+        <section id="formScreen" class="card" style="display:none;"></section>
+        <section id="reviewScreen" class="card" style="display:none;"></section>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const STORAGE_KEY = "dailyLifeLogsV6";
+    const CATEGORY_KEY = "dailyLifeCategoriesV1";
+    const TEMPLATE_KEY = "dailyLifeFrequentPlansV1";
+    const TAG_KEY = "dailyLifeFrequentTagsV1";
+    const SUMMARY_KEY = "dailyLifeDailySummariesV1";
+    const DEFAULT_CATEGORIES = [
+      { id:"none", name:"カテゴリなし", color:"#95a5a6" },
+      { id:"study", name:"勉強", color:"#3498db" },
+      { id:"class", name:"授業", color:"#2ecc71" },
+      { id:"meal", name:"食事・飲み会", color:"#e67e22" },
+      { id:"hobby", name:"娯楽", color:"#9b59b6" },
+      { id:"rest", name:"休息", color:"#1abc9c" },
+      { id:"move", name:"移動", color:"#34495e" }
+    ];
+    const DEFAULT_TAGS = ["#集中", "#反省", "#学び", "#人間関係", "#成長実感"];
+    let currentCalendarDate = new Date();
+    let selectedDate = todayString();
+    let stopwatchStart = null;
+    let stopwatchInterval = null;
+
+    function todayString(){ const d=new Date(); return toDateString(d); }
+    function toDateString(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
+    function formatDateJapanese(s){ const d=new Date(s+"T00:00:00"); const w=["日","月","火","水","木","金","土"][d.getDay()]; const [,m,day]=s.split("-"); return `${Number(m)}月${Number(day)}日（${w}）`; }
+    function formatTime(d){ return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`; }
+    function formatDuration(ms){ const t=Math.floor(ms/1000); return `${String(Math.floor(t/3600)).padStart(2,"0")}:${String(Math.floor((t%3600)/60)).padStart(2,"0")}:${String(t%60).padStart(2,"0")}`; }
+    function escapeHtml(str){ return String(str).replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch])); }
+
+    function loadJSON(key, fallback){ try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } }
+    function saveJSON(key, value){ localStorage.setItem(key, JSON.stringify(value)); }
+    function loadLogs(){ return loadJSON(STORAGE_KEY, []); }
+    function saveLogs(logs){ saveJSON(STORAGE_KEY, logs); }
+    function loadCategories(){ const c=loadJSON(CATEGORY_KEY, null); if(c && c.length) return c; saveJSON(CATEGORY_KEY, DEFAULT_CATEGORIES); return DEFAULT_CATEGORIES; }
+    function saveCategories(c){ saveJSON(CATEGORY_KEY, c); }
+    function loadFrequentPlans(){ const p=loadJSON(TEMPLATE_KEY, null); if(p && p.length) return p; const d=["MOS資格勉強","数学の課題","英語課題","友達と飯","通学","休憩"]; saveJSON(TEMPLATE_KEY,d); return d; }
+    function saveFrequentPlans(p){ saveJSON(TEMPLATE_KEY,p); }
+    function loadFrequentTags(){ const t=loadJSON(TAG_KEY, null); if(t && t.length) return t; saveJSON(TAG_KEY,DEFAULT_TAGS); return DEFAULT_TAGS; }
+    function loadDailySummaries(){ return loadJSON(SUMMARY_KEY, []); }
+    function saveDailySummaries(summaries){ saveJSON(SUMMARY_KEY, summaries); }
+    function saveFrequentTags(t){ saveJSON(TAG_KEY,t); }
+
+    function getCategoryById(id){ return loadCategories().find(c=>c.id===id) || loadCategories()[0]; }
+    function categoryOptions(selected="none"){ return loadCategories().map(c=>`<option value="${c.id}" ${c.id===selected?"selected":""}>${escapeHtml(c.name)}</option>`).join(""); }
+    function frequentPlanOptions(){ return loadFrequentPlans().map(p=>`<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join(""); }
+    function frequentTagOptions(){ return loadFrequentTags().map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join(""); }
+
+    function updateTodayBar(){ document.getElementById("todayBar").textContent = `今日：${formatDateJapanese(todayString())}`; }
+    function hideRightPanels(){ ["menuScreen","formScreen","reviewScreen"].forEach(id=>document.getElementById(id).style.display="none"); }
+    function showMenu(){ hideRightPanels(); document.getElementById("menuScreen").style.display="block"; renderCalendar(); }
+    function toggleQuickMenu(){ document.getElementById("quickMenu")?.classList.toggle("show"); }
+    function closeQuickMenu(){ document.getElementById("quickMenu")?.classList.remove("show"); }
+    document.addEventListener("click", e => { const m=document.getElementById("quickMenu"), b=document.querySelector(".hamburger-btn"); if(m && b && !m.contains(e.target) && !b.contains(e.target)) m.classList.remove("show"); });
+
+    function addCategory(selectId){
+      const name=prompt("追加するカテゴリ名を入力してください"); if(!name?.trim()) return;
+      const colors=["#e74c3c","#3498db","#2ecc71","#f1c40f","#9b59b6","#1abc9c","#e67e22","#34495e","#ff6b81","#00a8ff"];
+      const cats=loadCategories(); const cat={id:"cat_"+Date.now(), name:name.trim(), color:colors[cats.length%colors.length]}; cats.push(cat); saveCategories(cats);
+      const sel=document.getElementById(selectId); if(sel) sel.innerHTML=categoryOptions(cat.id);
+    }
+    function deleteSelectedCategory(selectId){
+      const sel=document.getElementById(selectId); if(!sel || sel.value==="none") { alert("カテゴリなしは削除できません"); return; }
+      const cat=getCategoryById(sel.value); if(!confirm(`カテゴリ「${cat.name}」を削除しますか？`)) return;
+      saveCategories(loadCategories().filter(c=>c.id!==sel.value));
+      saveLogs(loadLogs().map(l=>l.categoryId===sel.value ? {...l, categoryId:"none"} : l));
+      sel.innerHTML=categoryOptions("none"); renderCalendar();
+    }
+    function applyFrequentPlan(){ const sel=document.getElementById("frequentPlanSelect"), t=document.getElementById("logText"); if(sel&&t) t.value=sel.value; }
+    function addFrequentPlan(){ const name=prompt("よく使う予定を追加してください"); if(!name?.trim()) return; const plans=loadFrequentPlans(); if(!plans.includes(name.trim())) plans.push(name.trim()); saveFrequentPlans(plans); document.getElementById("frequentPlanSelect").innerHTML=frequentPlanOptions(); }
+    function deleteSelectedFrequentPlan(){ const sel=document.getElementById("frequentPlanSelect"); if(!sel?.value) return; if(!confirm(`「${sel.value}」を削除しますか？`)) return; saveFrequentPlans(loadFrequentPlans().filter(p=>p!==sel.value)); sel.innerHTML=frequentPlanOptions(); }
+    function insertFrequentTag(){ const sel=document.getElementById("frequentTagSelect"), t=document.getElementById("detailText"); if(!sel||!t) return; t.value = t.value.trim() ? `${t.value.trim()} ${sel.value}` : sel.value; t.focus(); }
+    function addFrequentTag(){ let tag=prompt("よく使う#を追加してください。例：#集中"); if(!tag?.trim()) return; tag=tag.trim().startsWith("#")?tag.trim():"#"+tag.trim(); const tags=loadFrequentTags(); if(!tags.includes(tag)) tags.push(tag); saveFrequentTags(tags); document.getElementById("frequentTagSelect").innerHTML=frequentTagOptions(); }
+    function deleteSelectedFrequentTag(){ const sel=document.getElementById("frequentTagSelect"); if(!sel?.value) return; if(!confirm(`「${sel.value}」を削除しますか？`)) return; saveFrequentTags(loadFrequentTags().filter(t=>t!==sel.value)); sel.innerHTML=frequentTagOptions(); }
+
+    function formBase(title, date, label, placeholder, type, start="", end="", text="", cat="none"){
+      hideRightPanels(); const f=document.getElementById("formScreen"); f.style.display="block";
+      f.innerHTML=`
+        <h2>${title}</h2>
+        <label>日付</label><input id="logDate" type="date" value="${date}">
+        <label>${label}</label><textarea id="logText" placeholder="${placeholder}">${escapeHtml(text)}</textarea>
+        ${type==="plan"?`<div class="template-row"><select id="frequentPlanSelect">${frequentPlanOptions()}</select><button class="mini-button" onclick="applyFrequentPlan()">使う</button><button class="mini-button" onclick="addFrequentPlan()">追加</button><button class="mini-button danger" onclick="deleteSelectedFrequentPlan()">削除</button></div>`:""}
+        <label>カテゴリ</label><div class="category-row"><select id="categorySelect">${categoryOptions(cat)}</select><button class="mini-button" onclick="addCategory('categorySelect')">追加</button><button class="mini-button danger" onclick="deleteSelectedCategory('categorySelect')">削除</button></div>
+        <div class="row"><div><label>開始時刻</label><input id="startTime" type="time" value="${start}"></div><div><label>終了時刻</label><input id="endTime" type="time" value="${end}"></div></div>
+        <div class="actions"><button onclick="saveEntry('${type}')">保存</button><button class="light" onclick="showReview('${date}')">戻る</button></div>`;
+    }
+    function showPlanForm(date=selectedDate||todayString()){ formBase("予定の入力",date,"予定を教えてください","例：数学の課題、友達と飯、MOS資格勉強","plan"); }
+    function showActualForm(date=selectedDate||todayString()){ formBase("行動の事後報告",date,"いつ・何をしましたか？","例：電車でMOS資格勉強、予定外に友達と話した","actual"); }
+    function showGapFillForm(date,start,end){ formBase("ここ何してた？",date,`${start}〜${end} に何をしていましたか？`,"例：移動、SNS、休憩","actual",start,end); }
+    function saveEntry(type){
+      const date=logDate.value, text=logText.value.trim(), start=startTime.value, end=endTime.value, categoryId=categorySelect.value;
+      if(!date||!text||!start||!end){ alert("未入力の項目があります"); return; } if(end<=start){ alert("終了時刻は開始時刻より後にして！"); return; }
+      const logs=loadLogs(); logs.push({id:Date.now(), date, type, text, start, end, categoryId, detail:""}); saveLogs(logs); selectedDate=date; currentCalendarDate=new Date(date+"T00:00:00"); type==="plan"?askAddMorePlan(date):showReview(date);
+    }
+    function askAddMorePlan(date){ hideRightPanels(); const f=document.getElementById("formScreen"); f.style.display="block"; f.innerHTML=`<h2>予定を保存しました</h2><div class="notice">${formatDateJapanese(date)} の予定をさらに追加しますか？</div><div class="actions"><button onclick="showPlanForm('${date}')">はい、追加する</button><button class="secondary" onclick="showReview('${date}')">いいえ、この日を確認する</button></div>`; }
+
+    function showRepeatForm(){
+      hideRightPanels(); const f=document.getElementById("formScreen"); f.style.display="block";
+      f.innerHTML=`<h2>繰り返し予定の登録</h2><label>予定名</label><textarea id="repeatText" placeholder="例：授業、バイト、ジム"></textarea><label>カテゴリ</label><div class="category-row"><select id="repeatCategory">${categoryOptions()}</select><button class="mini-button" onclick="addCategory('repeatCategory')">追加</button><button class="mini-button danger" onclick="deleteSelectedCategory('repeatCategory')">削除</button></div><div class="row"><div><label>開始時刻</label><input id="repeatStartTime" type="time"></div><div><label>終了時刻</label><input id="repeatEndTime" type="time"></div></div><div class="row"><div><label>開始日</label><input id="repeatStartDate" type="date" value="${todayString()}"></div><div><label>終了日</label><input id="repeatEndDate" type="date" value="${todayString()}"></div></div><label>繰り返す曜日</label><div class="inline-row">${["日","月","火","水","木","金","土"].map((w,i)=>`<label style="margin:0;font-size:13px;"><input type="checkbox" name="repeatWeekday" value="${i}" style="width:auto;">${w}</label>`).join("")}</div><div class="actions"><button onclick="saveRepeatedPlans()">繰り返し予定を作成</button><button class="light" onclick="showMenu()">戻る</button></div>`;
+    }
+    function saveRepeatedPlans(){
+      const text=repeatText.value.trim(), categoryId=repeatCategory.value, start=repeatStartTime.value, end=repeatEndTime.value, startDate=repeatStartDate.value, endDate=repeatEndDate.value;
+      const weekdays=Array.from(document.querySelectorAll('input[name="repeatWeekday"]:checked')).map(x=>Number(x.value));
+      if(!text||!start||!end||!startDate||!endDate||!weekdays.length){ alert("未入力の項目があります"); return; } if(end<=start||endDate<startDate){ alert("時間か日付の指定が不正です"); return; }
+      const logs=loadLogs(); let count=0; for(let d=new Date(startDate+"T00:00:00"), last=new Date(endDate+"T00:00:00"); d<=last; d.setDate(d.getDate()+1)){ if(weekdays.includes(d.getDay())){ logs.push({id:Date.now()+count,date:toDateString(d),type:"plan",text,start,end,categoryId,detail:"",repeat:true}); count++; } }
+      saveLogs(logs); alert(`${count}件の繰り返し予定を作成しました`); showReview(startDate);
+    }
+
+    function showStopwatch(){ hideRightPanels(); clearStopwatchTimer(); stopwatchStart=null; const f=document.getElementById("formScreen"); f.style.display="block"; f.innerHTML=`<h2>ストップウォッチで記録</h2><div class="timer-info">開始ボタンを押すと現在時刻から計測します。</div><div id="timerDisplay" class="timer-display">00:00:00</div><div id="timerStatus" class="timer-info">まだ計測していません。</div><div class="actions"><button class="green" onclick="startStopwatch()">計測開始</button><button onclick="stopStopwatch()">計測終了</button><button class="light" onclick="showMenu()">戻る</button></div><div id="stopwatchSaveArea"></div>`; }
+    function startStopwatch(){ stopwatchStart=new Date(); clearStopwatchTimer(); updateStopwatchDisplay(); stopwatchInterval=setInterval(updateStopwatchDisplay,1000); timerStatus.textContent=`計測中：${formatTime(stopwatchStart)} 開始`; stopwatchSaveArea.innerHTML=""; }
+    function stopStopwatch(){ if(!stopwatchStart){ alert("先に計測開始を押して！"); return; } const endObj=new Date(); clearStopwatchTimer(); const date=toDateString(stopwatchStart), start=formatTime(stopwatchStart), end=formatTime(endObj); timerStatus.textContent=`計測終了：${start}〜${end} / ${formatDuration(endObj-stopwatchStart)}`; stopwatchSaveArea.innerHTML=`<label>何をしましたか？</label><textarea id="swText"></textarea><label>カテゴリ</label><div class="category-row"><select id="swCategory">${categoryOptions()}</select><button class="mini-button" onclick="addCategory('swCategory')">追加</button><button class="mini-button danger" onclick="deleteSelectedCategory('swCategory')">削除</button></div><div class="actions"><button onclick="saveStopwatchEntry('${date}','${start}','${end}')">事後報告として保存</button><button class="light" onclick="showStopwatch()">リセット</button></div>`; }
+    function saveStopwatchEntry(date,start,end){ const text=swText.value.trim(), categoryId=swCategory.value; if(!text){ alert("内容を入力して！"); return; } const logs=loadLogs(); logs.push({id:Date.now(),date,type:"actual",text,start,end,categoryId,detail:""}); saveLogs(logs); showReview(date); }
+    function clearStopwatchTimer(){ if(stopwatchInterval){ clearInterval(stopwatchInterval); stopwatchInterval=null; } }
+    function updateStopwatchDisplay(){ if(stopwatchStart && document.getElementById("timerDisplay")) timerDisplay.textContent=formatDuration(Date.now()-stopwatchStart.getTime()); }
+
+    function showReview(dateArg){
+      hideRightPanels(); const r=document.getElementById("reviewScreen"); r.style.display="block"; selectedDate=dateArg||selectedDate||todayString(); renderCalendar();
+      const logs=getDayLogs(selectedDate); let html=`<h2>${formatDateJapanese(selectedDate)} の行動振り返り</h2><p class="small">予定・事後報告を時系列順に表示します。</p><div class="actions"><button class="blue" onclick="showPlanForm('${selectedDate}')">予定を追加</button><button class="green" onclick="showActualForm('${selectedDate}')">事後報告を追加</button><button onclick="showStopwatch()">計測開始</button></div>`;
+      html+=buildPieChart(logs)+buildGapPrompts(logs,selectedDate);
+      if(!logs.length) html+=`<div class="empty">この日はまだ何も記録されていません。</div>`;
+      logs.forEach(log=>{ const cat=getCategoryById(log.categoryId||"none"), label=log.type==="plan"?"予定":"事後報告", cls=log.type==="plan"?"plan":"actual"; html+=`<div class="log-item ${cls}"><div class="log-content-row"><div class="log-main"><div class="log-meta">${log.start}〜${log.end} / ${label}</div><div class="log-title">${escapeHtml(log.text)}</div><span class="category-pill"><span class="category-dot" style="background:${cat.color}"></span>${escapeHtml(cat.name)}</span>${log.repeat?`<span class="detail-badge">繰り返し</span>`:""}${log.detail?`<span class="detail-badge">詳細あり</span>`:""}</div><div class="mini-actions"><button class="blue" onclick="showDetail(${log.id})">詳細</button><button class="light" onclick="showLogMenu(${log.id})">編集</button></div></div></div>`; });
+      html+=`<div class="actions"><button class="light" onclick="showMenu()">メニューに戻る</button><button class="danger" onclick="clearDateLogs('${selectedDate}')">この日の記録を全削除</button></div>`; r.innerHTML=html;
+    }
+    function getDayLogs(date){ return loadLogs().filter(l=>l.date===date).sort((a,b)=>a.start.localeCompare(b.start)); }
+    function getLogById(id){ return loadLogs().find(l=>l.id===id); }
+    function showLogMenu(id){ const log=getLogById(id); if(!log) return; hideRightPanels(); const r=document.getElementById("reviewScreen"); r.style.display="block"; r.innerHTML=`<h2>編集メニュー</h2><div class="log-item ${log.type}"><div class="log-meta">${formatDateJapanese(log.date)} / ${log.start}〜${log.end}</div><div class="log-title">${escapeHtml(log.text)}</div></div><div class="actions">${log.type==="plan"?`<button onclick="showEditLogForm(${id})">予定の変更</button>`:""}<button class="danger" onclick="deleteLog(${id})">削除</button><button class="light" onclick="showReview('${log.date}')">戻る</button></div>`; }
+    function showEditLogForm(id){ const log=getLogById(id); if(!log) return; hideRightPanels(); const f=document.getElementById("formScreen"); f.style.display="block"; f.innerHTML=`<h2>予定の変更</h2><label>日付</label><input id="editDate" type="date" value="${log.date}"><label>予定</label><textarea id="editText">${escapeHtml(log.text)}</textarea><label>カテゴリ</label><div class="category-row"><select id="editCategory">${categoryOptions(log.categoryId||"none")}</select><button class="mini-button" onclick="addCategory('editCategory')">追加</button><button class="mini-button danger" onclick="deleteSelectedCategory('editCategory')">削除</button></div><div class="row"><div><label>開始時刻</label><input id="editStart" type="time" value="${log.start}"></div><div><label>終了時刻</label><input id="editEnd" type="time" value="${log.end}"></div></div><div class="actions"><button onclick="saveEditedLog(${id})">保存</button><button class="light" onclick="showReview('${log.date}')">戻る</button></div>`; }
+    function saveEditedLog(id){ const date=editDate.value, text=editText.value.trim(), start=editStart.value, end=editEnd.value, categoryId=editCategory.value; if(!date||!text||!start||!end||end<=start){ alert("入力を確認して！"); return; } saveLogs(loadLogs().map(l=>l.id===id?{...l,date,text,start,end,categoryId}:l)); showReview(date); }
+    function showDetail(id){ const log=getLogById(id); if(!log) return; const cat=getCategoryById(log.categoryId||"none"); hideRightPanels(); const r=document.getElementById("reviewScreen"); r.style.display="block"; r.innerHTML=`<h2>詳細</h2><div class="log-item ${log.type}"><div class="log-meta">${formatDateJapanese(log.date)} / ${log.start}〜${log.end}</div><div class="log-title">${escapeHtml(log.text)}</div><span class="category-pill"><span class="category-dot" style="background:${cat.color}"></span>${escapeHtml(cat.name)}</span></div><label>詳細メモ</label><textarea id="detailText" placeholder="例：感じたこと、反省、#集中 #学び など">${escapeHtml(log.detail||"")}</textarea><div class="tag-template-row"><select id="frequentTagSelect">${frequentTagOptions()}</select><button class="mini-button" onclick="insertFrequentTag()">使う</button><button class="mini-button" onclick="addFrequentTag()">追加</button><button class="mini-button danger" onclick="deleteSelectedFrequentTag()">削除</button></div><p class="small">ハッシュタグを入れると振り返りノートで検索できます。</p><div class="actions"><button onclick="saveDetail(${id})">詳細を保存</button><button class="light" onclick="showReview('${log.date}')">戻る</button></div>`; }
+    function saveDetail(id){ const detail=detailText.value.trim(); saveLogs(loadLogs().map(l=>l.id===id?{...l,detail}:l)); showDetail(id); }
+    function deleteLog(id){ const log=getLogById(id); if(!log||!confirm("削除しますか？")) return; saveLogs(loadLogs().filter(l=>l.id!==id)); showReview(log.date); }
+    function clearDateLogs(date){ if(!confirm(`${formatDateJapanese(date)} の記録をすべて削除しますか？`)) return; saveLogs(loadLogs().filter(l=>l.date!==date)); showReview(date); }
+
+    function timeToMinutes(t){ const [h,m]=t.split(":").map(Number); return h*60+m; }
+    function minutesToHourText(n){ const h=Math.floor(n/60), m=n%60; if(h===0) return `${m}分`; if(m===0) return `${h}時間`; return `${h}時間${m}分`; }
+    function logWithMinutes(log){ const cat=getCategoryById(log.categoryId||"none"), s=timeToMinutes(log.start), e=timeToMinutes(log.end); return {...log,startMin:s,endMin:e,duration:Math.max(0,e-s),color:cat.color,categoryName:cat.name}; }
+    function buildDayActionCard(logs, date){
+      const fill=calculateFillRate(date);
+      const summary=loadDailySummaries().find(s=>s.date===date);
+
+      if(summary){
+        return `
+          <div class="pie-wrap">
+            <h2>今日の振り返り</h2>
+            <div class="score-result" style="margin-top:10px;">
+              <div>この日の総合充実度</div>
+              <div class="score-result-value">${summary.totalFulfillment.toFixed(1)}</div>
+              <div>/ 10</div>
+            </div>
+            <p class="small">記録充填率：${summary.fillRate.toFixed(0)}% / 記録済み：${minutesToHourText(summary.loggedMinutes)}</p>
+            <div class="actions">
+              <button class="blue" onclick="showDailyFulfillment()">充実ポイントを修正する</button>
+              <button class="light" onclick="showFulfillmentTrend()">充実度チャートを見る</button>
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="pie-wrap">
+          <h2>今日の振り返り</h2>
+          <p class="small">現在の記録充填率：<strong>${fill.rate.toFixed(0)}%</strong>（記録済み：${minutesToHourText(fill.totalMinutes)} / 24時間）</p>
+          <div class="notice">
+            今日はまだ充実ポイントが確定されていません。<br>
+            記録がある程度たまったら、その日の納得感を0〜10で振り返ってみましょう。
+          </div>
+          <div class="actions">
+            <button class="blue" onclick="showDailyFulfillment()">充実度を記録する</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function buildPieChart(logs){
+      const valid=logs.map(logWithMinutes).filter(l=>l.duration>0);
+      return buildDayActionCard(logs, selectedDate) + buildClockChart(valid);
+    }
+
+    function buildClockChart(valid){ const colors=Array(1440).fill("#e0e0e0"); valid.forEach(l=>{ for(let i=Math.max(0,l.startMin); i<Math.min(1440,l.endMin); i++) colors[i]=l.color; }); let segs=[], cur=colors[0], start=0; for(let i=1;i<=1440;i++){ if(i===1440||colors[i]!==cur){ segs.push(`${cur} ${start/1440*360}deg ${i/1440*360}deg`); cur=colors[i]; start=i; } } const labels=Array.from({length:24},(_,h)=>{ const a=h/24*2*Math.PI-Math.PI/2, r=145, x=160+Math.cos(a)*r, y=160+Math.sin(a)*r; return `<div class="clock-hour-label" style="left:${x}px; top:${y}px;">${h}</div>`; }).join(""); return `<div class="clock-wrap"><h2>24時間リング表示</h2><div class="clock-ring-area"><div class="clock-wrapper">${labels}<div class="clock-ring" style="background:conic-gradient(${segs.join(",")});"></div></div></div><p class="small">灰色は未記録時間です。</p></div>`; }
+    function buildGapPrompts(logs,date){ const arr=logs.map(logWithMinutes).filter(l=>l.duration>0).sort((a,b)=>a.startMin-b.startMin); const gaps=[]; for(let i=0;i<arr.length-1;i++){ const gap=arr[i+1].startMin-arr[i].endMin; if(gap>0&&gap<=60) gaps.push({start:arr[i].end,end:arr[i+1].start,min:gap}); } if(!gaps.length) return ""; return `<div class="gap-wrap"><h2>ここ何してた？</h2><p class="small">1時間以下の未記録時間です。</p>${gaps.map(g=>`<div class="gap-card"><div class="log-title">${g.min}分の空白</div><div class="log-meta">${g.start}〜${g.end}</div><button class="blue" onclick="showGapFillForm('${date}','${g.start}','${g.end}')">この時間を埋める</button></div>`).join("")}</div>`; }
+
+    function calculateFillRate(date){
+      const logs=getDayLogs(date).map(logWithMinutes).filter(l=>l.duration>0);
+      const total=logs.reduce((sum,l)=>sum+l.duration,0);
+      const rate=Math.min(100,(total/1440)*100);
+      return { totalMinutes: total, rate };
+    }
+
+    function calculateFillRate(date){
+      const logs=getDayLogs(date).map(logWithMinutes).filter(l=>l.duration>0);
+      const total=logs.reduce((sum,l)=>sum+l.duration,0);
+      const rate=Math.min(100,(total/1440)*100);
+      return { totalMinutes: total, rate };
+    }
+
+    function renderScoreBar(id,current=null){ let html=`<div class="score-bar">`; for(let i=0;i<=10;i++){ html+=`<div class="score-cell ${current!==null&&i<=current?"active":""}" onclick="setFulfillmentScore(${id},${i})" id="score-${id}-${i}">${i}</div>`; } return html+`</div>`; }
+    function setFulfillmentScore(id,score){ const logs=loadLogs(), log=logs.find(l=>l.id===id); if(!log) return; log.fulfillmentScore=score; saveLogs(logs); for(let i=0;i<=10;i++){ const el=document.getElementById(`score-${id}-${i}`); if(el) el.classList.toggle("active", i<=score); } }
+    function renderMiniReflect(log, currentScore){
+      if(log.detail && log.detail.trim()) return "";
+
+      let message = "この評価の理由や気づきを残しますか？";
+      let placeholder = "例：#気づき 思ったより集中できた";
+
+      if(typeof currentScore === "number"){
+        if(currentScore >= 8){
+          message = "なぜ満足できた？あとで再現できるように残しておこう。";
+          placeholder = "例：#集中 静かな場所で一気に進められた";
+        } else if(currentScore <= 3){
+          message = "何が引っかかった？次に崩れないためのメモを残そう。";
+          placeholder = "例：#反省 眠くて集中できなかった";
+        }
+      }
+
+      return `
+        <div class="mini-reflect-box">
+          <div class="mini-reflect-text">${message}</div>
+          <button class="mini-reflect-btn" onclick="toggleMiniReflect(${log.id})">ひとこと書く</button>
+          <div id="miniReflect-${log.id}" class="mini-reflect-input">
+            <textarea placeholder="${placeholder}" oninput="saveMiniReflect(${log.id}, this.value)"></textarea>
+            <p class="small">保存は自動です。#集中 #反省 のように書くと、振り返りノートで検索できます。</p>
+          </div>
+        </div>
+      `;
+    }
+
+    function toggleMiniReflect(id){
+      const el=document.getElementById(`miniReflect-${id}`);
+      if(!el) return;
+      el.style.display = el.style.display === "block" ? "none" : "block";
+    }
+
+    function saveMiniReflect(id,value){
+      const logs=loadLogs();
+      const target=logs.find(l=>l.id===id);
+      if(!target) return;
+      target.detail=value;
+      saveLogs(logs);
+    }
+
+    function showDailyFulfillment(){
+      hideRightPanels();
+      closeQuickMenu();
+
+      const today=todayString();
+      const logs=getDayLogs(today);
+      const fill=calculateFillRate(today);
+      const r=document.getElementById("reviewScreen");
+      r.style.display="block";
+
+      let html=`
+        <h2>本日の充実ポイント</h2>
+        <p class="small">各行動に対して、どれだけ納得できたかを0〜10点で入力してください。</p>
+        <div class="notice">
+          <strong>現在の記録充填率：</strong>${fill.rate.toFixed(0)}%<br>
+          <span class="small">記録済み：${minutesToHourText(fill.totalMinutes)} / 24時間。これは点数ではなく、「どれだけ一日が見えているか」の指標です。</span>
+        </div>
+      `;
+
+      if(!logs.length){
+        html+=`<div class="empty">今日の予定・事後報告がまだありません。</div>`;
+      }
+
+      logs.forEach(log=>{
+        const cat=getCategoryById(log.categoryId||"none");
+        const label=log.type==="plan"?"予定":"事後報告";
+        const score=typeof log.fulfillmentScore==="number"?log.fulfillmentScore:null;
+        html+=`
+          <div class="score-row">
+            <div class="log-meta">${log.start}〜${log.end} / ${label}</div>
+            <div class="log-title">${escapeHtml(log.text)}</div>
+            <span class="category-pill"><span class="category-dot" style="background:${cat.color}"></span>${escapeHtml(cat.name)}</span>
+            <div class="score-title">充実ポイント</div>
+            ${renderScoreBar(log.id,score)}
+            ${renderMiniReflect(log,score)}
+          </div>
+        `;
+      });
+
+      if(logs.length){
+        html+=`
+          <div class="actions">
+            <button class="blue" onclick="finalizeDailyFulfillment()">本日の充実ポイントを確定する</button>
+            <button class="light" onclick="showMenu()">戻る</button>
+          </div>
+        `;
+      }
+
+      r.innerHTML=html;
+    }
+
+    function finalizeDailyFulfillment(){
+      const today = todayString();
+      const scored = loadLogs().filter(l =>
+        l.date === today && typeof l.fulfillmentScore === "number"
+      );
+
+      if(!scored.length){
+        alert("まだ充実ポイントが入力されていません");
+        return;
+      }
+
+      let weightedSum = 0;
+      let totalWeight = 0;
+
+      scored.forEach(log => {
+        const duration = Math.max(1, timeToMinutes(log.end) - timeToMinutes(log.start));
+        const weight = Math.sqrt(duration);
+        weightedSum += log.fulfillmentScore * weight;
+        totalWeight += weight;
+      });
+
+      const weightedAverage = weightedSum / totalWeight;
+      const fill = calculateFillRate(today);
+      const fillScore = fill.rate / 10;
+      const totalFulfillment = weightedAverage * 0.8 + fillScore * 0.2;
+
+      const summaries = loadDailySummaries().filter(s => s.date !== today);
+      summaries.push({
+        date: today,
+        totalFulfillment,
+        weightedAverage,
+        fillRate: fill.rate,
+        loggedMinutes: fill.totalMinutes,
+        updatedAt: new Date().toISOString()
+      });
+      summaries.sort((a,b)=>a.date.localeCompare(b.date));
+      saveDailySummaries(summaries);
+
+      const r = document.getElementById("reviewScreen");
+      r.innerHTML = `
+        <h2>本日の充実度</h2>
+
+        <div class="score-result">
+          <div>本日の総合充実度</div>
+          <div class="score-result-value">${totalFulfillment.toFixed(1)}</div>
+          <div>/ 10</div>
+        </div>
+
+        <div class="notice">
+          <strong>内訳</strong><br>
+          <span class="small">
+            時間補正済み充実ポイント：${weightedAverage.toFixed(1)} / 10<br>
+            記録充填率：${fill.rate.toFixed(0)}%（記録済み：${minutesToHourText(fill.totalMinutes)} / 24時間）
+          </span>
+        </div>
+
+        <div class="notice">
+          <strong>現在の計算方法</strong><br>
+          <span class="small">
+            充実ポイントは、各行動の点数を行動時間の平方根で重みづけしています。<br>
+            そのため、長い行動ほど影響は大きくなりますが、「長いだけ」で評価が暴れにくい設計です。<br>
+            総合充実度は、時間補正済み充実ポイントを80%、記録充填率スコアを20%として計算しています。
+          </span>
+        </div>
+
+        <div class="actions">
+          <button class="blue" onclick="showHighlightSelection('${today}')">人生ハイライトを選ぶ</button>
+          <button class="light" onclick="showDailyFulfillment()">点数を修正する</button>
+          <button class="light" onclick="showReview('${today}')">今日の記録を見る</button>
+          <button class="light" onclick="showMenu()">メニューに戻る</button>
+        </div>
+      `;
+    }
+
+    function showHighlightSelection(date){
+      hideRightPanels();
+      closeQuickMenu();
+
+      const logs=getDayLogs(date);
+      const r=document.getElementById("reviewScreen");
+      r.style.display="block";
+
+      let html=`
+        <h2>人生ハイライト</h2>
+        <p class="small">この日をあとから見返したときに、最も印象に残る行動を1つ選んでください。</p>
+      `;
+
+      if(!logs.length){
+        html+=`<div class="empty">この日の記録がまだありません。</div>`;
+      }else{
+        html+=`<div class="notice">新しく文章を書く必要はありません。今日のログから1つ選ぶだけです。</div>`;
+        logs.forEach(log=>{
+          const cat=getCategoryById(log.categoryId||"none");
+          const label=log.type==="plan"?"予定":"事後報告";
+          html+=`
+            <label class="log-item ${log.type}" style="display:block; cursor:pointer;">
+              <input type="radio" name="highlightLog" value="${log.id}" style="width:auto; margin-right:8px;">
+              <span class="log-meta">${log.start}〜${log.end} / ${label}</span>
+              <div class="log-title">${escapeHtml(log.text)}</div>
+              <span class="category-pill"><span class="category-dot" style="background:${cat.color}"></span>${escapeHtml(cat.name)}</span>
+            </label>
+          `;
+        });
+        html+=`
+          <div class="actions">
+            <button class="blue" onclick="saveDailyHighlight('${date}')">ハイライトとして保存する</button>
+            <button class="light" onclick="showReview('${date}')">この日の記録に戻る</button>
+          </div>
+        `;
+      }
+
+      r.innerHTML=html;
+    }
+
+    function saveDailyHighlight(date){
+      const selected=document.querySelector('input[name="highlightLog"]:checked');
+      if(!selected){
+        alert("ハイライトにする行動を1つ選んでください");
+        return;
+      }
+
+      const logId=Number(selected.value);
+      const log=getLogById(logId);
+      if(!log){
+        alert("対象のログが見つかりません");
+        return;
+      }
+
+      const summaries=loadDailySummaries();
+      let summary=summaries.find(s=>s.date===date);
+
+      if(!summary){
+        summary={
+          date,
+          totalFulfillment:null,
+          weightedAverage:null,
+          fillRate:calculateFillRate(date).rate,
+          loggedMinutes:calculateFillRate(date).totalMinutes,
+          updatedAt:new Date().toISOString()
+        };
+        summaries.push(summary);
+      }
+
+      summary.highlightLogId=log.id;
+      summary.highlightText=log.text;
+      summary.highlightStart=log.start;
+      summary.highlightEnd=log.end;
+      summary.highlightType=log.type;
+      summary.highlightCategoryId=log.categoryId||"none";
+      summary.updatedAt=new Date().toISOString();
+
+      summaries.sort((a,b)=>a.date.localeCompare(b.date));
+      saveDailySummaries(summaries);
+
+      const r=document.getElementById("reviewScreen");
+      r.innerHTML=`
+        <h2>人生ハイライトを保存しました</h2>
+        <div class="notice">
+          この日を象徴する行動として保存しました。<br>
+          あとで月間・年間ハイライトとして見返せるようにしていきます。
+        </div>
+        <div class="log-item ${log.type}">
+          <div class="log-meta">${formatDateJapanese(date)} / ${log.start}〜${log.end}</div>
+          <div class="log-title">${escapeHtml(log.text)}</div>
+        </div>
+        <div class="actions">
+          <button class="blue" onclick="showHighlightSelection('${date}')">選び直す</button>
+          <button class="light" onclick="showReview('${date}')">この日の記録に戻る</button>
+          <button class="light" onclick="showMenu()">メニューに戻る</button>
+        </div>
+      `;
+    }
+
+    function extractTags(text){ return [...new Set(String(text||"").replace(/\n/g," ").split(" ").filter(w=>w.startsWith("#")&&w.length>1))]; }
+    function getAllTaggedLogs(){ return loadLogs().filter(l=>l.detail&&extractTags(l.detail).length).map(l=>({...l,tags:extractTags(l.detail)})).sort((a,b)=>a.date!==b.date?a.date.localeCompare(b.date):a.start.localeCompare(b.start)); }
+    function showReflectionNotebook(searchTag=""){ hideRightPanels(); closeQuickMenu(); const tagged=getAllTaggedLogs(), counts={}; tagged.forEach(l=>l.tags.forEach(t=>counts[t]=(counts[t]||0)+1)); const tags=Object.entries(counts).sort((a,b)=>b[1]-a[1]); const normalized=String(searchTag||"").trim(), target=normalized&&!normalized.startsWith("#")?"#"+normalized:normalized; const results=target?tagged.filter(l=>l.tags.includes(target)):[]; const r=document.getElementById("reviewScreen"); r.style.display="block"; let html=`<h2>振り返りノート</h2><p class="small">詳細メモの #タグ で過去の予定・行動を検索できます。</p><label>ハッシュタグ検索</label><div class="category-row"><input id="tagSearchInput" type="text" placeholder="#集中、#反省 など" value="${escapeHtml(target)}"><button class="blue" onclick="showReflectionNotebook(tagSearchInput.value)">検索</button></div>`; if(tags.length){ html+=`<div class="tag-cloud">${tags.map(([t,c])=>`<button class="tag-chip" onclick="showReflectionNotebook('${t}')">${escapeHtml(t)} ${c}</button>`).join("")}</div>`; } else html+=`<div class="empty">まだハッシュタグ付きの詳細メモがありません。</div>`; if(!target&&tags.length) html+=`<div class="empty">検索前は本文を表示しません。タグをクリックすると該当メモだけ表示します。</div>`; if(target) html+=`<div class="date-title">検索中：${escapeHtml(target)} / ${results.length}件</div>`; results.forEach(log=>{ const cat=getCategoryById(log.categoryId||"none"), label=log.type==="plan"?"予定":"事後報告"; html+=`<div class="notebook-result"><div class="log-meta">${formatDateJapanese(log.date)} / ${log.start}〜${log.end} / ${label}</div><div class="log-title">${escapeHtml(log.text)}</div><span class="category-pill"><span class="category-dot" style="background:${cat.color}"></span>${escapeHtml(cat.name)}</span><div class="notebook-detail">${escapeHtml(log.detail)}</div><div class="notebook-tags">${log.tags.map(t=>`<button class="tag-chip" onclick="showReflectionNotebook('${t}')">${escapeHtml(t)}</button>`).join("")}</div><div class="actions"><button class="blue" onclick="showDetail(${log.id})">詳細を編集</button><button class="light" onclick="showReview('${log.date}')">この日を見る</button></div></div>`; }); if(target&&!results.length) html+=`<div class="empty">${escapeHtml(target)} が付いた詳細メモはまだありません。</div>`; html+=`<div class="actions"><button class="light" onclick="showMenu()">メニューに戻る</button></div>`; r.innerHTML=html; }
+
+    function getTrendStartDate(range){
+      const d=new Date();
+      if(range==="all") return null;
+      const days={"1w":7,"1m":30,"3m":90,"6m":180,"1y":365,"2y":730,"5y":1825}[range] || 30;
+      d.setDate(d.getDate()-days);
+      return toDateString(d);
+    }
+
+    function rangeLabel(range){
+      return {"1w":"1週間","1m":"1ヶ月","3m":"3ヶ月","6m":"半年","1y":"1年","2y":"2年","5y":"5年","all":"すべて"}[range] || "1ヶ月";
+    }
+
+    function showFulfillmentTrend(range="1m"){
+      hideRightPanels();
+      closeQuickMenu();
+      const r=document.getElementById("reviewScreen");
+      r.style.display="block";
+
+      const startDate=getTrendStartDate(range);
+      const summaries=loadDailySummaries()
+        .filter(s=>!startDate || s.date>=startDate)
+        .sort((a,b)=>a.date.localeCompare(b.date));
+
+      const allSummaries=loadDailySummaries().sort((a,b)=>a.date.localeCompare(b.date));
+
+      let html=`
+        <h2>充実度チャート</h2>
+        <p class="small">株価チャートのように、総合充実度の推移を期間別に確認できます。</p>
+        <div class="chart-range-tabs">
+          ${["1w","1m","3m","6m","1y","2y","5y","all"].map(key=>`<button class="${range===key?"active":""}" onclick="showFulfillmentTrend('${key}')">${rangeLabel(key)}</button>`).join("")}
+        </div>
+      `;
+
+      if(!allSummaries.length){
+        html+=`<div class="empty">まだ充実度データがありません。まず「本日の充実ポイント」を確定してください。</div>`;
+      } else if(!summaries.length){
+        html+=`<div class="empty">${rangeLabel(range)}の範囲には、まだ充実度データがありません。</div>`;
+      } else {
+        const avg=summaries.reduce((s,d)=>s+d.totalFulfillment,0)/summaries.length;
+        const best=summaries.reduce((max,d)=>d.totalFulfillment>max.totalFulfillment?d:max,summaries[0]);
+        const latest=summaries[summaries.length-1];
+        const first=summaries[0];
+        const change=latest.totalFulfillment-first.totalFulfillment;
+
+        html+=`
+          <div class="summary-grid">
+            <div class="summary-box"><div class="small">期間平均</div><div class="summary-num">${avg.toFixed(1)}</div></div>
+            <div class="summary-box"><div class="small">最高</div><div class="summary-num">${best.totalFulfillment.toFixed(1)}</div></div>
+            <div class="summary-box"><div class="small">変化</div><div class="summary-num">${change>=0?"+":""}${change.toFixed(1)}</div></div>
+          </div>
+          ${buildFulfillmentLineChart(summaries)}
+          ${buildRecentHighlights(summaries)}
+          <div class="notice">
+            <strong>${rangeLabel(range)}チャート</strong><br>
+            <span class="small">縦軸は0〜10点の総合充実度です。総合充実度 = 時間補正済み充実ポイント80% + 記録充填率スコア20%。</span>
+          </div>
+        `;
+      }
+
+      html+=`<div class="actions"><button class="light" onclick="showMenu()">メニューに戻る</button></div>`;
+      r.innerHTML=html;
+    }
+
+    function buildFulfillmentLineChart(data){
+      const width=680, height=280;
+      const padL=42, padR=18, padT=18, padB=38;
+      const innerW=width-padL-padR;
+      const innerH=height-padT-padB;
+      const n=data.length;
+      const xFor=i=> n===1 ? padL+innerW/2 : padL+(i/(n-1))*innerW;
+      const yFor=v=> padT+innerH-(v/10)*innerH;
+
+      const points=data.map((d,i)=>({x:xFor(i), y:yFor(d.totalFulfillment), d}));
+      const poly=points.map(p=>`${p.x},${p.y}`).join(" ");
+      const grid=[0,2,4,6,8,10].map(v=>`<line class="chart-grid-line" x1="${padL}" y1="${yFor(v)}" x2="${width-padR}" y2="${yFor(v)}"></line><text class="chart-axis-text" x="8" y="${yFor(v)+4}">${v}</text>`).join("");
+      const dots=points.map(p=>`<circle class="chart-dot" cx="${p.x}" cy="${p.y}" r="4"><title>${formatDateJapanese(p.d.date)}：${p.d.totalFulfillment.toFixed(1)}</title></circle>`).join("");
+
+      const labelIndexes=[];
+      if(n<=6){ for(let i=0;i<n;i++) labelIndexes.push(i); }
+      else { labelIndexes.push(0, Math.floor((n-1)/4), Math.floor((n-1)/2), Math.floor((n-1)*3/4), n-1); }
+      const xLabels=[...new Set(labelIndexes)].map(i=>{
+        const d=data[i];
+        const [,m,day]=d.date.split("-");
+        return `<text class="chart-axis-text" x="${xFor(i)}" y="${height-12}" text-anchor="middle">${Number(m)}/${Number(day)}</text>`;
+      }).join("");
+
+      return `
+        <div class="line-chart-wrap">
+          <svg class="line-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="充実度の折れ線グラフ">
+            ${grid}
+            <line class="chart-grid-line" x1="${padL}" y1="${padT}" x2="${padL}" y2="${height-padB}"></line>
+            <line class="chart-grid-line" x1="${padL}" y1="${height-padB}" x2="${width-padR}" y2="${height-padB}"></line>
+            <polyline class="chart-line" points="${poly}"></polyline>
+            ${dots}
+            ${xLabels}
+          </svg>
+        </div>
+      `;
+    }
+
+    function buildRecentHighlights(summaries){
+      const highlights=summaries
+        .filter(s=>s.highlightText)
+        .slice()
+        .sort((a,b)=>b.date.localeCompare(a.date))
+        .slice(0,5);
+
+      if(!highlights.length){
+        return `
+          <div class="notice">
+            <strong>最近の人生ハイライト</strong><br>
+            <span class="small">まだハイライトが保存されていません。充実度確定後に、その日を象徴する行動を1つ選ぶとここに表示されます。</span>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="highlight-list">
+          <h2>最近の人生ハイライト</h2>
+          ${highlights.map(h=>{
+            const cat=getCategoryById(h.highlightCategoryId||"none");
+            const typeLabel=h.highlightType==="plan"?"予定":"事後報告";
+            return `
+              <div class="highlight-card">
+                <div class="highlight-date">${formatDateJapanese(h.date)} / ${h.highlightStart||""}〜${h.highlightEnd||""} / ${typeLabel}</div>
+                <div class="highlight-title">${escapeHtml(h.highlightText)}</div>
+                <span class="category-pill"><span class="category-dot" style="background:${cat.color}"></span>${escapeHtml(cat.name)}</span>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      `;
+    }
+
+    function showBackupMenu(){ hideRightPanels(); const f=document.getElementById("formScreen"); f.style.display="block"; f.innerHTML=`<h2>データの書き出し/読み込み</h2><div class="notice">予定・事後報告・カテゴリをJSONで保存/復元できます。</div><div class="actions"><button onclick="exportData()">JSONで書き出し</button><button class="secondary" onclick="importFile.click()">JSONを読み込み</button><button class="light" onclick="showMenu()">戻る</button></div><input id="importFile" class="backup-file" type="file" accept=".json,application/json" onchange="importData(event)">`; }
+    function exportData(){ const data={version:1,exportedAt:new Date().toISOString(),logs:loadLogs(),categories:loadCategories(),frequentPlans:loadFrequentPlans(),frequentTags:loadFrequentTags()}; const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=`daily-log-backup-${todayString()}.json`; a.click(); URL.revokeObjectURL(url); }
+    function importData(e){ const file=e.target.files[0]; if(!file) return; const reader=new FileReader(); reader.onload=ev=>{ try{ const data=JSON.parse(ev.target.result); if(!Array.isArray(data.logs)){ alert("ログデータが見つかりません"); return; } if(!confirm("現在のデータを上書きします。実行しますか？")) return; saveLogs(data.logs); if(Array.isArray(data.categories)) saveCategories(data.categories); if(Array.isArray(data.frequentPlans)) saveFrequentPlans(data.frequentPlans); if(Array.isArray(data.frequentTags)) saveFrequentTags(data.frequentTags); alert("読み込み完了"); showMenu(); }catch{ alert("読み込みに失敗しました"); } }; reader.readAsText(file); }
+
+    function moveMonth(delta){ currentCalendarDate.setMonth(currentCalendarDate.getMonth()+delta); renderCalendar(); }
+    function renderCalendar(){ const grid=document.getElementById("calendarGrid"), title=document.getElementById("calendarTitle"), logs=loadLogs(), today=todayString(), y=currentCalendarDate.getFullYear(), m=currentCalendarDate.getMonth(); title.textContent=`${y}年 ${m+1}月`; grid.innerHTML=""; ["日","月","火","水","木","金","土"].forEach(w=>{ const d=document.createElement("div"); d.className="weekday"; d.textContent=w; grid.appendChild(d); }); const first=new Date(y,m,1), start=new Date(first); start.setDate(first.getDate()-first.getDay()); for(let i=0;i<42;i++){ const date=new Date(start); date.setDate(start.getDate()+i); const dateStr=toDateString(date), dayLogs=logs.filter(l=>l.date===dateStr), plan=dayLogs.filter(l=>l.type==="plan"&&!l.repeat).length, actual=dayLogs.filter(l=>l.type==="actual").length; const cell=document.createElement("div"); cell.className="day-cell"; if(date.getMonth()!==m) cell.classList.add("outside"); if(dateStr===today) cell.classList.add("today"); if(dateStr===selectedDate) cell.classList.add("selected"); cell.innerHTML=`<div class="day-number">${date.getDate()}</div><div class="badges">${plan?`<span class="badge plan-badge">予${plan}</span>`:""}${actual?`<span class="badge actual-badge">実${actual}</span>`:""}</div>`; cell.onclick=()=>{ selectedDate=dateStr; currentCalendarDate=new Date(dateStr+"T00:00:00"); closeQuickMenu(); showReview(dateStr); }; grid.appendChild(cell); } }
+
+    updateTodayBar();
+    renderCalendar();
+  </script>
+</body>
+</html>
