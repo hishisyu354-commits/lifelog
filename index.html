@@ -41,6 +41,92 @@
     .gcal-synced-badge { display:inline-block; font-size:10px; background:#27ae60; color:#fff; padding:2px 7px; border-radius:999px; font-weight:800; margin-left:6px; vertical-align:middle; }
     .gcal-info-row { background:#f6f8fa; border:1px solid #e3e3e3; border-radius:10px; padding:10px 12px; margin:8px 0; font-size:13px; line-height:1.6; }
     .gcal-info-row strong { color:var(--main); }
+
+    /* 月間カレンダー日付タップ時のアクションシート */
+    .date-action-sheet-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0);
+      z-index: 200;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      transition: background .22s ease;
+    }
+    .date-action-sheet-overlay.show { background: rgba(0,0,0,.45); }
+    .date-action-sheet {
+      width: 100%;
+      max-width: 480px;
+      background: #fff;
+      border-radius: 18px 18px 0 0;
+      padding: 18px 18px calc(18px + var(--safe-bottom));
+      transform: translateY(100%);
+      transition: transform .25s ease;
+      box-shadow: 0 -8px 24px rgba(0,0,0,.22);
+    }
+    .date-action-sheet-overlay.show .date-action-sheet { transform: translateY(0); }
+    .das-date {
+      text-align: center;
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--main);
+      margin-bottom: 16px;
+    }
+    .das-btn {
+      width: 100%;
+      margin-bottom: 10px;
+      font-size: 15px;
+      padding: 14px;
+      border-radius: 10px;
+      font-weight: 700;
+      min-height: 48px;
+    }
+    .das-cancel {
+      width: 100%;
+      margin-top: 8px;
+      background: #f0f0f0;
+      color: #666;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 14px;
+      min-height: 44px;
+      border: none;
+      cursor: pointer;
+    }
+
+    /* カスタム確認ダイアログ（iOS Safari の confirm() 不具合対策） */
+    .custom-confirm-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0);
+      z-index: 300;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      transition: background .2s ease;
+    }
+    .custom-confirm-overlay.show { background: rgba(0,0,0,.55); }
+    .custom-confirm-box {
+      background: #fff;
+      border-radius: 16px;
+      padding: 22px;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.3);
+      transform: scale(.92);
+      opacity: 0;
+      transition: transform .2s ease, opacity .2s ease;
+    }
+    .custom-confirm-overlay.show .custom-confirm-box {
+      transform: scale(1);
+      opacity: 1;
+    }
+    .cc-message { font-size: 15px; line-height: 1.6; margin-bottom: 18px; white-space: pre-wrap; color: #222; }
+    .cc-actions { display: flex; gap: 10px; }
+    .cc-actions button { flex: 1; padding: 13px; border-radius: 10px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; min-height: 46px; }
+    .cc-cancel { background: #eee; color: #333; }
+    .cc-ok { background: #c0392b; color: #fff; }
     button { border:none; border-radius:12px; padding:13px 14px; font-size:15px; font-weight:700; cursor:pointer; background:var(--main); color:#fff; min-height:44px; -webkit-appearance:none; transition:transform .08s ease, opacity .08s ease; touch-action:manipulation; }
     button:active { transform:scale(.96); opacity:.85; }
     button.secondary { background:#444; } button.light { background:#eee; color:#222; } button.danger { background:#c0392b; } button.green { background:#27ae60; } button.blue { background:#3498db; }
@@ -873,8 +959,10 @@
 
     // ボトムタブ切替（メイン画面ナビゲーション）
     let currentTab = "calendar";
+    let navigationContext = null; // "monthCalendar"等：保存・キャンセル後の戻り先を制御
     function switchTab(tab){
       currentTab = tab;
+      navigationContext = null; // タブ切替で戻り先コンテキストはリセット
       document.body.dataset.activeTab = tab;
       document.body.dataset.showReview = "false";
       document.querySelectorAll(".nav-tab").forEach(btn => {
@@ -929,6 +1017,15 @@
 
     // 保存・キャンセル後の戻り先を、現在のタブ/ビューに応じて決定する
     function navigateAfterSave(date){
+      // 月間カレンダーのアクションシート経由 → カレンダー画面に戻る
+      if(navigationContext === "monthCalendar"){
+        navigationContext = null;
+        document.body.dataset.showReview = "false";
+        hideRightPanels();
+        renderCalendar();
+        scrollToTopMobile();
+        return;
+      }
       // 週間ビュー → そのまま週間ビューに戻る（振り返り画面に飛ばさない）
       if(currentTab === "calendar" && calendarViewMode === "week"){
         document.body.dataset.showReview = "false";
@@ -958,6 +1055,98 @@
       currentCalendarDate = new Date(date + "T00:00:00");
       document.body.dataset.showReview = "true";
       showReview(date);
+    }
+
+    // 月間カレンダーの日付タップ → 3択アクションシート
+    function openDateActionSheet(date){
+      closeDateActionSheet();
+      selectedDate = date;
+      currentCalendarDate = new Date(date + "T00:00:00");
+      renderCalendar(); // 選択ハイライト更新
+      const sheet = document.createElement("div");
+      sheet.id = "dateActionSheet";
+      sheet.className = "date-action-sheet-overlay";
+      sheet.innerHTML = `
+        <div class="date-action-sheet" onclick="event.stopPropagation()">
+          <div class="das-date">${formatDateJapanese(date)}</div>
+          <button class="das-btn blue" onclick="closeDateActionSheet(); navigationContext='monthCalendar'; showPlanForm('${date}');">＋ 予定を追加</button>
+          <button class="das-btn green" onclick="closeDateActionSheet(); navigationContext='monthCalendar'; showActualForm('${date}');">✓ 行動を追加</button>
+          <button class="das-btn" onclick="closeDateActionSheet(); document.body.dataset.showReview='true'; showReview('${date}');">📖 この日の振り返り</button>
+          <button class="das-cancel" onclick="closeDateActionSheet()">キャンセル</button>
+        </div>
+      `;
+      sheet.addEventListener("click", (e) => {
+        if(e.target === sheet) closeDateActionSheet();
+      });
+      document.body.appendChild(sheet);
+      requestAnimationFrame(() => sheet.classList.add("show"));
+    }
+    function closeDateActionSheet(){
+      const sheet = document.getElementById("dateActionSheet");
+      if(!sheet) return;
+      sheet.classList.remove("show");
+      setTimeout(() => { if(sheet.parentNode) sheet.remove(); }, 220);
+    }
+
+    // カスタム確認ダイアログ（iOS Safariのconfirm()不具合対策）
+    let _customConfirmCallback = null;
+    function customConfirm(message, onConfirm, okLabel = "OK", okClass = "cc-ok"){
+      closeCustomConfirm();
+      _customConfirmCallback = onConfirm;
+      const overlay = document.createElement("div");
+      overlay.id = "customConfirmOverlay";
+      overlay.className = "custom-confirm-overlay";
+      overlay.setAttribute("onclick", "if(event.target===this) closeCustomConfirm()");
+      overlay.innerHTML = `
+        <div class="custom-confirm-box">
+          <div class="cc-message"></div>
+          <div class="cc-actions">
+            <button type="button" class="cc-cancel" onclick="closeCustomConfirm()">キャンセル</button>
+            <button type="button" class="${okClass} cc-ok-action" onclick="executeCustomConfirm()">${escapeHtml(okLabel)}</button>
+          </div>
+        </div>
+      `;
+      overlay.querySelector(".cc-message").textContent = message;
+      document.body.appendChild(overlay);
+      // 多重防御：addEventListener も追加（onclick が iOS で発火しない場合の保険）
+      const okBtn = overlay.querySelector(".cc-ok-action");
+      const cancelBtn = overlay.querySelector(".cc-cancel");
+      if(okBtn){
+        okBtn.addEventListener("click", executeCustomConfirm);
+        okBtn.addEventListener("touchend", function(e){ e.preventDefault(); executeCustomConfirm(); });
+      }
+      if(cancelBtn){
+        cancelBtn.addEventListener("click", closeCustomConfirm);
+        cancelBtn.addEventListener("touchend", function(e){ e.preventDefault(); closeCustomConfirm(); });
+      }
+      requestAnimationFrame(() => overlay.classList.add("show"));
+    }
+    let _ccExecuting = false;
+    function executeCustomConfirm(){
+      if(_ccExecuting) return; // 二重実行防止
+      _ccExecuting = true;
+      setTimeout(() => { _ccExecuting = false; }, 800);
+      // デバッグ：呼び出し検知
+      const debugMsg = "[debug] executeCustomConfirm called. callback=" + (typeof _customConfirmCallback);
+      console.log(debugMsg);
+      const callback = _customConfirmCallback;
+      _customConfirmCallback = null;
+      closeCustomConfirm();
+      if(typeof callback === "function"){
+        try { callback(); } catch(e){
+          alert("削除処理でエラー：" + (e && e.message ? e.message : e));
+        }
+      } else {
+        alert("コールバックが見つかりません（" + debugMsg + "）");
+      }
+    }
+    function closeCustomConfirm(){
+      const overlay = document.getElementById("customConfirmOverlay");
+      if(overlay){
+        overlay.classList.remove("show");
+        setTimeout(() => { if(overlay.parentNode) overlay.remove(); }, 220);
+      }
+      _customConfirmCallback = null;
     }
 
     // 振り返り画面の×ボタン：カレンダー画面に戻る
@@ -1082,7 +1271,7 @@
       if(running && running.startAt){ stopwatchStart=new Date(running.startAt); }
       const f=document.getElementById("formScreen");
       f.style.display="block";
-      f.innerHTML=`<h2>ストップウォッチで記録</h2><div class="timer-info">計測開始時刻を保存するので、別日を見たり他画面に移動しても計測は続きます。</div><div id="timerDisplay" class="timer-display">00:00:00</div><div id="timerStatus" class="timer-info">まだ計測していません。</div><div class="actions"><button class="green" onclick="startStopwatch()">計測開始</button><button onclick="stopStopwatch()">計測終了</button><button class="danger" onclick="resetStopwatch()">リセット</button><button class="light" onclick="showMenu()">戻る</button></div><div id="stopwatchSaveArea"></div>`;
+      f.innerHTML=`<h2>ストップウォッチで記録</h2><div class="timer-info">計測開始時刻を保存するので、別日を見たり他画面に移動しても計測は続きます。</div><div id="timerDisplay" class="timer-display">00:00:00</div><div id="timerStatus" class="timer-info">まだ計測していません。</div><div class="actions"><button class="green" onclick="startStopwatch()">計測開始</button><button onclick="stopStopwatch()">計測終了</button><button class="danger" onclick="resetStopwatch()">リセット</button><button class="light" onclick="navigateAfterSave(selectedDate || todayString())">戻る</button></div><div id="stopwatchSaveArea"></div>`;
       if(running && running.startAt){
         clearStopwatchTimer();
         updateStopwatchDisplay();
@@ -1361,13 +1550,28 @@
     }
     function getDayLogs(date){ return loadLogs().filter(l=>l.date===date).sort((a,b)=>a.start.localeCompare(b.start)); }
     function getLogById(id){ return loadLogs().find(l=>l.id===id); }
-    function showLogMenu(id){ const log=getLogById(id); if(!log) return; hideRightPanels(); const r=document.getElementById("reviewScreen"); r.style.display="block"; const editLabel=log.type==="plan"?"予定の変更":"行動の変更"; const gcalBadge = log.gcalEventId ? `<span class="gcal-synced-badge">📅 GCal同期済み</span>` : ""; const gcalBtn = (log.type === "plan" && isGcalAuthenticated()) ? `<button class="green" onclick="sendSingleLogToGcal(${id})">📅 ${log.gcalEventId ? "Googleカレンダーで更新" : "Googleカレンダーに送る"}</button>` : ""; r.innerHTML=`<h2>編集メニュー</h2><div class="log-item ${log.type}"><div class="log-meta">${formatDateJapanese(log.date)} / ${log.start}〜${log.end}${gcalBadge}</div><div class="log-title">${escapeHtml(log.text)}</div></div><div class="actions"><button onclick="showEditLogForm(${id})">${editLabel}</button>${gcalBtn}<button class="danger" onclick="deleteLog(${id})">削除</button><button class="light" onclick="navigateAfterSave('${log.date}')">戻る</button></div>`; }
+    function showLogMenu(id){ const log=getLogById(id); if(!log) return; hideRightPanels(); const r=document.getElementById("reviewScreen"); r.style.display="block"; const editLabel=log.type==="plan"?"予定の変更":"行動の変更"; const gcalBadge = log.gcalEventId ? `<span class="gcal-synced-badge">📅 GCal同期済み</span>` : ""; const gcalBtn = (log.type === "plan" && isGcalAuthenticated()) ? `<button class="green" onclick="sendSingleLogToGcal(${id})">📅 ${log.gcalEventId ? "Googleカレンダーで更新" : "Googleカレンダーに送る"}</button>` : ""; r.innerHTML=`<h2>編集メニュー</h2><div class="log-item ${log.type}"><div class="log-meta">${formatDateJapanese(log.date)} / ${log.start}〜${log.end}${gcalBadge}</div><div class="log-title">${escapeHtml(log.text)}</div></div><div class="actions"><button onclick="showEditLogForm(${id})">${editLabel}</button>${gcalBtn}<button class="danger" onclick="confirmDeleteLog(${id})">削除</button><button class="light" onclick="navigateAfterSave('${log.date}')">戻る</button></div>`; }
     function showEditLogForm(id){ const log=getLogById(id); if(!log) return; hideRightPanels(); const f=document.getElementById("formScreen"); f.style.display="block"; const title=log.type==="plan"?"予定の変更":"行動の変更"; const textLabel=log.type==="plan"?"予定":"行動"; f.innerHTML=`<h2>${title}</h2><label>日付</label><input id="editDate" type="date" value="${log.date}"><label>${textLabel}</label><textarea id="editText">${escapeHtml(log.text)}</textarea><label>カテゴリ</label><div class="category-row"><select id="editCategory">${categoryOptions(log.categoryId||"none")}</select><button class="mini-button" onclick="addCategory('editCategory')">追加</button><button class="mini-button danger" onclick="deleteSelectedCategory('editCategory')">削除</button></div><div class="row"><div><label>開始時刻</label><input id="editStart" type="time" value="${log.start}"></div><div><label>終了時刻</label><input id="editEnd" type="time" value="${log.end}"></div></div><div class="actions"><button onclick="saveEditedLog(${id})">保存</button><button class="light" onclick="navigateAfterSave('${log.date}')">戻る</button></div>`; }
     function saveEditedLog(id){ const date=editDate.value, text=editText.value.trim(), start=editStart.value, end=editEnd.value, categoryId=editCategory.value; if(!date||!text||!start||!end||end<=start){ alert("入力を確認して！"); return; } saveLogs(loadLogs().map(l=>l.id===id?{...l,date,text,start,end,categoryId}:l)); navigateAfterSave(date); }
     function showDetail(id){ const log=getLogById(id); if(!log) return; const cat=getCategoryById(log.categoryId||"none"); hideRightPanels(); const r=document.getElementById("reviewScreen"); r.style.display="block"; r.innerHTML=`<h2>詳細</h2><div class="log-item ${log.type}"><div class="log-meta">${formatDateJapanese(log.date)} / ${log.start}〜${log.end}</div><div class="log-title">${escapeHtml(log.text)}</div><span class="category-pill"><span class="category-dot" style="background:${cat.color}"></span>${escapeHtml(cat.name)}</span></div><label>詳細メモ</label><textarea id="detailText" placeholder="例：感じたこと、反省、#集中 #学び など">${escapeHtml(log.detail||"")}</textarea><div class="tag-template-row"><select id="frequentTagSelect">${frequentTagOptions()}</select><button class="mini-button" onclick="insertFrequentTag()">使う</button><button class="mini-button" onclick="addFrequentTag()">追加</button><button class="mini-button danger" onclick="deleteSelectedFrequentTag()">削除</button></div><p class="small">ハッシュタグを入れると振り返りノートで検索できます。</p><div class="actions"><button onclick="saveDetail(${id})">詳細を保存</button><button class="light" onclick="navigateAfterSave('${log.date}')">戻る</button></div>`; }
     function saveDetail(id){ const detail=detailText.value.trim(); saveLogs(loadLogs().map(l=>l.id===id?{...l,detail}:l)); showDetail(id); }
-    function deleteLog(id){ const log=getLogById(id); if(!log||!confirm("削除しますか？")) return; saveLogs(loadLogs().filter(l=>l.id!==id)); showReview(log.date); }
-    function clearDateLogs(date){ if(!confirm(`${formatDateJapanese(date)} の記録をすべて削除しますか？`)) return; saveLogs(loadLogs().filter(l=>l.date!==date)); showReview(date); }
+    function confirmDeleteLog(id){
+      const log = getLogById(id);
+      if(!log){ alert("対象の記録が見つかりません。画面を更新してください。"); return; }
+      customConfirm(`「${log.text || "(無題)"}」を削除しますか？`, () => deleteLog(id), "削除");
+    }
+    function deleteLog(id){
+      const log = getLogById(id);
+      if(!log) return;
+      saveLogs(loadLogs().filter(l => l.id !== id));
+      showReview(log.date);
+    }
+    function clearDateLogs(date){
+      customConfirm(`${formatDateJapanese(date)} の記録をすべて削除しますか？`, () => {
+        saveLogs(loadLogs().filter(l => l.date !== date));
+        showReview(date);
+      }, "全削除");
+    }
 
     function timeToMinutes(t){ const [h,m]=t.split(":").map(Number); return h*60+m; }
     function minutesToHourText(n){ const h=Math.floor(n/60), m=n%60; if(h===0) return `${m}分`; if(m===0) return `${h}時間`; return `${h}時間${m}分`; }
@@ -1867,13 +2071,15 @@
     function showBackupMenu(){ hideRightPanels(); const f=document.getElementById("formScreen"); f.style.display="block"; f.innerHTML=`<h2>データの書き出し/読み込み</h2><div class="notice">予定・行動・カテゴリをJSONで保存/復元できます。</div><div class="actions"><button onclick="exportData()">JSONで書き出し</button><button class="secondary" onclick="importFile.click()">JSONを読み込み</button><button class="light" onclick="showMenu()">戻る</button></div><input id="importFile" class="backup-file" type="file" accept=".json,application/json" onchange="importData(event)"><h3 class="menu-section-title" style="margin-top:24px;">記録の全削除</h3><p class="small">このブラウザに保存されている予定・行動・充実度の記録をすべて消去します。カテゴリやタグなどの設定は残ります。<br><strong>消す前にJSONで書き出してバックアップ</strong>することを推奨します。</p><div class="actions"><button class="danger" onclick="resetAllRecords()">すべての記録を削除</button></div>`; }
 
     function resetAllRecords(){
-      if(!confirm("すべての予定・行動・充実度の記録を削除します。\nこの操作は取り消せません。本当に削除しますか？")) return;
-      if(!confirm("最終確認：本当に削除しますか？\n（バックアップを取っていない場合は、いったんキャンセルして「JSONで書き出し」を先に実行してください）")) return;
-      localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem(SUMMARY_KEY);
-      localStorage.removeItem(STOPWATCH_KEY);
-      alert("すべての記録を削除しました。ページを再読み込みします。");
-      location.reload();
+      customConfirm("すべての予定・行動・充実度の記録を削除します。\nこの操作は取り消せません。本当に削除しますか？", () => {
+        customConfirm("最終確認：本当に削除しますか？\n（バックアップを取っていない場合は、いったんキャンセルして「JSONで書き出し」を先に実行してください）", () => {
+          localStorage.removeItem(STORAGE_KEY);
+          localStorage.removeItem(SUMMARY_KEY);
+          localStorage.removeItem(STOPWATCH_KEY);
+          alert("すべての記録を削除しました。ページを再読み込みします。");
+          location.reload();
+        }, "削除");
+      }, "次へ");
     }
     function exportData(){ const data={version:1,exportedAt:new Date().toISOString(),logs:loadLogs(),categories:loadCategories(),frequentPlans:loadFrequentPlans(),frequentTags:loadFrequentTags(),summaries:loadDailySummaries()}; const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=`daily-log-backup-${todayString()}.json`; a.click(); URL.revokeObjectURL(url); }
     function importData(e){ const file=e.target.files[0]; if(!file) return; const reader=new FileReader(); reader.onload=ev=>{ try{ const data=JSON.parse(ev.target.result); if(!Array.isArray(data.logs)){ alert("ログデータが見つかりません"); return; } if(!confirm("現在のデータを上書きします。実行しますか？")) return; saveLogs(data.logs); if(Array.isArray(data.categories)) saveCategories(data.categories); if(Array.isArray(data.frequentPlans)) saveFrequentPlans(data.frequentPlans); if(Array.isArray(data.frequentTags)) saveFrequentTags(data.frequentTags); if(Array.isArray(data.summaries)) saveDailySummaries(data.summaries); alert("読み込み完了"); showMenu(); }catch{ alert("読み込みに失敗しました"); } }; reader.readAsText(file); }
@@ -1923,7 +2129,7 @@
         if(dateStr===today) cell.classList.add("today");
         if(dateStr===selectedDate) cell.classList.add("selected");
         cell.innerHTML=`<div class="day-number">${date.getDate()}</div><div class="badges">${plan?`<span class="badge plan-badge">予${plan}</span>`:""}${actual?`<span class="badge actual-badge">行${actual}</span>`:""}</div>`;
-        cell.onclick=()=>{ selectedDate=dateStr; currentCalendarDate=new Date(dateStr+"T00:00:00"); closeQuickMenu(); document.body.dataset.showReview="true"; showReview(dateStr); };
+        cell.onclick=()=>{ openDateActionSheet(dateStr); };
         grid.appendChild(cell);
       }
     }
