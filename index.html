@@ -42,57 +42,35 @@
     .gcal-info-row { background:#f6f8fa; border:1px solid #e3e3e3; border-radius:10px; padding:10px 12px; margin:8px 0; font-size:13px; line-height:1.6; }
     .gcal-info-row strong { color:var(--main); }
 
-    /* 月間カレンダー日付タップ時のアクションシート */
-    .date-action-sheet-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0);
-      z-index: 200;
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      transition: background .22s ease;
+    /* 月間カレンダー日付タップ時のコンテキストメニュー（PC右クリック風） */
+    .date-context-overlay {
+      position: fixed; inset: 0; background: transparent; z-index: 200;
     }
-    .date-action-sheet-overlay.show { background: rgba(0,0,0,.45); }
-    .date-action-sheet {
-      width: 100%;
-      max-width: 480px;
-      background: #fff;
-      border-radius: 18px 18px 0 0;
-      padding: 18px 18px calc(18px + var(--safe-bottom));
-      transform: translateY(100%);
-      transition: transform .25s ease;
-      box-shadow: 0 -8px 24px rgba(0,0,0,.22);
+    .date-context-menu {
+      position: fixed; z-index: 201;
+      background: #fff; border-radius: 12px;
+      box-shadow: 0 6px 24px rgba(0,0,0,.22), 0 0 0 1px rgba(0,0,0,.06);
+      padding: 6px; min-width: 168px; max-width: 200px;
+      opacity: 0; transform: scale(.94); transform-origin: top left;
+      transition: opacity .12s ease, transform .12s ease;
     }
-    .date-action-sheet-overlay.show .date-action-sheet { transform: translateY(0); }
-    .das-date {
-      text-align: center;
-      font-size: 16px;
-      font-weight: 800;
-      color: var(--main);
-      margin-bottom: 16px;
+    .date-context-menu.show { opacity: 1; transform: scale(1); }
+    .dcm-header {
+      font-size: 12px; font-weight: 800; color: var(--main);
+      padding: 6px 10px 8px; border-bottom: 1px solid #eee; margin-bottom: 4px;
     }
-    .das-btn {
-      width: 100%;
-      margin-bottom: 10px;
-      font-size: 15px;
-      padding: 14px;
-      border-radius: 10px;
-      font-weight: 700;
-      min-height: 48px;
+    .dcm-item {
+      display: flex; align-items: center; gap: 8px;
+      width: 100%; padding: 9px 10px; border-radius: 7px;
+      background: transparent; border: none; cursor: pointer;
+      font-size: 13.5px; font-weight: 600; color: #222;
+      text-align: left; min-height: 38px;
     }
-    .das-cancel {
-      width: 100%;
-      margin-top: 8px;
-      background: #f0f0f0;
-      color: #666;
-      padding: 12px;
-      border-radius: 10px;
-      font-size: 14px;
-      min-height: 44px;
-      border: none;
-      cursor: pointer;
-    }
+    .dcm-item:active { background: #f0f0f0; }
+    .dcm-item .dcm-icon { font-size: 14px; width: 18px; text-align: center; flex-shrink: 0; }
+    .dcm-item.dcm-plan { color: #2477b8; }
+    .dcm-item.dcm-actual { color: #1e8a4a; }
+    .dcm-item.dcm-review { color: var(--main); }
 
     /* カスタム確認ダイアログ（iOS Safari の confirm() 不具合対策） */
     .custom-confirm-overlay {
@@ -133,8 +111,7 @@
     .menu { display:grid; gap:10px; }
     .actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; }
     .actions button { flex:1; min-width:130px; }
-    label { display:block; margin:12px 0 6px; font-weight:700; }
-    input, select, textarea { width:100%; padding:13px; border:1px solid #ccc; border-radius:10px; font-size:16px; background:#fff; -webkit-appearance:none; appearance:none; font-family:inherit; }
+    label { display:block; margin:12px 0 6px; font-weight:700; }    input, select, textarea { width:100%; padding:13px; border:1px solid #ccc; border-radius:10px; font-size:16px; background:#fff; -webkit-appearance:none; appearance:none; font-family:inherit; }
     input:focus, select:focus, textarea:focus { outline:none; border-color:var(--main); box-shadow:0 0 0 3px rgba(139,0,38,.15); }
     textarea { min-height:58px; resize:vertical; }
     .row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
@@ -142,6 +119,22 @@
     .inline-row select, .category-row select, .template-row select, .tag-template-row select { flex:1; min-width:140px; }
     .mini-button { flex:0 0 auto; padding:11px 14px; font-size:13px; border-radius:10px; background:#eee; color:#222; min-width:64px; min-height:44px; }
     .mini-button.danger { background:#c0392b; color:#fff; }
+    /* コンパクトフォーム */
+    .form-title { font-size:18px; font-weight:800; margin:0 0 10px; color:var(--main); }
+    .form-grid { display:flex; flex-direction:column; gap:10px; }
+    .form-field { display:flex; flex-direction:column; gap:4px; }
+    .mini-label { font-size:11px; color:#777; font-weight:700; margin:0; padding:0 2px; }
+    .compact-input { padding:8px 10px; font-size:14px; min-height:40px; border-radius:8px; border:1px solid #ddd; background:#fff; box-sizing:border-box; width:100%; }
+    .compact-textarea { min-height:52px; padding:8px 10px; font-size:14px; border-radius:8px; border:1px solid #ddd; background:#fff; box-sizing:border-box; width:100%; resize:vertical; line-height:1.4; font-family:inherit; }
+    .compact-row { display:flex; gap:6px; align-items:center; }
+    .compact-row select, .compact-row input[type="text"] { flex:1 1 0; min-width:0; padding:8px 10px; font-size:13.5px; min-height:40px; border-radius:8px; border:1px solid #ddd; background:#fff; }
+    .icon-button { flex:0 0 auto; width:40px; height:40px; padding:0; font-size:17px; border-radius:8px; background:#eee; color:#222; min-width:40px; min-height:40px; font-weight:800; display:inline-flex; align-items:center; justify-content:center; }
+    .icon-button.danger { background:#c0392b; color:#fff; }
+    .icon-button:active { transform:scale(.92); }
+    .time-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .time-row .form-field { gap:4px; }
+    .form-actions-compact { display:flex; gap:8px; margin-top:14px; }
+    .form-actions-compact button { flex:1; min-height:44px; padding:11px; font-size:14px; border-radius:10px; }
     .view-toggle-row { display:flex; justify-content:flex-start; margin-bottom:10px; }
     .toggle-view-btn { background:#f3f3f3; color:var(--main); padding:8px 14px; font-size:13px; border-radius:999px; min-height:38px; font-weight:800; display:inline-flex; align-items:center; gap:6px; border:1px solid #e5e5e5; }
     .toggle-view-btn:active { transform:scale(.95); background:#eaeaea; }
@@ -300,17 +293,25 @@
       word-break:break-word;
     }
 
-    .calendar-header { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:12px; }
-    .calendar-title { font-size:20px; font-weight:800; flex:1; min-width:0; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .month-btn { width:46px; height:44px; padding:0; border-radius:10px; background:#eee; color:#222; font-size:22px; min-height:44px; flex-shrink:0; }
+    .calendar-header { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; }
+    .calendar-title { font-size:22px; font-weight:800; flex:1; min-width:0; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .today-jump-btn { padding:6px 14px; border-radius:18px; background:#eee; color:#333; font-size:13px; font-weight:700; flex-shrink:0; min-height:32px; }
     .calendar-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
     .weekday { text-align:center; font-size:13px; font-weight:800; color:#666; padding:4px 0; }
-    .day-cell { min-height:72px; border-radius:12px; background:#fafafa; border:1px solid #e3e3e3; padding:7px; cursor:pointer; transition:background .12s, transform .08s; }
+    /* 月間カレンダー：3面カルーセル */
+    .weekday-row { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; margin-bottom:4px; }
+    .month-viewport { position:relative; overflow:hidden; width:100%; touch-action:pan-y; }
+    .month-slider { display:flex; width:300%; transform:translateX(-33.3333%); will-change:transform; }
+    .month-slider:not(.dragging) { transition:transform .28s cubic-bezier(.2,.7,.3,1); }
+    .month-page { width:33.3333%; flex-shrink:0; display:grid; grid-template-columns:repeat(7,1fr); gap:3px; padding:0 2px; box-sizing:border-box; }
+    .day-cell { min-height:80px; border-radius:8px; background:#fafafa; border:1px solid #e3e3e3; padding:4px 3px; cursor:pointer; transition:background .12s, transform .08s; overflow:hidden; }
     .day-cell:hover { background:#f1f1f1; } .day-cell:active { transform:scale(.96); } .day-cell.outside { opacity:.28; } .day-cell.today { border:2px solid var(--main); background:#fff4f7; } .day-cell.selected { background:var(--main); color:#fff; border-color:var(--main); }
-    .day-number { font-weight:800; font-size:15px; }
-    .badges { display:flex; gap:4px; flex-wrap:wrap; margin-top:8px; }
-    .badge { font-size:10px; border-radius:999px; padding:2px 5px; color:#fff; font-weight:800; }
-    .plan-badge { background:#3498db; } .actual-badge { background:#27ae60; } .selected .badge { background:#fff; color:var(--main); }
+    .day-number { font-weight:800; font-size:13px; line-height:1; margin-bottom:2px; }
+    .day-plans { display:flex; flex-direction:column; gap:2px; }
+    .day-plan-chip { font-size:10px; padding:1px 4px; border-radius:3px; line-height:1.3; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .day-plan-more { font-size:9px; color:#888; padding:0 3px; line-height:1.3; font-weight:600; }
+    .day-cell.selected .day-plan-chip { background:rgba(255,255,255,.22)!important; color:#fff!important; border-left-color:rgba(255,255,255,.7)!important; }
+    .day-cell.selected .day-plan-more { color:rgba(255,255,255,.85); }
     .log-item, .score-row, .notebook-result, .gap-card { background:#fafafa; border-radius:12px; padding:12px; margin-bottom:10px; border-left:7px solid #ccc; }
     .plan { border-left-color:#3498db; } .actual { border-left-color:#27ae60; }
     .log-content-row { display:flex; justify-content:space-between; gap:12px; align-items:center; }
@@ -334,14 +335,17 @@
     .clock-ring { width:240px; height:240px; border-radius:50%; position:relative; box-shadow:inset 0 0 0 1px rgba(0,0,0,.08),0 2px 10px rgba(0,0,0,.08); }
     .clock-ring:before { content:""; position:absolute; inset:0; border-radius:50%; background:repeating-conic-gradient(rgba(255,255,255,.95) 0deg .55deg, transparent .55deg 15deg); pointer-events:none; }
     .clock-ring:after { content:""; position:absolute; inset:54px; border-radius:50%; background:#fafafa; box-shadow:0 0 0 1px rgba(0,0,0,.08); pointer-events:none; }
+    .clock-overlay { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; }
+    .clock-click-segment { pointer-events:auto; cursor:pointer; transition:fill .15s; }
+    .clock-click-segment:active { fill:rgba(255,255,255,.25); }
     .tag-cloud, .notebook-tags { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
     .tag-chip { border:1px solid #ddd; background:#fafafa; color:#333; padding:9px 12px; border-radius:999px; font-size:13px; cursor:pointer; min-height:38px; display:inline-flex; align-items:center; }
     .notebook-result { border-left-color:var(--main); }
     .notebook-detail { margin-top:8px; white-space:pre-wrap; line-height:1.7; }
     .score-row { border-left-color:var(--main); }
     .score-title { font-weight:800; margin:12px 0 8px; }
-    .score-bar { display:flex; gap:5px; flex-wrap:wrap; }
-    .score-cell { width:34px; height:34px; border-radius:8px; border:1px solid #ccc; background:#fff; display:flex; justify-content:center; align-items:center; cursor:pointer; font-size:13px; font-weight:800; transition:.15s; }
+    .score-bar { display:flex; gap:4px; flex-wrap:nowrap; width:100%; }
+    .score-cell { flex:1 1 0; min-width:0; height:38px; border-radius:8px; border:1px solid #ccc; background:#fff; display:flex; justify-content:center; align-items:center; cursor:pointer; font-size:13px; font-weight:800; transition:.15s; padding:0; }
     .score-cell:hover { transform:scale(1.08); } .score-cell:active { transform:scale(.94); } .score-cell.active { background:var(--main); color:#fff; border-color:var(--main); }
     .score-result { margin-top:24px; padding:24px; border-radius:18px; background:linear-gradient(135deg,#8b0026,#b8003c); color:#fff; text-align:center; }
     .score-result-value { font-size:52px; font-weight:900; margin-top:8px; }
@@ -508,80 +512,82 @@
 
 
     .untitled-helper{
-      margin-top:14px;
+      margin-top:10px;
       background:#fff7f8;
-      border:2px solid #ffd7df;
-      border-radius:16px;
-      padding:14px;
+      border:1.5px solid #ffd7df;
+      border-radius:12px;
+      padding:10px;
     }
     .untitled-title{
-      font-size:18px;
+      font-size:15px;
       font-weight:800;
-      margin-bottom:6px;
+      margin-bottom:2px;
     }
     .untitled-sub{
-      font-size:12px;
-      color:#777;
-      margin-bottom:12px;
-      line-height:1.6;
+      font-size:11px;
+      color:#888;
+      margin-bottom:8px;
+      line-height:1.4;
     }
     .untitled-grid{
       display:flex;
       flex-wrap:wrap;
-      gap:8px;
-      margin-bottom:12px;
+      gap:5px;
+      margin-bottom:6px;
     }
     .untitled-option{
       display:flex;
       align-items:center;
-      gap:6px;
+      gap:5px;
       background:white;
       border-radius:999px;
-      padding:10px 14px;
+      padding:5px 10px;
       border:1px solid #eee;
-      font-size:14px;
+      font-size:12.5px;
       font-weight:700;
       margin:0;
       cursor:pointer;
-      min-height:42px;
+      min-height:30px;
+      line-height:1.2;
     }
     .untitled-option input{
-      width:auto;
+      width:14px;
+      height:14px;
       margin:0;
+      flex-shrink:0;
     }
     .untitled-input{
       width:100%;
-      padding:12px;
-      border-radius:12px;
+      padding:8px 10px;
+      border-radius:8px;
       border:1px solid #ddd;
-      margin-bottom:12px;
-      font-size:16px;
+      margin-bottom:8px;
+      font-size:14px;
       box-sizing:border-box;
+      min-height:38px;
     }
 
 
     .untitled-smart-note{
-      font-size:11px;
-      color:#777;
-      margin:-4px 0 10px;
-      line-height:1.5;
+      display:none; /* 過剰な説明なので非表示 */
     }
     .untitled-option.smart-top{
       border-color:#f0a6b8;
       background:#fff1f4;
     }
     .untitled-score-label{
-      font-size:10px;
+      font-size:9px;
       color:#8b0026;
       font-weight:900;
-      margin-left:2px;
+      margin-left:1px;
     }
 
     .untitled-section-title{
-      font-size:12px;
+      font-size:11px;
       font-weight:900;
       color:#8b0026;
-      margin:10px 0 8px;
+      margin:8px 0 4px;
+      letter-spacing:.02em;
     }
     .untitled-recent{
       border-color:#f3c0cd;
@@ -593,11 +599,11 @@
       background:#8b0028;
       color:white;
       border:none;
-      border-radius:14px;
-      padding:14px;
-      font-size:16px;
+      border-radius:10px;
+      padding:11px;
+      font-size:14px;
       font-weight:800;
-      min-height:50px;
+      min-height:44px;
     }
 
     .bottom-nav {
@@ -697,9 +703,16 @@
       main{padding:12px max(12px, var(--safe-right)) 12px max(12px, var(--safe-left))}
       .layout{gap:12px}
       .card{padding:14px;margin-bottom:12px}
-      .day-cell{min-height:60px;padding:5px}
-      .day-number{font-size:14px}
-      .calendar-grid{gap:2px}
+      /* 月間カレンダー画面のcardは余白を詰めて表示幅を確保 */
+      body[data-active-tab="calendar"]:not([data-show-review="true"]) main{padding:12px 6px}
+      body[data-active-tab="calendar"]:not([data-show-review="true"]) .left-pane.card{padding:10px 6px}
+      .day-cell{min-height:82px;padding:3px 2px;border-radius:6px}
+      .day-number{font-size:12px}
+      .calendar-grid{gap:1px}
+      .month-page{gap:1px;padding:0 1px}
+      .weekday-row{gap:1px}
+      .day-plan-chip{font-size:10px;padding:1px 3px;border-radius:3px}
+      .day-plan-more{font-size:9px}
       .clock-wrapper{width:280px;height:280px}
       .clock-ring{width:210px;height:210px}
       .clock-ring:after{inset:47px}
@@ -709,7 +722,8 @@
       .mini-actions button{flex:1}
       .weekday-checks{grid-template-columns:repeat(4,1fr)}
       h2{font-size:18px}
-      .score-cell{width:32px;height:32px;font-size:13px}
+      .score-cell{height:36px;font-size:12px;gap:3px}
+      .score-bar{gap:3px}
 
       /* 週間タイムテーブルをスマホ画面に収める */
       .card{padding:12px}
@@ -768,12 +782,25 @@
           </button>
         </div>
         <div class="calendar-header">
-          <button class="month-btn" onclick="moveCalendar(-1)" aria-label="前へ">‹</button>
           <div id="calendarTitle" class="calendar-title"></div>
-          <button class="month-btn" onclick="moveCalendar(1)" aria-label="次へ">›</button>
+          <button class="today-jump-btn" onclick="jumpToToday()" aria-label="今日へ">今日</button>
         </div>
+        <!-- 月間ビュー：曜日行 + スライダー（3面：前月/当月/翌月） -->
+        <div id="monthCalendarArea">
+          <div class="weekday-row">
+            <div class="weekday">日</div><div class="weekday">月</div><div class="weekday">火</div><div class="weekday">水</div><div class="weekday">木</div><div class="weekday">金</div><div class="weekday">土</div>
+          </div>
+          <div id="monthViewport" class="month-viewport">
+            <div id="monthSlider" class="month-slider">
+              <div class="month-page" id="monthPagePrev"></div>
+              <div class="month-page" id="monthPageCurr"></div>
+              <div class="month-page" id="monthPageNext"></div>
+            </div>
+          </div>
+        </div>
+        <!-- 週間ビュー（タイムテーブル）用 -->
         <div id="calendarGrid" class="calendar-grid"></div>
-        <p class="small">日付をタップすると、その日の予定・行動を時系列で表示します。記録の追加は右下の「＋」ボタンから。</p>
+        <p class="small" style="margin:8px 2px 0;font-size:10.5px;color:#999;">日付タップで詳細・記録追加。左右スワイプで前後の月。</p>
       </section>
 
       <div class="right-pane">
@@ -1058,35 +1085,83 @@
     }
 
     // 月間カレンダーの日付タップ → 3択アクションシート
-    function openDateActionSheet(date){
-      closeDateActionSheet();
+    function openDateContextMenu(date, anchorEl){
+      closeDateContextMenu();
       selectedDate = date;
       currentCalendarDate = new Date(date + "T00:00:00");
       renderCalendar(); // 選択ハイライト更新
-      const sheet = document.createElement("div");
-      sheet.id = "dateActionSheet";
-      sheet.className = "date-action-sheet-overlay";
-      sheet.innerHTML = `
-        <div class="date-action-sheet" onclick="event.stopPropagation()">
-          <div class="das-date">${formatDateJapanese(date)}</div>
-          <button class="das-btn blue" onclick="closeDateActionSheet(); navigationContext='monthCalendar'; showPlanForm('${date}');">＋ 予定を追加</button>
-          <button class="das-btn green" onclick="closeDateActionSheet(); navigationContext='monthCalendar'; showActualForm('${date}');">✓ 行動を追加</button>
-          <button class="das-btn" onclick="closeDateActionSheet(); document.body.dataset.showReview='true'; showReview('${date}');">📖 この日の振り返り</button>
-          <button class="das-cancel" onclick="closeDateActionSheet()">キャンセル</button>
-        </div>
+
+      // 透明オーバーレイ（外側タップで閉じる）
+      const overlay = document.createElement("div");
+      overlay.id = "dateContextOverlay";
+      overlay.className = "date-context-overlay";
+      overlay.addEventListener("click", closeDateContextMenu);
+      document.body.appendChild(overlay);
+
+      // メニュー本体
+      const menu = document.createElement("div");
+      menu.id = "dateContextMenu";
+      menu.className = "date-context-menu";
+      const d = new Date(date + "T00:00:00");
+      const dow = ["日","月","火","水","木","金","土"][d.getDay()];
+      menu.innerHTML = `
+        <div class="dcm-header">${d.getMonth()+1}月${d.getDate()}日（${dow}）</div>
+        <button class="dcm-item dcm-plan" type="button"><span class="dcm-icon">＋</span>予定を追加</button>
+        <button class="dcm-item dcm-actual" type="button"><span class="dcm-icon">✓</span>行動を追加</button>
+        <button class="dcm-item dcm-review" type="button"><span class="dcm-icon">📖</span>振り返り</button>
       `;
-      sheet.addEventListener("click", (e) => {
-        if(e.target === sheet) closeDateActionSheet();
+      document.body.appendChild(menu);
+
+      // 各項目にイベント設定（onclick属性 + addEventListener 多重防御）
+      const items = menu.querySelectorAll(".dcm-item");
+      const actions = [
+        () => { closeDateContextMenu(); navigationContext='monthCalendar'; showPlanForm(date); },
+        () => { closeDateContextMenu(); navigationContext='monthCalendar'; showActualForm(date); },
+        () => { closeDateContextMenu(); document.body.dataset.showReview='true'; showReview(date); }
+      ];
+      items.forEach((it, i) => {
+        it.addEventListener("click", actions[i]);
+        it.addEventListener("touchend", (e) => { e.preventDefault(); actions[i](); });
       });
-      document.body.appendChild(sheet);
-      requestAnimationFrame(() => sheet.classList.add("show"));
+
+      // 位置決め
+      // 後でレイアウトを取得するため、まず非表示状態で計測
+      const rect = anchorEl ? anchorEl.getBoundingClientRect() : null;
+      const menuW = 180, menuH = menu.offsetHeight || 170;
+      const vw = window.innerWidth, vh = window.innerHeight;
+      let left, top;
+      if(rect){
+        // セルの右下から少しずらす（PC右クリック風）
+        left = rect.right - 8;
+        top = rect.bottom + 4;
+        // 右側にはみ出すなら左寄りに
+        if(left + menuW > vw - 8){ left = rect.left + 8; menu.style.transformOrigin = "top right"; }
+        if(left + menuW > vw - 8){ left = vw - menuW - 8; }
+        if(left < 8) left = 8;
+        // 下にはみ出すなら上に出す
+        if(top + menuH > vh - 90){
+          top = rect.top - menuH - 4;
+          menu.style.transformOrigin = (left > rect.left ? "bottom left" : "bottom right");
+        }
+        if(top < 60) top = 60;
+      } else {
+        left = (vw - menuW) / 2;
+        top = (vh - menuH) / 2;
+      }
+      menu.style.left = left + "px";
+      menu.style.top = top + "px";
+
+      requestAnimationFrame(() => menu.classList.add("show"));
     }
-    function closeDateActionSheet(){
-      const sheet = document.getElementById("dateActionSheet");
-      if(!sheet) return;
-      sheet.classList.remove("show");
-      setTimeout(() => { if(sheet.parentNode) sheet.remove(); }, 220);
+    function closeDateContextMenu(){
+      const m = document.getElementById("dateContextMenu");
+      const o = document.getElementById("dateContextOverlay");
+      if(m){ m.classList.remove("show"); setTimeout(() => { if(m.parentNode) m.remove(); }, 130); }
+      if(o && o.parentNode) o.remove();
     }
+    // 後方互換: 既存呼び出しで anchor が無い場合も動く
+    function openDateActionSheet(date, anchorEl){ openDateContextMenu(date, anchorEl); }
+    function closeDateActionSheet(){ closeDateContextMenu(); }
 
     // カスタム確認ダイアログ（iOS Safariのconfirm()不具合対策）
     let _customConfirmCallback = null;
@@ -1230,14 +1305,45 @@
 
     function formBase(title, date, label, placeholder, type, start="", end="", text="", cat="none"){
       hideRightPanels(); const f=document.getElementById("formScreen"); f.style.display="block";
+      const tplBlock = type==="plan" ? `
+        <div class="form-field">
+          <label class="mini-label">よく使う予定</label>
+          <div class="compact-row">
+            <select id="frequentPlanSelect">${frequentPlanOptions()}</select>
+            <button class="icon-button" type="button" onclick="applyFrequentPlan()" title="この内容を本文に入れる" aria-label="使う">↵</button>
+            <button class="icon-button" type="button" onclick="addFrequentPlan()" title="本文を新規登録" aria-label="追加">＋</button>
+            <button class="icon-button danger" type="button" onclick="deleteSelectedFrequentPlan()" title="選択中を削除" aria-label="削除">×</button>
+          </div>
+        </div>` : "";
       f.innerHTML=`
-        <h2>${title}</h2>
-        <label>日付</label><input id="logDate" type="date" value="${date}">
-        <label>${label}</label><textarea id="logText" placeholder="${placeholder}">${escapeHtml(text)}</textarea>
-        ${type==="plan"?`<div class="template-row"><select id="frequentPlanSelect">${frequentPlanOptions()}</select><button class="mini-button" onclick="applyFrequentPlan()">使う</button><button class="mini-button" onclick="addFrequentPlan()">追加</button><button class="mini-button danger" onclick="deleteSelectedFrequentPlan()">削除</button></div>`:""}
-        <label>カテゴリ</label><div class="category-row"><select id="categorySelect">${categoryOptions(cat)}</select><button class="mini-button" onclick="addCategory('categorySelect')">追加</button><button class="mini-button danger" onclick="deleteSelectedCategory('categorySelect')">削除</button></div>
-        <div class="row"><div><label>開始時刻</label><input id="startTime" type="time" value="${start}"></div><div><label>終了時刻</label><input id="endTime" type="time" value="${end}"></div></div>
-        <div class="actions"><button onclick="saveEntry('${type}')">保存</button><button class="light" onclick="navigateAfterSave('${date}')">戻る</button></div>`;
+        <h2 class="form-title">${title}</h2>
+        <div class="form-grid">
+          <div class="form-field">
+            <label class="mini-label">日付</label>
+            <input id="logDate" type="date" value="${date}" class="compact-input">
+          </div>
+          <div class="form-field">
+            <label class="mini-label">${label}</label>
+            <textarea id="logText" class="compact-textarea" placeholder="${placeholder}">${escapeHtml(text)}</textarea>
+          </div>
+          ${tplBlock}
+          <div class="form-field">
+            <label class="mini-label">カテゴリ</label>
+            <div class="compact-row">
+              <select id="categorySelect">${categoryOptions(cat)}</select>
+              <button class="icon-button" type="button" onclick="addCategory('categorySelect')" title="カテゴリを新規追加" aria-label="追加">＋</button>
+              <button class="icon-button danger" type="button" onclick="deleteSelectedCategory('categorySelect')" title="選択中のカテゴリを削除" aria-label="削除">×</button>
+            </div>
+          </div>
+          <div class="time-row">
+            <div class="form-field"><label class="mini-label">開始時刻</label><input id="startTime" type="time" value="${start}" class="compact-input"></div>
+            <div class="form-field"><label class="mini-label">終了時刻</label><input id="endTime" type="time" value="${end}" class="compact-input"></div>
+          </div>
+        </div>
+        <div class="form-actions-compact">
+          <button onclick="saveEntry('${type}')">保存</button>
+          <button class="light" onclick="navigateAfterSave('${date}')">戻る</button>
+        </div>`;
     }
     function showPlanForm(date=selectedDate||todayString(), start="", end=""){ formBase("予定の入力",date,"予定を教えてください","例：数学の課題、友達と飯、MOS資格勉強","plan",start,end); }
     function showActualForm(date=selectedDate||todayString(), start="", end=""){ formBase("行動を追加",date,"いつ・何をしましたか？","例：電車でMOS資格勉強、予定外に友達と話した","actual",start,end); }
@@ -1458,32 +1564,29 @@
       return `
         <div class="untitled-helper">
           <div class="untitled-title">この時間、何してた？</div>
-          <div class="untitled-sub">
-            時間帯・最近使った記録・よく使う予定から候補を出しています。複数選択も自由入力もOKです。
-          </div>
+          <div class="untitled-sub">タップで選択（複数可）／下に直接入力もOK</div>
 
-          <div class="untitled-section-title">${candidates.bucketLabel}のおすすめ候補</div>
-          <div class="untitled-smart-note">この時間帯に使いそうな候補を上に出しています。</div>
+          <div class="untitled-section-title">${candidates.bucketLabel}のおすすめ</div>
           <div class="untitled-grid">
-            ${candidates.smart.map((item,idx) => renderUntitledOption(item, log.id, idx < 3 ? "smart-top" : "", idx < 3 ? "おすすめ" : "")).join("")}
+            ${candidates.smart.slice(0, 3).map((item,idx) => renderUntitledOption(item, log.id, "smart-top", "おすすめ")).join("")}
           </div>
 
           ${candidates.recent.length ? `
-            <div class="untitled-section-title">最近この時間帯に使った候補</div>
+            <div class="untitled-section-title">最近この時間帯</div>
             <div class="untitled-grid">
-              ${candidates.recent.map(item => renderUntitledOption(item, log.id, "untitled-recent")).join("")}
+              ${candidates.recent.slice(0, 3).map(item => renderUntitledOption(item, log.id, "untitled-recent")).join("")}
             </div>
           ` : ""}
 
           <div class="untitled-section-title">よく使う予定</div>
           <div class="untitled-grid">
-            ${candidates.frequent.map(item => renderUntitledOption(item, log.id)).join("")}
+            ${candidates.frequent.slice(0, 3).map(item => renderUntitledOption(item, log.id)).join("")}
           </div>
 
           <input
             id="untitledInput-${log.id}"
             class="untitled-input"
-            placeholder="自由入力もOK。例：通学中にMOS資格勉強"
+            placeholder="自由入力（例：通学中にMOS）"
             oninput="syncUntitledInput(${log.id})"
           >
 
@@ -1551,7 +1654,40 @@
     function getDayLogs(date){ return loadLogs().filter(l=>l.date===date).sort((a,b)=>a.start.localeCompare(b.start)); }
     function getLogById(id){ return loadLogs().find(l=>l.id===id); }
     function showLogMenu(id){ const log=getLogById(id); if(!log) return; hideRightPanels(); const r=document.getElementById("reviewScreen"); r.style.display="block"; const editLabel=log.type==="plan"?"予定の変更":"行動の変更"; const gcalBadge = log.gcalEventId ? `<span class="gcal-synced-badge">📅 GCal同期済み</span>` : ""; const gcalBtn = (log.type === "plan" && isGcalAuthenticated()) ? `<button class="green" onclick="sendSingleLogToGcal(${id})">📅 ${log.gcalEventId ? "Googleカレンダーで更新" : "Googleカレンダーに送る"}</button>` : ""; r.innerHTML=`<h2>編集メニュー</h2><div class="log-item ${log.type}"><div class="log-meta">${formatDateJapanese(log.date)} / ${log.start}〜${log.end}${gcalBadge}</div><div class="log-title">${escapeHtml(log.text)}</div></div><div class="actions"><button onclick="showEditLogForm(${id})">${editLabel}</button>${gcalBtn}<button class="danger" onclick="confirmDeleteLog(${id})">削除</button><button class="light" onclick="navigateAfterSave('${log.date}')">戻る</button></div>`; }
-    function showEditLogForm(id){ const log=getLogById(id); if(!log) return; hideRightPanels(); const f=document.getElementById("formScreen"); f.style.display="block"; const title=log.type==="plan"?"予定の変更":"行動の変更"; const textLabel=log.type==="plan"?"予定":"行動"; f.innerHTML=`<h2>${title}</h2><label>日付</label><input id="editDate" type="date" value="${log.date}"><label>${textLabel}</label><textarea id="editText">${escapeHtml(log.text)}</textarea><label>カテゴリ</label><div class="category-row"><select id="editCategory">${categoryOptions(log.categoryId||"none")}</select><button class="mini-button" onclick="addCategory('editCategory')">追加</button><button class="mini-button danger" onclick="deleteSelectedCategory('editCategory')">削除</button></div><div class="row"><div><label>開始時刻</label><input id="editStart" type="time" value="${log.start}"></div><div><label>終了時刻</label><input id="editEnd" type="time" value="${log.end}"></div></div><div class="actions"><button onclick="saveEditedLog(${id})">保存</button><button class="light" onclick="navigateAfterSave('${log.date}')">戻る</button></div>`; }
+    function showEditLogForm(id){
+      const log=getLogById(id); if(!log) return;
+      hideRightPanels(); const f=document.getElementById("formScreen"); f.style.display="block";
+      const title=log.type==="plan"?"予定の変更":"行動の変更";
+      const textLabel=log.type==="plan"?"予定":"行動";
+      f.innerHTML=`
+        <h2 class="form-title">${title}</h2>
+        <div class="form-grid">
+          <div class="form-field">
+            <label class="mini-label">日付</label>
+            <input id="editDate" type="date" value="${log.date}" class="compact-input">
+          </div>
+          <div class="form-field">
+            <label class="mini-label">${textLabel}</label>
+            <textarea id="editText" class="compact-textarea">${escapeHtml(log.text)}</textarea>
+          </div>
+          <div class="form-field">
+            <label class="mini-label">カテゴリ</label>
+            <div class="compact-row">
+              <select id="editCategory">${categoryOptions(log.categoryId||"none")}</select>
+              <button class="icon-button" type="button" onclick="addCategory('editCategory')" title="カテゴリを新規追加" aria-label="追加">＋</button>
+              <button class="icon-button danger" type="button" onclick="deleteSelectedCategory('editCategory')" title="選択中のカテゴリを削除" aria-label="削除">×</button>
+            </div>
+          </div>
+          <div class="time-row">
+            <div class="form-field"><label class="mini-label">開始時刻</label><input id="editStart" type="time" value="${log.start}" class="compact-input"></div>
+            <div class="form-field"><label class="mini-label">終了時刻</label><input id="editEnd" type="time" value="${log.end}" class="compact-input"></div>
+          </div>
+        </div>
+        <div class="form-actions-compact">
+          <button onclick="saveEditedLog(${id})">保存</button>
+          <button class="light" onclick="navigateAfterSave('${log.date}')">戻る</button>
+        </div>`;
+    }
     function saveEditedLog(id){ const date=editDate.value, text=editText.value.trim(), start=editStart.value, end=editEnd.value, categoryId=editCategory.value; if(!date||!text||!start||!end||end<=start){ alert("入力を確認して！"); return; } saveLogs(loadLogs().map(l=>l.id===id?{...l,date,text,start,end,categoryId}:l)); navigateAfterSave(date); }
     function showDetail(id){ const log=getLogById(id); if(!log) return; const cat=getCategoryById(log.categoryId||"none"); hideRightPanels(); const r=document.getElementById("reviewScreen"); r.style.display="block"; r.innerHTML=`<h2>詳細</h2><div class="log-item ${log.type}"><div class="log-meta">${formatDateJapanese(log.date)} / ${log.start}〜${log.end}</div><div class="log-title">${escapeHtml(log.text)}</div><span class="category-pill"><span class="category-dot" style="background:${cat.color}"></span>${escapeHtml(cat.name)}</span></div><label>詳細メモ</label><textarea id="detailText" placeholder="例：感じたこと、反省、#集中 #学び など">${escapeHtml(log.detail||"")}</textarea><div class="tag-template-row"><select id="frequentTagSelect">${frequentTagOptions()}</select><button class="mini-button" onclick="insertFrequentTag()">使う</button><button class="mini-button" onclick="addFrequentTag()">追加</button><button class="mini-button danger" onclick="deleteSelectedFrequentTag()">削除</button></div><p class="small">ハッシュタグを入れると振り返りノートで検索できます。</p><div class="actions"><button onclick="saveDetail(${id})">詳細を保存</button><button class="light" onclick="navigateAfterSave('${log.date}')">戻る</button></div>`; }
     function saveDetail(id){ const detail=detailText.value.trim(); saveLogs(loadLogs().map(l=>l.id===id?{...l,detail}:l)); showDetail(id); }
@@ -1620,6 +1756,30 @@
       return buildDayActionCard(logs, selectedDate) + buildClockChart(valid);
     }
 
+    // 24時間リング用：極座標→直交座標変換（0度=12時方向、時計回り）
+    function polarToCartesian(cx, cy, r, angleDeg){
+      const angleRad = (angleDeg - 90) * Math.PI / 180;
+      return { x: cx + r * Math.cos(angleRad), y: cy + r * Math.sin(angleRad) };
+    }
+    // ドーナツ型円弧のSVGパスを生成
+    function describeDonutArc(cx, cy, rOuter, rInner, startAngle, endAngle){
+      // 終了角が360度ぴったりだとSVGが描けないので、わずかに引く
+      if(endAngle >= 360) endAngle = 359.99;
+      if(endAngle - startAngle < 0.05) return "";
+      const startOuter = polarToCartesian(cx, cy, rOuter, startAngle);
+      const endOuter = polarToCartesian(cx, cy, rOuter, endAngle);
+      const startInner = polarToCartesian(cx, cy, rInner, endAngle);
+      const endInner = polarToCartesian(cx, cy, rInner, startAngle);
+      const largeArc = (endAngle - startAngle) > 180 ? 1 : 0;
+      return [
+        "M", startOuter.x, startOuter.y,
+        "A", rOuter, rOuter, 0, largeArc, 1, endOuter.x, endOuter.y,
+        "L", startInner.x, startInner.y,
+        "A", rInner, rInner, 0, largeArc, 0, endInner.x, endInner.y,
+        "Z"
+      ].join(" ");
+    }
+
     function buildClockChart(valid){
       const colors=Array(1440).fill("#e0e0e0");
       valid.forEach(l=>{ for(let i=Math.max(0,l.startMin); i<Math.min(1440,l.endMin); i++) colors[i]=l.color; });
@@ -1628,15 +1788,26 @@
       const isMobile = window.innerWidth <= 850;
       const wrapperSize = isMobile ? 280 : 320;
       const ringSize = isMobile ? 210 : 240;
+      const ringInset = isMobile ? 47 : 54;
       const center = wrapperSize / 2;
       const labelRadius = ringSize / 2 + 14;
+      const rOuter = ringSize / 2;
+      const rInner = rOuter - ringInset;
       const labels=Array.from({length:24},(_,h)=>{
         const a=h/24*2*Math.PI-Math.PI/2;
         const x=center+Math.cos(a)*labelRadius;
         const y=center+Math.sin(a)*labelRadius;
         return `<div class="clock-hour-label" style="left:${x}px; top:${y}px;">${h}</div>`;
       }).join("");
-      return `<div class="clock-wrap"><h2>24時間リング表示</h2><div class="clock-ring-area"><div class="clock-wrapper">${labels}<div class="clock-ring" style="background:conic-gradient(${segs.join(",")});"></div></div></div><p class="small">灰色は未記録時間です。</p></div>`;
+      // 各ログ用のクリック可能な透明SVG path
+      const clickPaths = valid.map(log => {
+        const startAngle = (log.startMin / 1440) * 360;
+        const endAngle = (log.endMin / 1440) * 360;
+        const d = describeDonutArc(center, center, rOuter, rInner, startAngle, endAngle);
+        if(!d) return "";
+        return `<path d="${d}" fill="rgba(0,0,0,0)" class="clock-click-segment" onclick="showLogMenu(${log.id})" data-log-id="${log.id}"></path>`;
+      }).join("");
+      return `<div class="clock-wrap"><h2>24時間リング表示</h2><div class="clock-ring-area"><div class="clock-wrapper">${labels}<div class="clock-ring" style="background:conic-gradient(${segs.join(",")});"></div><svg class="clock-overlay" width="${wrapperSize}" height="${wrapperSize}" viewBox="0 0 ${wrapperSize} ${wrapperSize}">${clickPaths}</svg></div></div><p class="small">灰色は未記録時間。色付き部分をタップすると、その記録を編集できます。</p></div>`;
     }
     function buildGapPrompts(logs,date){ const arr=logs.map(logWithMinutes).filter(l=>l.duration>0).sort((a,b)=>a.startMin-b.startMin); const gaps=[]; for(let i=0;i<arr.length-1;i++){ const gap=arr[i+1].startMin-arr[i].endMin; if(gap>0&&gap<=60) gaps.push({start:arr[i].end,end:arr[i+1].start,min:gap}); } if(!gaps.length) return ""; return `<div class="gap-wrap"><h2>ここ何してた？</h2><p class="small">1時間以下の未記録時間です。</p>${gaps.map(g=>`<div class="gap-card"><div class="log-title">${g.min}分の空白</div><div class="log-meta">${g.start}〜${g.end}</div><button class="blue" onclick="showGapFillForm('${date}','${g.start}','${g.end}')">この時間を埋める</button></div>`).join("")}</div>`; }
 
@@ -2115,27 +2286,140 @@
     }
 
     function renderMonthView(){
-      const grid=document.getElementById("calendarGrid"), title=document.getElementById("calendarTitle"), logs=loadLogs(), today=todayString(), y=currentCalendarDate.getFullYear(), m=currentCalendarDate.getMonth();
-      grid.className="calendar-grid";
+      // 表示切替（週間グリッドを隠し、月間カルーセルを出す）
+      const monthArea = document.getElementById("monthCalendarArea");
+      const weekGrid = document.getElementById("calendarGrid");
+      if(monthArea) monthArea.style.display = "block";
+      if(weekGrid) weekGrid.style.display = "none";
+
+      const title=document.getElementById("calendarTitle");
+      const y=currentCalendarDate.getFullYear(), m=currentCalendarDate.getMonth();
       title.textContent=`${y}年 ${m+1}月`;
-      grid.innerHTML="";
-      ["日","月","火","水","木","金","土"].forEach(w=>{ const d=document.createElement("div"); d.className="weekday"; d.textContent=w; grid.appendChild(d); });
+
+      // 3面を描画（前月 / 当月 / 翌月）
+      const prevDate = new Date(y, m - 1, 1);
+      const nextDate = new Date(y, m + 1, 1);
+      renderMonthPage(prevDate, document.getElementById("monthPagePrev"));
+      renderMonthPage(currentCalendarDate, document.getElementById("monthPageCurr"));
+      renderMonthPage(nextDate, document.getElementById("monthPageNext"));
+
+      // sliderを中央（current）位置にスナップ。アニメ無しで即座に。
+      const slider = document.getElementById("monthSlider");
+      if(slider){
+        slider.classList.add("dragging");        // transition 一時無効
+        slider.style.transform = "translateX(-33.3333%)";
+        // 次フレームでtransition復活
+        requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ slider.classList.remove("dragging"); }); });
+      }
+      attachMonthSwipe();
+    }
+
+    function renderMonthPage(refDate, pageEl){
+      if(!pageEl) return;
+      pageEl.innerHTML = "";
+      const logs=loadLogs(), today=todayString();
+      const y=refDate.getFullYear(), m=refDate.getMonth();
       const first=new Date(y,m,1), start=new Date(first); start.setDate(first.getDate()-first.getDay());
       for(let i=0;i<42;i++){
         const date=new Date(start); date.setDate(start.getDate()+i);
-        const dateStr=toDateString(date), dayLogs=logs.filter(l=>l.date===dateStr), plan=dayLogs.filter(l=>l.type==="plan"&&!l.repeat).length, actual=dayLogs.filter(l=>l.type==="actual").length;
+        const dateStr=toDateString(date), dayLogs=logs.filter(l=>l.date===dateStr);
+        const dayPlans=dayLogs.filter(l=>l.type==="plan"&&!l.repeat).sort((a,b)=>a.start.localeCompare(b.start));
         const cell=document.createElement("div"); cell.className="day-cell";
         if(date.getMonth()!==m) cell.classList.add("outside");
         if(dateStr===today) cell.classList.add("today");
         if(dateStr===selectedDate) cell.classList.add("selected");
-        cell.innerHTML=`<div class="day-number">${date.getDate()}</div><div class="badges">${plan?`<span class="badge plan-badge">予${plan}</span>`:""}${actual?`<span class="badge actual-badge">行${actual}</span>`:""}</div>`;
-        cell.onclick=()=>{ openDateActionSheet(dateStr); };
-        grid.appendChild(cell);
+        const maxShow=4;
+        const planChips=dayPlans.slice(0,maxShow).map(p=>{
+          const cat=getCategoryById(p.categoryId||"none");
+          return `<div class="day-plan-chip" style="background:${cat.color}22;color:${cat.color};border-left:2px solid ${cat.color};" title="${escapeHtml(p.text)}">${escapeHtml(p.text)}</div>`;
+        }).join("");
+        const more=dayPlans.length>maxShow?`<div class="day-plan-more">+${dayPlans.length-maxShow}</div>`:"";
+        cell.innerHTML=`<div class="day-number">${date.getDate()}</div><div class="day-plans">${planChips}${more}</div>`;
+        cell.onclick=()=>{
+          if(Date.now() < _swipeSuppressClickUntil) return;
+          openDateContextMenu(dateStr, cell);
+        };
+        pageEl.appendChild(cell);
       }
     }
 
+    // 指追従カルーセル（月間カレンダー）
+    let _monthSwipeAttached=false;
+    let _swipeSuppressClickUntil=0;
+    function attachMonthSwipe(){
+      if(_monthSwipeAttached) return;
+      const viewport=document.getElementById("monthViewport");
+      const slider=document.getElementById("monthSlider");
+      if(!viewport || !slider) return;
+      _monthSwipeAttached=true;
+      let sx=null, sy=null, st=0;
+      let isDragging=false, axisLocked=null, viewportW=0;
+
+      viewport.addEventListener("touchstart",(e)=>{
+        if(e.touches.length!==1){ sx=null; return; }
+        const t=e.touches[0]; sx=t.clientX; sy=t.clientY; st=Date.now();
+        isDragging=false; axisLocked=null;
+        viewportW=viewport.offsetWidth || 1;
+      },{passive:true});
+
+      viewport.addEventListener("touchmove",(e)=>{
+        if(sx===null) return;
+        const t=e.touches[0];
+        const dx=t.clientX-sx, dy=t.clientY-sy;
+        // 軸方向の判定（5px超で確定）
+        if(axisLocked===null){
+          if(Math.abs(dx)>5 || Math.abs(dy)>5){
+            axisLocked = Math.abs(dx) > Math.abs(dy) ? "h" : "v";
+          } else { return; }
+        }
+        if(axisLocked!=="h") return; // 縦方向ならスクロールに任せる
+        // 指追従
+        isDragging=true;
+        slider.classList.add("dragging");
+        const percent = -33.3333 + (dx / viewportW) * 33.3333;
+        slider.style.transform = `translateX(${percent}%)`;
+      },{passive:true});
+
+      const endHandler = (e)=>{
+        if(sx===null) return;
+        const t=(e.changedTouches && e.changedTouches[0]) || null;
+        const dx = t ? (t.clientX - sx) : 0;
+        const dt = Date.now() - st;
+        sx=null;
+        if(!isDragging){ return; }
+        slider.classList.remove("dragging"); // transition 復活
+        const ratio = dx / viewportW;
+        const velocity = Math.abs(dx) / Math.max(dt,1); // px/ms
+        const goNext = ratio < -0.30 || (ratio < -0.05 && velocity > 0.45);
+        const goPrev = ratio >  0.30 || (ratio >  0.05 && velocity > 0.45);
+        _swipeSuppressClickUntil = Date.now() + 450;
+        if(goNext){
+          slider.style.transform = "translateX(-66.6666%)";
+          setTimeout(()=>{
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+            renderCalendar();
+          }, 290);
+        } else if(goPrev){
+          slider.style.transform = "translateX(0%)";
+          setTimeout(()=>{
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+            renderCalendar();
+          }, 290);
+        } else {
+          // スナップバック
+          slider.style.transform = "translateX(-33.3333%)";
+        }
+      };
+      viewport.addEventListener("touchend", endHandler, {passive:true});
+      viewport.addEventListener("touchcancel", endHandler, {passive:true});
+    }
+
     function renderWeekView(){
+      // 表示切替（月間カルーセルを隠し、週間グリッドを出す）
+      const monthArea = document.getElementById("monthCalendarArea");
       const grid=document.getElementById("calendarGrid");
+      if(monthArea) monthArea.style.display = "none";
+      if(grid) grid.style.display = "";
       const title=document.getElementById("calendarTitle");
       const logs=loadLogs();
       const today=todayString();
