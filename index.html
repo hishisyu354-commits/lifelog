@@ -12,17 +12,114 @@
   <title>生活ログMVP</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
-    :root { --main:#8b0026; --sub:#74001f; --bg:#f5f6fa; --text:#222; --muted:#666; --safe-top:env(safe-area-inset-top); --safe-bottom:env(safe-area-inset-bottom); --safe-left:env(safe-area-inset-left); --safe-right:env(safe-area-inset-right); }
+    :root,
+    body[data-theme="red-light"] {
+      --main:#8b0026; --sub:#74001f; --bg:#f5f6fa; --card:#fff; --text:#222; --muted:#666; --border:#e3e3e3; --soft-bg:#fafafa; --notice-bg:#fffae6; --notice-border:#e8d048;
+      --safe-top:env(safe-area-inset-top); --safe-bottom:env(safe-area-inset-bottom); --safe-left:env(safe-area-inset-left); --safe-right:env(safe-area-inset-right);
+    }
+    body[data-theme="blue-light"] { --main:#1f5fa8; --sub:#15467f; --bg:#f0f4fa; --card:#fff; --text:#1a1a1a; --muted:#666; --border:#dde4ee; --soft-bg:#f7faff; --notice-bg:#eff5ff; --notice-border:#a8c5e8; }
+    body[data-theme="green-light"] { --main:#1e7a48; --sub:#155a35; --bg:#f1f7f3; --card:#fff; --text:#1a1a1a; --muted:#666; --border:#dde8e0; --soft-bg:#f7fcf8; --notice-bg:#eef9f2; --notice-border:#a8d8b8; }
+    body[data-theme="mono-light"] { --main:#333; --sub:#222; --bg:#f5f5f5; --card:#fff; --text:#1a1a1a; --muted:#666; --border:#e0e0e0; --soft-bg:#f9f9f9; --notice-bg:#f5f5f5; --notice-border:#bbb; }
+    body[data-theme="red-dark"] { --main:#c93a52; --sub:#a82d40; --bg:#161616; --card:#222; --text:#e8e8e8; --muted:#aaa; --border:#3a3a3a; --soft-bg:#2a2a2a; --notice-bg:#3a2e15; --notice-border:#8a7335; }
+    body[data-theme="blue-dark"] { --main:#5b9bd5; --sub:#3f7ab5; --bg:#101620; --card:#1e2632; --text:#e8e8e8; --muted:#aaa; --border:#34404e; --soft-bg:#252e3c; --notice-bg:#1f2c3e; --notice-border:#3f5670; }
+    body[data-theme="green-dark"] { --main:#46c47a; --sub:#38a564; --bg:#0f1815; --card:#1d2622; --text:#e8e8e8; --muted:#aaa; --border:#324038; --soft-bg:#252e29; --notice-bg:#1a2e22; --notice-border:#3f6651; }
+    body[data-theme="mono-dark"] { --main:#bbb; --sub:#999; --bg:#121212; --card:#1e1e1e; --text:#e8e8e8; --muted:#999; --border:#333; --soft-bg:#262626; --notice-bg:#2a2a2a; --notice-border:#555; }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html, body { overscroll-behavior-y: contain; -webkit-text-size-adjust: 100%; }
     html { background: #d8d8d8; }
     body { margin:0 auto; max-width:480px; min-height:100vh; font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif; background:var(--bg); color:var(--text); padding-bottom: calc(78px + var(--safe-bottom)); box-shadow: 0 0 24px rgba(0,0,0,.12); position:relative; }
-    header { background:var(--main); color:#fff; padding:calc(14px + var(--safe-top)) max(14px, var(--safe-right)) 14px max(14px, var(--safe-left)); text-align:center; font-size:23px; font-weight:800; min-height:calc(56px + var(--safe-top)); display:flex; align-items:center; justify-content:center; }
+    header { background:var(--main); color:#fff; padding:calc(14px + var(--safe-top)) max(14px, var(--safe-right)) 14px max(14px, var(--safe-left)); text-align:center; font-size:23px; font-weight:800; min-height:calc(56px + var(--safe-top)); display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; }
     .header-title { display:inline-block; }
+    .sync-badge { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; padding:3px 9px; border-radius:999px; background:rgba(255,255,255,.18); color:#fff; line-height:1.2; cursor:default; user-select:none; }
+    .sync-badge .sync-icon { font-size:12px; }
+    .sync-badge-busy { background:rgba(255,255,255,.22); }
+    .sync-badge-busy .sync-icon { animation:syncSpin 1.1s linear infinite; display:inline-block; }
+    .sync-badge-ok { background:rgba(46,204,113,.30); }
+    .sync-badge-err { background:rgba(231,76,60,.45); cursor:pointer; }
+    @keyframes syncSpin { from{transform:rotate(0)} to{transform:rotate(360deg)} }
+
+    /* トースト通知 */
+    .save-toast { position:fixed; bottom:120px; left:50%; transform:translateX(-50%) translateY(20px); background:rgba(20,20,20,.9); color:#fff; padding:11px 22px; border-radius:22px; font-size:13px; font-weight:600; opacity:0; transition:opacity .25s, transform .25s; pointer-events:none; z-index:9999; max-width:80%; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,.2); }
+    .save-toast.visible { opacity:1; transform:translateX(-50%) translateY(0); }
+
+    /* マイクボタン（音声入力） */
+    .mic-btn { background:#f3f3f3; color:#444; border:1px solid #ddd; padding:7px 12px; border-radius:10px; font-size:16px; cursor:pointer; line-height:1; min-height:36px; min-width:42px; display:inline-flex; align-items:center; justify-content:center; gap:4px; }
+    .mic-btn:active { transform:scale(.95); }
+    .mic-btn.mic-active { background:#e74c3c; color:#fff; border-color:#e74c3c; animation:micPulse 1.2s ease-in-out infinite; }
+    .mic-label { font-size:11px; font-weight:600; }
+    @keyframes micPulse { 0%,100%{box-shadow:0 0 0 0 rgba(231,76,60,.55)} 50%{box-shadow:0 0 0 10px rgba(231,76,60,0)} }
+    .mic-row { display:flex; gap:6px; align-items:center; margin-top:4px; }
+
+    /* 振り返り画面スワイプアニメ */
+    #reviewScreen { transition:transform .26s ease, opacity .26s ease; will-change:transform, opacity; }
+    #reviewScreen.review-slide-left { transform:translateX(-30%); opacity:0; }
+    #reviewScreen.review-slide-right { transform:translateX(30%); opacity:0; }
+    #reviewScreen.review-slide-in-from-left { transform:translateX(-30%); opacity:0; transition:none; }
+    #reviewScreen.review-slide-in-from-right { transform:translateX(30%); opacity:0; transition:none; }
+
+    /* やめたことログ */
+    .quit-item { background:#fafafa; border:1px solid #e3e3e3; border-radius:12px; padding:14px; margin-bottom:12px; border-left:4px solid #b58068; }
+    .quit-title { font-weight:800; font-size:15px; margin-bottom:6px; }
+    .quit-period { font-size:12px; color:#888; margin-bottom:6px; }
+    .quit-reason { font-size:13px; color:#444; line-height:1.5; padding:6px 0; border-top:1px dashed #ddd; margin-top:6px; }
+
+    /* カテゴリ管理 */
+    .category-list { margin:10px 0 18px; }
+    .category-row-item { display:flex; align-items:center; gap:10px; padding:10px 12px; background:#fafafa; border:1px solid #e3e3e3; border-radius:10px; margin-bottom:6px; }
+    .category-row-name { font-weight:700; font-size:14px; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; }
+    .category-row-count { font-size:12px; color:#888; }
+
+    /* 重複ログチェック */
+    .dup-pair { background:#fffaf0; border:1px solid #ffd89e; border-radius:12px; padding:12px; margin-bottom:14px; }
+    .dup-header { font-weight:800; font-size:13px; margin-bottom:8px; padding-bottom:6px; border-bottom:1px solid #ffd89e; }
+    .dup-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .dup-side { background:#fff; border-radius:8px; padding:10px; border:1px solid #f0e0c0; }
+    .dup-meta { font-size:11px; color:#666; font-weight:700; margin-bottom:4px; }
+    .dup-detail { font-size:11px; color:#444; padding:5px 0; line-height:1.4; }
+    .dup-detail-empty { font-size:11px; color:#bbb; padding:5px 0; }
+    @media(max-width:9999px){
+      .dup-row { grid-template-columns:1fr; }
+    }
+
+    /* 配色テーマ選択 */
+    .theme-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:14px 0 20px; }
+    .theme-card { display:flex; flex-direction:column; align-items:center; gap:8px; background:var(--soft-bg); border:2px solid var(--border); border-radius:14px; padding:14px 10px; cursor:pointer; min-height:90px; color:var(--text); font-weight:700; transition:transform .08s; position:relative; }
+    .theme-card:active { transform:scale(.96); }
+    .theme-card.theme-active { border-color:var(--main); background:var(--card); box-shadow:0 2px 10px rgba(0,0,0,.08); }
+    .theme-swatch { width:42px; height:42px; border-radius:50%; border:2px solid rgba(255,255,255,.6); box-shadow:0 1px 3px rgba(0,0,0,.15); }
+    .theme-name { font-size:12px; font-weight:700; text-align:center; line-height:1.3; }
+    .theme-check { position:absolute; top:6px; right:8px; font-size:18px; color:var(--main); font-weight:900; }
+
+    /* 週次振り返り */
+    .weekly-nav { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:8px 0 16px; padding:8px 10px; background:var(--soft-bg); border-radius:10px; }
+    .weekly-period { font-weight:800; font-size:14px; flex:1; text-align:center; }
+    .weekly-summary-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin:10px 0 18px; }
+    .weekly-stat { background:var(--soft-bg); border:1px solid var(--border); border-radius:12px; padding:12px 8px; text-align:center; }
+    .weekly-stat-label { font-size:11px; color:var(--muted); font-weight:700; margin-bottom:4px; }
+    .weekly-stat-value { font-size:22px; font-weight:800; color:var(--main); line-height:1; }
+    .weekly-stat-value span { font-size:11px; color:var(--muted); margin-left:2px; font-weight:600; }
+    .weekly-top-item { display:flex; align-items:center; gap:10px; background:var(--soft-bg); border:1px solid var(--border); border-radius:10px; padding:10px; margin-bottom:8px; }
+    .weekly-top-rank { width:28px; height:28px; border-radius:50%; background:var(--main); color:#fff; font-weight:800; font-size:14px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .weekly-top-body { flex:1; min-width:0; }
+    .weekly-top-title { font-weight:700; font-size:14px; line-height:1.4; }
+    .weekly-top-meta { font-size:11px; color:var(--muted); margin-top:2px; }
+    .weekly-top-score { font-size:20px; font-weight:800; color:var(--main); flex-shrink:0; min-width:32px; text-align:right; }
+
+    /* カテゴリ別円グラフ */
+    .category-pie-wrap { display:flex; flex-direction:column; align-items:center; gap:14px; padding:6px 0; }
+    .category-pie-svg { width:200px; height:200px; flex-shrink:0; }
+    .category-pie-legend { width:100%; }
+    .legend-row { display:grid; grid-template-columns:14px 1fr 60px 50px 42px; gap:6px; align-items:center; padding:5px 4px; font-size:12px; }
+    .legend-dot { width:12px; height:12px; border-radius:3px; flex-shrink:0; }
+    .legend-name { font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .legend-bar { height:6px; background:var(--border); border-radius:3px; overflow:hidden; }
+    .legend-bar-fill { display:block; height:100%; border-radius:3px; }
+    .legend-val { text-align:right; font-weight:600; color:var(--muted); font-size:11px; }
+    .legend-pct { text-align:right; font-weight:700; font-size:11px; }
     .today-bar { background:var(--sub); color:#fff; text-align:center; padding:0 max(14px, var(--safe-right)) 14px max(14px, var(--safe-left)); font-size:14px; font-weight:600; }
     main { max-width:1180px; margin:0 auto; padding:18px max(18px, var(--safe-right)) 18px max(18px, var(--safe-left)); }
     .layout { display:grid; grid-template-columns:1fr; gap:12px; align-items:start; }
-    .card { background:#fff; border-radius:16px; padding:18px; box-shadow:0 2px 10px rgba(0,0,0,.08); margin-bottom:16px; }
+    .card { background:var(--card); color:var(--text); border-radius:16px; padding:18px; box-shadow:0 2px 10px rgba(0,0,0,.08); margin-bottom:16px; }
     h2 { margin:0 0 14px; font-size:20px; }
     .small { font-size:13px; color:var(--muted); line-height:1.7; }
     .empty { color:#777; line-height:1.7; background:#fafafa; border-radius:12px; padding:14px; }
@@ -41,6 +138,9 @@
     .gcal-synced-badge { display:inline-block; font-size:10px; background:#27ae60; color:#fff; padding:2px 7px; border-radius:999px; font-weight:800; margin-left:6px; vertical-align:middle; }
     .gcal-info-row { background:#f6f8fa; border:1px solid #e3e3e3; border-radius:10px; padding:10px 12px; margin:8px 0; font-size:13px; line-height:1.6; }
     .gcal-info-row strong { color:var(--main); }
+    .apply-divider { height:1px; background:var(--border); margin:18px 0 14px; }
+    .apply-link-btn { display:inline-block; padding:11px 18px; background:var(--soft-bg); border:2px solid var(--main); color:var(--main); border-radius:12px; font-weight:700; font-size:14px; text-decoration:none; text-align:center; min-height:44px; line-height:1.4; }
+    .apply-link-btn:active { transform:scale(.97); }
 
     /* 月間カレンダー日付タップ時のコンテキストメニュー（PC右クリック風） */
     .date-context-overlay {
@@ -752,6 +852,7 @@
 <body>
   <header>
     <span class="header-title">生活ログMVP</span>
+    <span id="syncBadge" class="sync-badge" style="display:none;"></span>
   </header>
   <div id="todayBar" class="today-bar"></div>
 
@@ -811,13 +912,26 @@
           <h3 class="menu-section-title">Googleカレンダー連携</h3>
           <div id="gcalSection"></div>
 
-          <h3 class="menu-section-title">その他</h3>
+          <h3 class="menu-section-title">記録・振り返り</h3>
           <div class="menu" style="margin-top:14px;">
+            <button class="light" onclick="showWeeklyReview()">週次振り返り</button>
             <button class="light" onclick="showReflectionNotebook()">振り返りノート</button>
+            <button class="light" onclick="showQuitList()">やめたことログ</button>
             <button class="secondary" onclick="showRepeatForm()">繰り返し予定の登録</button>
+          </div>
+
+          <h3 class="menu-section-title">データ整理</h3>
+          <div class="menu" style="margin-top:14px;">
+            <button class="light" onclick="showCategoryManager()">カテゴリ管理・統合</button>
+            <button class="light" onclick="showDuplicateChecker()">重複ログをチェック</button>
             <button class="light" onclick="showBackupMenu()">データの書き出し/読み込み</button>
           </div>
-          <p class="small" style="margin-top:14px;">データはこのブラウザ内に保存されます。定期的にバックアップしてください。</p>
+
+          <h3 class="menu-section-title">表示設定</h3>
+          <div class="menu" style="margin-top:14px;">
+            <button class="light" onclick="showThemeSettings()">配色テーマ</button>
+          </div>
+          <p class="small" style="margin-top:14px;">データはこのブラウザ内に保存されます（Drive連携時は自動同期）。</p>
         </section>
         <section id="formScreen" class="card" style="display:none;"></section>
         <section id="reviewScreen" class="card" style="display:none;"></section>
@@ -878,6 +992,8 @@
     const GCAL_CLIENT_ID_KEY = "dailyLifeGcalClientIdV1";
     const GCAL_TOKEN_KEY = "dailyLifeGcalTokenV1";
     const GCAL_USER_KEY = "dailyLifeGcalUserV1";
+    const QUIT_KEY = "dailyLifeQuitItemsV1";
+    const THEME_KEY = "dailyLifeThemeV1";
     const DEFAULT_CATEGORIES = [
       { id:"none", name:"カテゴリなし", color:"#95a5a6" },
       { id:"study", name:"勉強", color:"#3498db" },
@@ -901,7 +1017,13 @@
     function escapeHtml(str){ return String(str).replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch])); }
 
     function loadJSON(key, fallback){ try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } }
-    function saveJSON(key, value){ localStorage.setItem(key, JSON.stringify(value)); }
+    function saveJSON(key, value){
+      localStorage.setItem(key, JSON.stringify(value));
+      if(!_suppressSyncTrigger && typeof SYNC_KEYS !== "undefined" && SYNC_KEYS.includes(key) && typeof triggerDriveSync === "function"){
+        triggerDriveSync();
+      }
+    }
+    let _suppressSyncTrigger = false;
     function loadLogs(){ return loadJSON(STORAGE_KEY, []); }
     function saveLogs(logs){ saveJSON(STORAGE_KEY, logs); }
     function loadCategories(){ const c=loadJSON(CATEGORY_KEY, null); if(c && c.length) return c; saveJSON(CATEGORY_KEY, DEFAULT_CATEGORIES); return DEFAULT_CATEGORIES; }
@@ -911,6 +1033,8 @@
     function loadFrequentTags(){ const t=loadJSON(TAG_KEY, null); if(t && t.length) return t; saveJSON(TAG_KEY,DEFAULT_TAGS); return DEFAULT_TAGS; }
     function loadDailySummaries(){ return loadJSON(SUMMARY_KEY, []); }
     function saveDailySummaries(summaries){ saveJSON(SUMMARY_KEY, summaries); }
+    function loadQuitList(){ return loadJSON(QUIT_KEY, []); }
+    function saveQuitList(list){ saveJSON(QUIT_KEY, list); }
     function saveFrequentTags(t){ saveJSON(TAG_KEY,t); }
 
     function getCategoryById(id){ return loadCategories().find(c=>c.id===id) || loadCategories()[0]; }
@@ -1023,8 +1147,30 @@
       scrollToTopMobile();
     }
 
-    // showMenuは「カレンダー画面に戻る」を意味するエイリアス
-    function showMenu(){ switchTab("calendar"); }
+    // showMenuは「現在のタブのトップ画面に戻る」を意味する
+    // メニュータブから来たならメニューへ、推移タブからなら推移へ、それ以外はカレンダーへ
+    function showMenu(){
+      hideRightPanels();
+      if(currentTab === "menu"){
+        document.body.dataset.showReview = "false";
+        const m = document.getElementById("menuScreen");
+        if(m) m.style.display = "block";
+        scrollToTopMobile();
+        return;
+      }
+      if(currentTab === "trend"){
+        if(typeof showFulfillmentTrend === "function") showFulfillmentTrend();
+        else switchTab("calendar");
+        return;
+      }
+      if(currentTab === "record"){
+        if(typeof showRecordMenu === "function") showRecordMenu();
+        else switchTab("calendar");
+        return;
+      }
+      // calendar / today / その他 → カレンダーへ
+      switchTab("calendar");
+    }
 
     // 記録タブ：予定/行動/SWへの導線をreviewScreenに表示
     function showRecordMenu(){
@@ -1345,15 +1491,54 @@
           <button class="light" onclick="navigateAfterSave('${date}')">戻る</button>
         </div>`;
     }
-    function showPlanForm(date=selectedDate||todayString(), start="", end=""){ formBase("予定の入力",date,"予定を教えてください","例：数学の課題、友達と飯、MOS資格勉強","plan",start,end); }
-    function showActualForm(date=selectedDate||todayString(), start="", end=""){ formBase("行動を追加",date,"いつ・何をしましたか？","例：電車でMOS資格勉強、予定外に友達と話した","actual",start,end); }
+    function getSmartDefaultTimes(date){
+      const today=todayString();
+      let sh,sm;
+      if(date===today){
+        const now=new Date();
+        let h=now.getHours(), m=now.getMinutes();
+        m=Math.ceil(m/15)*15;
+        if(m>=60){ h+=1; m=0; }
+        if(h>=24){ h=23; m=45; }
+        sh=h; sm=m;
+      } else {
+        sh=9; sm=0;
+      }
+      let eh=sh+1, em=sm;
+      if(eh>=24){ eh=23; em=59; }
+      const pad=n=>String(n).padStart(2,"0");
+      return { start:`${pad(sh)}:${pad(sm)}`, end:`${pad(eh)}:${pad(em)}` };
+    }
+    function showPlanForm(date=selectedDate||todayString(), start="", end=""){
+      if(!start||!end){ const d=getSmartDefaultTimes(date); if(!start) start=d.start; if(!end) end=d.end; }
+      formBase("予定の入力",date,"予定を教えてください","例：数学の課題、友達と飯、MOS資格勉強","plan",start,end);
+    }
+    function showActualForm(date=selectedDate||todayString(), start="", end=""){
+      if(!start||!end){ const d=getSmartDefaultTimes(date); if(!start) start=d.start; if(!end) end=d.end; }
+      formBase("行動を追加",date,"いつ・何をしましたか？","例：電車でMOS資格勉強、予定外に友達と話した","actual",start,end);
+    }
     function showGapFillForm(date,start,end){ formBase("ここ何してた？",date,`${start}〜${end} に何をしていましたか？`,"例：移動、SNS、休憩","actual",start,end); }
     function saveEntry(type){
       const date=logDate.value, text=logText.value.trim(), start=startTime.value, end=endTime.value, categoryId=categorySelect.value;
       if(!date||!text||!start||!end){ alert("未入力の項目があります"); return; } if(end<=start){ alert("終了時刻は開始時刻より後にして！"); return; }
-      const logs=loadLogs(); logs.push({id:Date.now(), date, type, text, start, end, categoryId, detail:""}); saveLogs(logs); selectedDate=date; currentCalendarDate=new Date(date+"T00:00:00"); type==="plan"?askAddMorePlan(date):navigateAfterSave(date);
+      const logs=loadLogs(); logs.push({id:Date.now(), date, type, text, start, end, categoryId, detail:"", updatedAt:new Date().toISOString()}); saveLogs(logs); selectedDate=date; currentCalendarDate=new Date(date+"T00:00:00");
+      showSaveToast(type==="plan" ? "予定を保存しました" : "行動を保存しました");
+      navigateAfterSave(date);
     }
-    function askAddMorePlan(date){ hideRightPanels(); const f=document.getElementById("formScreen"); f.style.display="block"; f.innerHTML=`<h2>予定を保存しました</h2><div class="notice">${formatDateJapanese(date)} の予定をさらに追加しますか？</div><div class="actions"><button onclick="showPlanForm('${date}')">はい、追加する</button><button class="secondary" onclick="navigateAfterSave('${date}')">いいえ、戻る</button></div>`; }
+    // 確認ダイアログをトーストに置換
+    function showSaveToast(message, duration=1800){
+      let toast = document.getElementById("saveToast");
+      if(!toast){
+        toast = document.createElement("div");
+        toast.id = "saveToast";
+        toast.className = "save-toast";
+        document.body.appendChild(toast);
+      }
+      toast.textContent = message;
+      toast.classList.add("visible");
+      clearTimeout(toast._hideTimer);
+      toast._hideTimer = setTimeout(() => toast.classList.remove("visible"), duration);
+    }
 
     function showRepeatForm(){
       hideRightPanels(); const f=document.getElementById("formScreen"); f.style.display="block";
@@ -1649,7 +1834,8 @@
       html+=buildPieChart(logs)+buildGapPrompts(logs,selectedDate);
       if(!logs.length) html+=`<div class="empty">この日はまだ何も記録されていません。</div>`;
       logs.forEach(log=>{ const cat=getCategoryById(log.categoryId||"none"), label=log.type==="plan"?"予定":"行動", cls=log.type==="plan"?"plan":"actual"; html+=`<div class="log-item ${cls}"><div class="log-content-row"><div class="log-main"><div class="log-meta">${log.start}〜${log.end} / ${label}</div><div class="log-title">${escapeHtml(log.text)}</div><span class="category-pill"><span class="category-dot" style="background:${cat.color}"></span>${escapeHtml(cat.name)}</span>${log.repeat?`<span class="detail-badge">繰り返し</span>`:""}${log.detail?`<span class="detail-badge">詳細あり</span>`:""}${renderUntitledHelper(log)}</div><div class="mini-actions"><button class="blue" onclick="showDetail(${log.id})">詳細</button><button class="light" onclick="showLogMenu(${log.id})">編集</button></div></div></div>`; });
-      html+=`<div class="actions"><button class="light" onclick="showMenu()">メニューに戻る</button><button class="danger" onclick="clearDateLogs('${selectedDate}')">この日の記録を全削除</button></div>`; r.innerHTML=html;
+      html+=`<div class="actions"><button class="light" onclick="showMenu()">戻る</button><button class="danger" onclick="clearDateLogs('${selectedDate}')">この日の記録を全削除</button></div>`; r.innerHTML=html;
+      attachReviewSwipe();
     }
     function getDayLogs(date){ return loadLogs().filter(l=>l.date===date).sort((a,b)=>a.start.localeCompare(b.start)); }
     function getLogById(id){ return loadLogs().find(l=>l.id===id); }
@@ -1689,7 +1875,7 @@
         </div>`;
     }
     function saveEditedLog(id){ const date=editDate.value, text=editText.value.trim(), start=editStart.value, end=editEnd.value, categoryId=editCategory.value; if(!date||!text||!start||!end||end<=start){ alert("入力を確認して！"); return; } saveLogs(loadLogs().map(l=>l.id===id?{...l,date,text,start,end,categoryId}:l)); navigateAfterSave(date); }
-    function showDetail(id){ const log=getLogById(id); if(!log) return; const cat=getCategoryById(log.categoryId||"none"); hideRightPanels(); const r=document.getElementById("reviewScreen"); r.style.display="block"; r.innerHTML=`<h2>詳細</h2><div class="log-item ${log.type}"><div class="log-meta">${formatDateJapanese(log.date)} / ${log.start}〜${log.end}</div><div class="log-title">${escapeHtml(log.text)}</div><span class="category-pill"><span class="category-dot" style="background:${cat.color}"></span>${escapeHtml(cat.name)}</span></div><label>詳細メモ</label><textarea id="detailText" placeholder="例：感じたこと、反省、#集中 #学び など">${escapeHtml(log.detail||"")}</textarea><div class="tag-template-row"><select id="frequentTagSelect">${frequentTagOptions()}</select><button class="mini-button" onclick="insertFrequentTag()">使う</button><button class="mini-button" onclick="addFrequentTag()">追加</button><button class="mini-button danger" onclick="deleteSelectedFrequentTag()">削除</button></div><p class="small">ハッシュタグを入れると振り返りノートで検索できます。</p><div class="actions"><button onclick="saveDetail(${id})">詳細を保存</button><button class="light" onclick="navigateAfterSave('${log.date}')">戻る</button></div>`; }
+    function showDetail(id){ const log=getLogById(id); if(!log) return; const cat=getCategoryById(log.categoryId||"none"); hideRightPanels(); const r=document.getElementById("reviewScreen"); r.style.display="block"; r.innerHTML=`<h2>詳細</h2><div class="log-item ${log.type}"><div class="log-meta">${formatDateJapanese(log.date)} / ${log.start}〜${log.end}</div><div class="log-title">${escapeHtml(log.text)}</div><span class="category-pill"><span class="category-dot" style="background:${cat.color}"></span>${escapeHtml(cat.name)}</span></div><label>詳細メモ</label><textarea id="detailText" placeholder="例：感じたこと、反省、#集中 #学び など">${escapeHtml(log.detail||"")}</textarea><div class="mic-row"><button type="button" class="mic-btn" onclick="toggleVoiceInput('detailText','detail')" id="micBtn-detail" aria-label="音声入力">🎤<span class="mic-label">音声</span></button></div><div class="tag-template-row"><select id="frequentTagSelect">${frequentTagOptions()}</select><button class="mini-button" onclick="insertFrequentTag()">使う</button><button class="mini-button" onclick="addFrequentTag()">追加</button><button class="mini-button danger" onclick="deleteSelectedFrequentTag()">削除</button></div><p class="small">ハッシュタグを入れると振り返りノートで検索できます。</p><div class="actions"><button onclick="saveDetail(${id})">詳細を保存</button><button class="light" onclick="navigateAfterSave('${log.date}')">戻る</button></div>`; }
     function saveDetail(id){ const detail=detailText.value.trim(); saveLogs(loadLogs().map(l=>l.id===id?{...l,detail}:l)); showDetail(id); }
     function confirmDeleteLog(id){
       const log = getLogById(id);
@@ -1841,11 +2027,147 @@
           <div class="mini-reflect-text">${message}</div>
           <button class="mini-reflect-btn" onclick="toggleMiniReflect(${log.id})">ひとこと書く</button>
           <div id="miniReflect-${log.id}" class="mini-reflect-input">
-            <textarea placeholder="${placeholder}" oninput="saveMiniReflect(${log.id}, this.value)"></textarea>
-            <p class="small">保存は自動です。#集中 #反省 のように書くと、振り返りノートで検索できます。</p>
+            <textarea id="miniReflectArea-${log.id}" placeholder="${placeholder}" oninput="saveMiniReflect(${log.id}, this.value)"></textarea>
+            <div class="mic-row">
+              <button type="button" class="mic-btn" onclick="toggleVoiceInput('miniReflectArea-${log.id}', ${log.id})" id="micBtn-${log.id}" aria-label="音声入力">🎤<span class="mic-label">音声</span></button>
+              <p class="small" style="margin:0;flex:1;">保存は自動。#集中 #反省 で振り返りノート検索可。</p>
+            </div>
           </div>
         </div>
       `;
+    }
+
+    // ============================================================
+    // 音声入力（Web Speech API） - 振り返りノート / 詳細メモへの追記
+    // ============================================================
+    let _voiceRecognition = null;
+    let _voiceTargetId = null;
+    let _voiceBaseText = "";
+    function toggleVoiceInput(targetId, btnSuffix){
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if(!SR){
+        alert("お使いのブラウザは音声入力に対応していません。\niPhoneの場合、Safari 14.5以降が必要です。");
+        return;
+      }
+      // 既に同じターゲットで起動中なら停止
+      if(_voiceRecognition && _voiceTargetId === targetId){
+        try { _voiceRecognition.stop(); } catch(e){}
+        return;
+      }
+      // 他で起動中なら停止
+      if(_voiceRecognition){
+        try { _voiceRecognition.stop(); } catch(e){}
+        _voiceRecognition = null;
+      }
+      const target = document.getElementById(targetId);
+      if(!target) return;
+      _voiceTargetId = targetId;
+      _voiceBaseText = target.value || "";
+      _voiceRecognition = new SR();
+      _voiceRecognition.lang = "ja-JP";
+      _voiceRecognition.continuous = true;
+      _voiceRecognition.interimResults = true;
+      _voiceRecognition.onresult = (e) => {
+        let interim = "", finalAdd = "";
+        for(let i=e.resultIndex; i<e.results.length; i++){
+          const t = e.results[i][0].transcript;
+          if(e.results[i].isFinal) finalAdd += t;
+          else interim += t;
+        }
+        if(finalAdd){
+          _voiceBaseText = (_voiceBaseText ? _voiceBaseText + (_voiceBaseText.endsWith("\n") ? "" : " ") : "") + finalAdd;
+          target.value = _voiceBaseText;
+        } else {
+          target.value = _voiceBaseText + (_voiceBaseText && interim ? " " : "") + interim;
+        }
+        // 既存のoninputハンドラに変更通知
+        target.dispatchEvent(new Event("input", { bubbles: true }));
+      };
+      _voiceRecognition.onerror = (e) => {
+        console.warn("Speech recognition error:", e.error);
+        if(e.error === "not-allowed" || e.error === "service-not-allowed"){
+          showSaveToast("マイクの利用が許可されていません", 2400);
+        }
+      };
+      _voiceRecognition.onend = () => {
+        updateMicButtons(false);
+        _voiceRecognition = null;
+        _voiceTargetId = null;
+      };
+      try {
+        _voiceRecognition.start();
+        updateMicButtons(true);
+        showSaveToast("録音中…マイクボタンで停止", 1500);
+      } catch(e){
+        console.error("voice start failed:", e);
+        _voiceRecognition = null;
+        _voiceTargetId = null;
+      }
+    }
+    function updateMicButtons(active){
+      document.querySelectorAll(".mic-btn").forEach(btn => {
+        if(active && _voiceTargetId){
+          // 現在録音中のターゲットに対応するボタンだけアクティブ表示
+          const onclick = btn.getAttribute("onclick") || "";
+          btn.classList.toggle("mic-active", onclick.includes(`'${_voiceTargetId}'`));
+        } else {
+          btn.classList.remove("mic-active");
+        }
+      });
+    }
+
+    // ============================================================
+    // 振り返り画面の左右スワイプ（前後の日付に滑らかに移動）
+    // ============================================================
+    let _reviewSwipeAttached = false;
+    function attachReviewSwipe(){
+      const target = document.getElementById("reviewScreen");
+      if(!target || _reviewSwipeAttached) return;
+      _reviewSwipeAttached = true;
+      let sx=null, sy=null, st=0;
+      target.addEventListener("touchstart",(e)=>{
+        if(e.touches.length!==1){ sx=null; return; }
+        // textarea/inputへのタッチではスワイプを開始しない
+        const tag = (e.target && e.target.tagName) || "";
+        if(["TEXTAREA","INPUT","SELECT","BUTTON"].includes(tag)){ sx=null; return; }
+        const t=e.touches[0]; sx=t.clientX; sy=t.clientY; st=Date.now();
+      },{passive:true});
+      target.addEventListener("touchend",(e)=>{
+        if(sx===null) return;
+        const t=e.changedTouches[0];
+        const dx=t.clientX-sx, dy=t.clientY-sy, dt=Date.now()-st;
+        sx=null;
+        // 横スワイプ閾値：60px、横移動が縦の1.8倍以上、1秒以内
+        if(Math.abs(dx)>60 && Math.abs(dx)>Math.abs(dy)*1.8 && dt<1000){
+          const direction = dx<0 ? 1 : -1; // 左スワイプ→翌日(direction=1)、右スワイプ→前日
+          animateReviewSlide(direction);
+        }
+      },{passive:true});
+    }
+    function animateReviewSlide(direction){
+      if(!selectedDate) return;
+      const target = document.getElementById("reviewScreen");
+      if(!target || target.style.display === "none") return;
+      const d = new Date(selectedDate + "T00:00:00");
+      d.setDate(d.getDate() + direction);
+      const newDate = toDateString(d);
+      // 現在の画面をフェードアウト＋スライド
+      target.classList.add(direction>0 ? "review-slide-left" : "review-slide-right");
+      setTimeout(() => {
+        // 新しい日付でshowReview呼出（中身書き換え）
+        selectedDate = newDate;
+        currentCalendarDate = new Date(newDate + "T00:00:00");
+        // 一時的にスライドイン位置にセット
+        target.classList.remove("review-slide-left","review-slide-right");
+        target.classList.add(direction>0 ? "review-slide-in-from-right" : "review-slide-in-from-left");
+        showReview(newDate);
+        // 1フレーム待ってからスライドイン
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            target.classList.remove("review-slide-in-from-right","review-slide-in-from-left");
+          });
+        });
+      }, 240);
     }
 
     function toggleMiniReflect(id){
@@ -1908,14 +2230,14 @@
           <div class="actions">
             <button class="blue" onclick="finalizeDailyFulfillment('${targetDate}')">${dateLabel}の充実ポイントを確定する</button>
             <button class="light" onclick="showReview('${targetDate}')">この日の記録に戻る</button>
-            <button class="light" onclick="showMenu()">メニューに戻る</button>
+            <button class="light" onclick="showMenu()">戻る</button>
           </div>
         `;
       } else {
         html+=`
           <div class="actions">
             <button class="light" onclick="showReview('${targetDate}')">この日の記録に戻る</button>
-            <button class="light" onclick="showMenu()">メニューに戻る</button>
+            <button class="light" onclick="showMenu()">戻る</button>
           </div>
         `;
       }
@@ -1997,7 +2319,7 @@
           <button class="blue" onclick="showHighlightSelection('${targetDate}')">人生ハイライトを選ぶ</button>
           <button class="light" onclick="showDailyFulfillment('${targetDate}')">点数を修正する</button>
           <button class="light" onclick="showReview('${targetDate}')">${isToday ? "今日" : "この日"}の記録を見る</button>
-          <button class="light" onclick="showMenu()">メニューに戻る</button>
+          <button class="light" onclick="showMenu()">戻る</button>
         </div>
       `;
     }
@@ -2096,14 +2418,417 @@
         <div class="actions">
           <button class="blue" onclick="showHighlightSelection('${date}')">選び直す</button>
           <button class="light" onclick="showReview('${date}')">この日の記録に戻る</button>
-          <button class="light" onclick="showMenu()">メニューに戻る</button>
+          <button class="light" onclick="showMenu()">戻る</button>
         </div>
       `;
     }
 
     function extractTags(text){ return [...new Set(String(text||"").replace(/\n/g," ").split(" ").filter(w=>w.startsWith("#")&&w.length>1))]; }
     function getAllTaggedLogs(){ return loadLogs().filter(l=>l.detail&&extractTags(l.detail).length).map(l=>({...l,tags:extractTags(l.detail)})).sort((a,b)=>a.date!==b.date?a.date.localeCompare(b.date):a.start.localeCompare(b.start)); }
-    function showReflectionNotebook(searchTag=""){ hideRightPanels(); closeQuickMenu(); const tagged=getAllTaggedLogs(), counts={}; tagged.forEach(l=>l.tags.forEach(t=>counts[t]=(counts[t]||0)+1)); const tags=Object.entries(counts).sort((a,b)=>b[1]-a[1]); const normalized=String(searchTag||"").trim(), target=normalized&&!normalized.startsWith("#")?"#"+normalized:normalized; const results=target?tagged.filter(l=>l.tags.includes(target)):[]; const r=document.getElementById("reviewScreen"); r.style.display="block"; let html=`<h2>振り返りノート</h2><p class="small">詳細メモの #タグ で過去の予定・行動を検索できます。</p><label>ハッシュタグ検索</label><div class="category-row"><input id="tagSearchInput" type="text" placeholder="#集中、#反省 など" value="${escapeHtml(target)}"><button class="blue" onclick="showReflectionNotebook(tagSearchInput.value)">検索</button></div>`; if(tags.length){ html+=`<div class="tag-cloud">${tags.map(([t,c])=>`<button class="tag-chip" onclick="showReflectionNotebook('${t}')">${escapeHtml(t)} ${c}</button>`).join("")}</div>`; } else html+=`<div class="empty">まだハッシュタグ付きの詳細メモがありません。</div>`; if(!target&&tags.length) html+=`<div class="empty">検索前は本文を表示しません。タグをクリックすると該当メモだけ表示します。</div>`; if(target) html+=`<div class="date-title">検索中：${escapeHtml(target)} / ${results.length}件</div>`; results.forEach(log=>{ const cat=getCategoryById(log.categoryId||"none"), label=log.type==="plan"?"予定":"行動"; html+=`<div class="notebook-result"><div class="log-meta">${formatDateJapanese(log.date)} / ${log.start}〜${log.end} / ${label}</div><div class="log-title">${escapeHtml(log.text)}</div><span class="category-pill"><span class="category-dot" style="background:${cat.color}"></span>${escapeHtml(cat.name)}</span><div class="notebook-detail">${escapeHtml(log.detail)}</div><div class="notebook-tags">${log.tags.map(t=>`<button class="tag-chip" onclick="showReflectionNotebook('${t}')">${escapeHtml(t)}</button>`).join("")}</div><div class="actions"><button class="blue" onclick="showDetail(${log.id})">詳細を編集</button><button class="light" onclick="showReview('${log.date}')">この日を見る</button></div></div>`; }); if(target&&!results.length) html+=`<div class="empty">${escapeHtml(target)} が付いた詳細メモはまだありません。</div>`; html+=`<div class="actions"><button class="light" onclick="showMenu()">メニューに戻る</button></div>`; r.innerHTML=html; }
+    function showReflectionNotebook(searchTag=""){ hideRightPanels(); closeQuickMenu(); const tagged=getAllTaggedLogs(), counts={}; tagged.forEach(l=>l.tags.forEach(t=>counts[t]=(counts[t]||0)+1)); const tags=Object.entries(counts).sort((a,b)=>b[1]-a[1]); const normalized=String(searchTag||"").trim(), target=normalized&&!normalized.startsWith("#")?"#"+normalized:normalized; const results=target?tagged.filter(l=>l.tags.includes(target)):[]; const r=document.getElementById("reviewScreen"); r.style.display="block"; let html=`<h2>振り返りノート</h2><p class="small">詳細メモの #タグ で過去の予定・行動を検索できます。</p><label>ハッシュタグ検索</label><div class="category-row"><input id="tagSearchInput" type="text" placeholder="#集中、#反省 など" value="${escapeHtml(target)}"><button class="blue" onclick="showReflectionNotebook(tagSearchInput.value)">検索</button></div>`; if(tags.length){ html+=`<div class="tag-cloud">${tags.map(([t,c])=>`<button class="tag-chip" onclick="showReflectionNotebook('${t}')">${escapeHtml(t)} ${c}</button>`).join("")}</div>`; } else html+=`<div class="empty">まだハッシュタグ付きの詳細メモがありません。</div>`; if(!target&&tags.length) html+=`<div class="empty">検索前は本文を表示しません。タグをクリックすると該当メモだけ表示します。</div>`; if(target) html+=`<div class="date-title">検索中：${escapeHtml(target)} / ${results.length}件</div>`; results.forEach(log=>{ const cat=getCategoryById(log.categoryId||"none"), label=log.type==="plan"?"予定":"行動"; html+=`<div class="notebook-result"><div class="log-meta">${formatDateJapanese(log.date)} / ${log.start}〜${log.end} / ${label}</div><div class="log-title">${escapeHtml(log.text)}</div><span class="category-pill"><span class="category-dot" style="background:${cat.color}"></span>${escapeHtml(cat.name)}</span><div class="notebook-detail">${escapeHtml(log.detail)}</div><div class="notebook-tags">${log.tags.map(t=>`<button class="tag-chip" onclick="showReflectionNotebook('${t}')">${escapeHtml(t)}</button>`).join("")}</div><div class="actions"><button class="blue" onclick="showDetail(${log.id})">詳細を編集</button><button class="light" onclick="showReview('${log.date}')">この日を見る</button></div></div>`; }); if(target&&!results.length) html+=`<div class="empty">${escapeHtml(target)} が付いた詳細メモはまだありません。</div>`; html+=`<div class="actions"><button class="light" onclick="showMenu()">戻る</button></div>`; r.innerHTML=html; }
+
+    // ============================================================
+    // やめたことログ（独立した記録領域）
+    // ============================================================
+    function showQuitList(){
+      hideRightPanels(); closeQuickMenu();
+      const items = loadQuitList().sort((a,b)=>(b.quitDate||"").localeCompare(a.quitDate||""));
+      const r = document.getElementById("reviewScreen"); r.style.display = "block";
+      let html = `<h2>やめたことログ</h2>
+        <p class="small">手放した習慣・行動を記録します。<br>「増やした人生」ではなく「減らした人生」の足跡。</p>
+        <div class="actions"><button class="blue" onclick="showQuitForm()">＋ 新しく追加</button></div>`;
+      if(!items.length){
+        html += `<div class="empty">まだ何も登録されていません。</div>`;
+      } else {
+        items.forEach(item => {
+          const period = item.startedDate ? `${item.startedDate} 〜 ${item.quitDate || "?"}` : (item.quitDate ? `〜 ${item.quitDate} にやめた` : "");
+          html += `<div class="quit-item">
+            <div class="quit-title">${escapeHtml(item.text)}</div>
+            ${period ? `<div class="quit-period">${escapeHtml(period)}</div>` : ""}
+            ${item.reason ? `<div class="quit-reason">${escapeHtml(item.reason)}</div>` : ""}
+            <div class="mini-actions">
+              <button class="light" onclick="showQuitForm(${item.id})">編集</button>
+              <button class="danger" onclick="deleteQuitItem(${item.id})">削除</button>
+            </div>
+          </div>`;
+        });
+      }
+      html += `<div class="actions"><button class="light" onclick="showMenu()">戻る</button></div>`;
+      r.innerHTML = html;
+    }
+    function showQuitForm(id=null){
+      hideRightPanels();
+      const item = id ? loadQuitList().find(q=>q.id===id) : { text:"", startedDate:"", quitDate: todayString(), reason:"" };
+      if(!item) return;
+      const f = document.getElementById("formScreen"); f.style.display = "block";
+      f.innerHTML = `<h2>${id?"やめたことを編集":"やめたことを追加"}</h2>
+        <label>やめたこと</label>
+        <textarea id="quitText" placeholder="例：寝る前のSNS、自販機のジュース、毎日の体重計測">${escapeHtml(item.text||"")}</textarea>
+        <div class="row">
+          <div><label>いつから（任意）</label><input id="quitStartedDate" type="date" value="${item.startedDate||""}"></div>
+          <div><label>やめた日</label><input id="quitDate" type="date" value="${item.quitDate||todayString()}"></div>
+        </div>
+        <label>理由・きっかけ（任意）</label>
+        <textarea id="quitReason" placeholder="例：時間の浪費だと気づいた、健康のため">${escapeHtml(item.reason||"")}</textarea>
+        <div class="actions">
+          <button onclick="saveQuitItem(${id||"null"})">保存</button>
+          <button class="light" onclick="showQuitList()">戻る</button>
+        </div>`;
+    }
+    function saveQuitItem(id){
+      const text = (document.getElementById("quitText").value || "").trim();
+      const startedDate = document.getElementById("quitStartedDate").value || "";
+      const quitDate = document.getElementById("quitDate").value || todayString();
+      const reason = (document.getElementById("quitReason").value || "").trim();
+      if(!text){ alert("「やめたこと」を入力してください"); return; }
+      const list = loadQuitList();
+      if(id){
+        const idx = list.findIndex(q=>q.id===id);
+        if(idx>=0) list[idx] = { ...list[idx], text, startedDate, quitDate, reason, updatedAt:new Date().toISOString() };
+      } else {
+        list.push({ id:Date.now(), text, startedDate, quitDate, reason, updatedAt:new Date().toISOString() });
+      }
+      saveQuitList(list);
+      showSaveToast("やめたことを記録しました");
+      showQuitList();
+    }
+    function deleteQuitItem(id){
+      const item = loadQuitList().find(q=>q.id===id);
+      if(!item) return;
+      if(!confirm(`「${item.text}」を削除しますか？`)) return;
+      saveQuitList(loadQuitList().filter(q=>q.id!==id));
+      showQuitList();
+    }
+
+    // ============================================================
+    // 配色テーマ
+    // ============================================================
+    const THEME_OPTIONS = [
+      { id:"red-light", name:"赤・ライト", swatch:"#8b0026" },
+      { id:"red-dark", name:"赤・ダーク", swatch:"#c93a52" },
+      { id:"blue-light", name:"青・ライト", swatch:"#1f5fa8" },
+      { id:"blue-dark", name:"青・ダーク", swatch:"#5b9bd5" },
+      { id:"green-light", name:"緑・ライト", swatch:"#1e7a48" },
+      { id:"green-dark", name:"緑・ダーク", swatch:"#46c47a" },
+      { id:"mono-light", name:"モノクロ・ライト", swatch:"#333" },
+      { id:"mono-dark", name:"モノクロ・ダーク", swatch:"#bbb" }
+    ];
+    function getCurrentTheme(){ return localStorage.getItem(THEME_KEY) || "red-light"; }
+    function applyTheme(themeId){
+      document.body.setAttribute("data-theme", themeId);
+      localStorage.setItem(THEME_KEY, themeId);
+    }
+    function showThemeSettings(){
+      hideRightPanels(); closeQuickMenu();
+      const cur = getCurrentTheme();
+      const r = document.getElementById("reviewScreen"); r.style.display = "block";
+      let html = `<h2>配色テーマ</h2><p class="small">アプリ全体の配色を変更できます。設定はこの端末のブラウザに保存されます。</p>
+        <div class="theme-grid">`;
+      THEME_OPTIONS.forEach(t => {
+        const isActive = t.id === cur;
+        html += `<button class="theme-card${isActive?" theme-active":""}" onclick="applyThemeAndRefresh('${t.id}')">
+          <span class="theme-swatch" style="background:${t.swatch};"></span>
+          <span class="theme-name">${escapeHtml(t.name)}</span>
+          ${isActive?'<span class="theme-check">✓</span>':''}
+        </button>`;
+      });
+      html += `</div><div class="actions"><button class="light" onclick="showMenu()">戻る</button></div>`;
+      r.innerHTML = html;
+    }
+    function applyThemeAndRefresh(themeId){
+      applyTheme(themeId);
+      showSaveToast("テーマを変更しました");
+      showThemeSettings();
+    }
+
+    // ============================================================
+    // 週次振り返り画面
+    // ============================================================
+    let _weeklyOffsetWeeks = 0; // 0=今週、-1=先週、+1=来週
+    function showWeeklyReview(offsetChange=null){
+      hideRightPanels(); closeQuickMenu();
+      if(offsetChange !== null) _weeklyOffsetWeeks += offsetChange;
+      // 週の起点：日曜
+      const today = new Date();
+      const dow = today.getDay();
+      const weekStart = new Date(today);
+      weekStart.setDate(today.getDate() - dow + _weeklyOffsetWeeks * 7);
+      weekStart.setHours(0,0,0,0);
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+      const weekDates = [];
+      for(let i=0; i<7; i++){
+        const d = new Date(weekStart); d.setDate(weekStart.getDate()+i);
+        weekDates.push(toDateString(d));
+      }
+      const logs = loadLogs().filter(l => weekDates.includes(l.date));
+      const summaries = loadDailySummaries().filter(s => weekDates.includes(s.date));
+
+      // 集計
+      const periodLabel = `${weekStart.getFullYear()}/${weekStart.getMonth()+1}/${weekStart.getDate()} 〜 ${weekEnd.getMonth()+1}/${weekEnd.getDate()}`;
+      const planCount = logs.filter(l => l.type==="plan" && !l.repeat).length;
+      const actualCount = logs.filter(l => l.type==="actual").length;
+      // 充実度の集計
+      const allScores = [];
+      summaries.forEach(s => (s.scores||[]).forEach(sc => { if(sc.score != null) allScores.push(sc); }));
+      const avgScore = allScores.length ? (allScores.reduce((a,b)=>a+(b.score||0),0)/allScores.length).toFixed(1) : null;
+      // 充実度TOP3
+      const top3 = [...allScores].sort((a,b)=>b.score-a.score).slice(0,3);
+      // ハッシュタグ集計
+      const tagCounts = {};
+      logs.forEach(l => {
+        const tags = (l.detail||"").match(/#[\p{L}\p{N}_]+/gu) || [];
+        tags.forEach(t => tagCounts[t] = (tagCounts[t]||0)+1);
+      });
+      const topTags = Object.entries(tagCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+      // カテゴリ別時間配分（行動ログのみ）
+      const catMinutes = {};
+      logs.filter(l => l.type==="actual").forEach(l => {
+        const [sh,sm]=(l.start||"0:0").split(":").map(Number);
+        const [eh,em]=(l.end||"0:0").split(":").map(Number);
+        const dur = (eh*60+em)-(sh*60+sm);
+        if(dur>0){ const cid = l.categoryId||"none"; catMinutes[cid] = (catMinutes[cid]||0) + dur; }
+      });
+      const catEntries = Object.entries(catMinutes).sort((a,b)=>b[1]-a[1]);
+      const totalMin = catEntries.reduce((a,b)=>a+b[1],0);
+
+      const r = document.getElementById("reviewScreen"); r.style.display = "block";
+      const headerNav = `<div class="weekly-nav">
+        <button class="mini-button" onclick="showWeeklyReview(-1)">‹ 前週</button>
+        <span class="weekly-period">${periodLabel}</span>
+        <button class="mini-button" onclick="showWeeklyReview(1)" ${_weeklyOffsetWeeks>=0?'disabled':''}>翌週 ›</button>
+      </div>`;
+
+      let html = `<h2>週次振り返り</h2>${headerNav}
+        <div class="weekly-summary-grid">
+          <div class="weekly-stat"><div class="weekly-stat-label">予定</div><div class="weekly-stat-value">${planCount}<span>件</span></div></div>
+          <div class="weekly-stat"><div class="weekly-stat-label">行動</div><div class="weekly-stat-value">${actualCount}<span>件</span></div></div>
+          <div class="weekly-stat"><div class="weekly-stat-label">平均充実度</div><div class="weekly-stat-value">${avgScore !== null ? avgScore : '—'}<span>${avgScore !== null ? '/10' : ''}</span></div></div>
+        </div>`;
+
+      // カテゴリ別円グラフ
+      if(catEntries.length){
+        html += `<h3 class="menu-section-title">カテゴリ別の時間配分（行動）</h3>${buildCategoryPie(catEntries, totalMin)}`;
+      }
+
+      // 充実度TOP3
+      if(top3.length){
+        html += `<h3 class="menu-section-title">充実度が高かった行動 TOP3</h3>`;
+        top3.forEach((sc, i) => {
+          const log = loadLogs().find(l => l.id === sc.logId);
+          if(!log) return;
+          const cat = getCategoryById(log.categoryId||"none");
+          html += `<div class="weekly-top-item">
+            <div class="weekly-top-rank">${i+1}</div>
+            <div class="weekly-top-body">
+              <div class="weekly-top-title">${escapeHtml(log.text)}</div>
+              <div class="weekly-top-meta">${formatDateJapanese(log.date)} / ${log.start}〜${log.end} <span class="category-pill"><span class="category-dot" style="background:${cat.color}"></span>${escapeHtml(cat.name)}</span></div>
+            </div>
+            <div class="weekly-top-score">${sc.score}</div>
+          </div>`;
+        });
+      }
+
+      // 頻出ハッシュタグ
+      if(topTags.length){
+        html += `<h3 class="menu-section-title">よく使ったハッシュタグ</h3><div class="tag-cloud">${topTags.map(([t,c])=>`<button class="tag-chip" onclick="showReflectionNotebook('${t}')">${escapeHtml(t)} ${c}</button>`).join("")}</div>`;
+      }
+
+      if(!planCount && !actualCount && !avgScore && !topTags.length){
+        html += `<div class="empty">この週はまだ記録がありません。</div>`;
+      }
+
+      html += `<div class="actions"><button class="light" onclick="showMenu()">戻る</button></div>`;
+      r.innerHTML = html;
+    }
+
+    // カテゴリ別円グラフ（SVGドーナツ）+ 凡例
+    function buildCategoryPie(catEntries, totalMin){
+      const cx=110, cy=110, rOuter=92, rInner=54;
+      let svg = `<svg viewBox="0 0 220 220" class="category-pie-svg" aria-label="カテゴリ別円グラフ">`;
+      let angle = 0;
+      catEntries.forEach(([cid, mins]) => {
+        const cat = getCategoryById(cid);
+        const sweep = (mins/totalMin)*360;
+        const path = describeDonutArc(cx, cy, rOuter, rInner, angle, angle+sweep);
+        svg += `<path d="${path}" fill="${cat.color}" stroke="#fff" stroke-width="1.5"></path>`;
+        angle += sweep;
+      });
+      svg += `<text x="110" y="105" text-anchor="middle" font-size="13" fill="var(--muted)" font-weight="600">合計</text>`;
+      const totalH = Math.floor(totalMin/60), totalRest = totalMin%60;
+      svg += `<text x="110" y="125" text-anchor="middle" font-size="17" fill="var(--text)" font-weight="800">${totalH}h${totalRest?` ${totalRest}m`:""}</text>`;
+      svg += `</svg>`;
+      // 凡例
+      let legend = `<div class="category-pie-legend">`;
+      catEntries.forEach(([cid, mins]) => {
+        const cat = getCategoryById(cid);
+        const pct = ((mins/totalMin)*100).toFixed(1);
+        const h = Math.floor(mins/60), m = mins%60;
+        legend += `<div class="legend-row">
+          <span class="legend-dot" style="background:${cat.color};"></span>
+          <span class="legend-name">${escapeHtml(cat.name)}</span>
+          <span class="legend-bar"><span class="legend-bar-fill" style="width:${pct}%; background:${cat.color};"></span></span>
+          <span class="legend-val">${h}h${m?`${m}m`:""}</span>
+          <span class="legend-pct">${pct}%</span>
+        </div>`;
+      });
+      legend += `</div>`;
+      return `<div class="category-pie-wrap">${svg}${legend}</div>`;
+    }
+
+    // ============================================================
+    // カテゴリ管理・統合
+    // ============================================================
+    function showCategoryManager(){
+      hideRightPanels(); closeQuickMenu();
+      const cats = loadCategories();
+      const logs = loadLogs();
+      const usage = {}; cats.forEach(c => usage[c.id] = 0);
+      logs.forEach(l => { if(usage[l.categoryId] != null) usage[l.categoryId]++; });
+      const r = document.getElementById("reviewScreen"); r.style.display = "block";
+      let html = `<h2>カテゴリ管理・統合</h2>
+        <p class="small">カテゴリ一覧。統合すると、元カテゴリの記録は統合先に移動し、元カテゴリは削除されます。</p>
+        <div class="category-list">`;
+      cats.forEach(c => {
+        const isNone = c.id === "none";
+        html += `<div class="category-row-item">
+          <span class="category-dot" style="background:${c.color}"></span>
+          <span class="category-row-name">${escapeHtml(c.name)}</span>
+          <span class="category-row-count">${usage[c.id]||0}件</span>
+          ${isNone ? `<span class="small" style="color:#aaa;">既定</span>` : `<button class="mini-button danger" onclick="deleteCategoryFromManager('${c.id}')">削除</button>`}
+        </div>`;
+      });
+      html += `</div>
+        <h3 class="menu-section-title">カテゴリを統合</h3>
+        <p class="small">「A → B」と選ぶと、Aに属する全ログがBに移動し、Aは削除されます。</p>
+        <div class="row">
+          <div><label>統合元（消える）</label><select id="catMergeFrom">${categoryOptions("none")}</select></div>
+          <div><label>統合先（残る）</label><select id="catMergeTo">${categoryOptions("none")}</select></div>
+        </div>
+        <div class="actions">
+          <button class="blue" onclick="executeMergeCategories()">統合を実行</button>
+          <button class="light" onclick="showMenu()">戻る</button>
+        </div>`;
+      r.innerHTML = html;
+    }
+    function deleteCategoryFromManager(id){
+      const cat = getCategoryById(id);
+      if(!cat || id === "none") return;
+      const logs = loadLogs();
+      const usedCount = logs.filter(l => l.categoryId === id).length;
+      const msg = usedCount > 0 
+        ? `カテゴリ「${cat.name}」を削除しますか？\nこのカテゴリの記録 ${usedCount} 件は「カテゴリなし」に変わります。`
+        : `カテゴリ「${cat.name}」を削除しますか？`;
+      if(!confirm(msg)) return;
+      if(usedCount > 0){
+        saveLogs(logs.map(l => l.categoryId === id ? { ...l, categoryId:"none", updatedAt:new Date().toISOString() } : l));
+      }
+      saveCategories(loadCategories().filter(c => c.id !== id));
+      showSaveToast("カテゴリを削除しました");
+      showCategoryManager();
+    }
+    function executeMergeCategories(){
+      const fromId = document.getElementById("catMergeFrom").value;
+      const toId = document.getElementById("catMergeTo").value;
+      if(fromId === toId){ alert("同じカテゴリは統合できません"); return; }
+      if(fromId === "none"){ alert("「カテゴリなし」は統合元にできません"); return; }
+      const fromCat = getCategoryById(fromId), toCat = getCategoryById(toId);
+      if(!fromCat || !toCat) return;
+      const movedCount = loadLogs().filter(l => l.categoryId === fromId).length;
+      if(!confirm(`「${fromCat.name}」(${movedCount}件) を「${toCat.name}」に統合します。\n統合元の「${fromCat.name}」は削除されます。実行しますか？`)) return;
+      saveLogs(loadLogs().map(l => l.categoryId === fromId ? { ...l, categoryId: toId, updatedAt:new Date().toISOString() } : l));
+      saveCategories(loadCategories().filter(c => c.id !== fromId));
+      showSaveToast(`${movedCount}件のログを統合しました`);
+      showCategoryManager();
+    }
+
+    // ============================================================
+    // 重複ログのチェックとマージ
+    // ============================================================
+    function detectDuplicateLogPairs(){
+      const logs = loadLogs();
+      const pairs = [];
+      // 同じ日・同じtype・テキスト同一・開始時刻差±5分 を重複候補とする
+      for(let i=0; i<logs.length; i++){
+        for(let j=i+1; j<logs.length; j++){
+          const a = logs[i], b = logs[j];
+          if(a.date !== b.date) continue;
+          if(a.type !== b.type) continue;
+          if((a.text||"").trim() !== (b.text||"").trim()) continue;
+          if((a.text||"").trim() === "") continue; // 無題は対象外
+          // 開始時刻差を分単位で計算
+          const [ah,am] = (a.start||"0:0").split(":").map(Number);
+          const [bh,bm] = (b.start||"0:0").split(":").map(Number);
+          const diff = Math.abs((ah*60+am) - (bh*60+bm));
+          if(diff > 5) continue;
+          pairs.push([a, b]);
+        }
+      }
+      return pairs;
+    }
+    function showDuplicateChecker(){
+      hideRightPanels(); closeQuickMenu();
+      const pairs = detectDuplicateLogPairs();
+      const r = document.getElementById("reviewScreen"); r.style.display = "block";
+      let html = `<h2>重複ログをチェック</h2>
+        <p class="small">同じ日・同じ内容・近い時刻のログを重複候補として検出します。マージしたいペアだけ手動で選んで統合してください。</p>`;
+      if(!pairs.length){
+        html += `<div class="empty">重複候補は見つかりませんでした。</div>`;
+      } else {
+        html += `<p class="small"><strong>${pairs.length}組</strong>の重複候補が見つかりました。</p>`;
+        pairs.forEach((pair,i) => {
+          const [a,b] = pair;
+          const catA = getCategoryById(a.categoryId||"none"), catB = getCategoryById(b.categoryId||"none");
+          const label = a.type === "plan" ? "予定" : "行動";
+          html += `<div class="dup-pair" id="dupPair-${i}">
+            <div class="dup-header">${formatDateJapanese(a.date)} / ${label} / 「${escapeHtml(a.text)}」</div>
+            <div class="dup-row">
+              <div class="dup-side">
+                <div class="dup-meta">A: ${a.start}〜${a.end}</div>
+                <span class="category-pill"><span class="category-dot" style="background:${catA.color}"></span>${escapeHtml(catA.name)}</span>
+                ${a.detail ? `<div class="dup-detail">${escapeHtml(a.detail).substring(0,80)}${a.detail.length>80?"…":""}</div>` : `<div class="dup-detail-empty">詳細メモなし</div>`}
+                <button class="blue mini-button" onclick="executeMergeLogs(${a.id},${b.id},'A',${i})">Aを残してマージ</button>
+              </div>
+              <div class="dup-side">
+                <div class="dup-meta">B: ${b.start}〜${b.end}</div>
+                <span class="category-pill"><span class="category-dot" style="background:${catB.color}"></span>${escapeHtml(catB.name)}</span>
+                ${b.detail ? `<div class="dup-detail">${escapeHtml(b.detail).substring(0,80)}${b.detail.length>80?"…":""}</div>` : `<div class="dup-detail-empty">詳細メモなし</div>`}
+                <button class="blue mini-button" onclick="executeMergeLogs(${a.id},${b.id},'B',${i})">Bを残してマージ</button>
+              </div>
+            </div>
+            <div class="mini-actions" style="margin-top:6px;">
+              <button class="light mini-button" onclick="dismissDupPair(${i})">このペアを無視</button>
+            </div>
+          </div>`;
+        });
+      }
+      html += `<div class="actions"><button class="light" onclick="showMenu()">戻る</button></div>`;
+      r.innerHTML = html;
+    }
+    function executeMergeLogs(idA, idB, keep, pairIdx){
+      const logs = loadLogs();
+      const a = logs.find(l=>l.id===idA), b = logs.find(l=>l.id===idB);
+      if(!a || !b) return;
+      const keepLog = keep === "A" ? a : b;
+      const removeLog = keep === "A" ? b : a;
+      // 統合先に、相手の有用な情報を取り込む（detail空ならコピー、gcalEventIdあるなら継承）
+      const merged = {
+        ...keepLog,
+        detail: keepLog.detail || removeLog.detail || "",
+        gcalEventId: keepLog.gcalEventId || removeLog.gcalEventId || null,
+        gcalSyncedAt: keepLog.gcalSyncedAt || removeLog.gcalSyncedAt || null,
+        updatedAt: new Date().toISOString()
+      };
+      const newLogs = logs.filter(l => l.id !== removeLog.id).map(l => l.id === keepLog.id ? merged : l);
+      saveLogs(newLogs);
+      showSaveToast("ログをマージしました");
+      // 該当ペアを画面から消す（再検出して再描画）
+      showDuplicateChecker();
+    }
+    function dismissDupPair(idx){
+      const el = document.getElementById(`dupPair-${idx}`);
+      if(el) el.style.display = "none";
+    }
 
     function getTrendStartDate(range){
       const d=new Date();
@@ -2164,7 +2889,7 @@
         `;
       }
 
-      html+=`<div class="actions"><button class="light" onclick="showMenu()">メニューに戻る</button></div>`;
+      html+=`<div class="actions"><button class="light" onclick="showMenu()">戻る</button></div>`;
       r.innerHTML=html;
     }
 
@@ -2585,8 +3310,7 @@
     let gcalTokenExpiry = 0;
     let gcalUserEmail = null;
 
-    function getGcalClientId(){ return localStorage.getItem(GCAL_CLIENT_ID_KEY) || ""; }
-    function setGcalClientId(id){ localStorage.setItem(GCAL_CLIENT_ID_KEY, id); }
+    // getGcalClientIdはこのファイル後半でFIXED_GCAL_CLIENT_ID固定値を返す形に統一
 
     function loadGcalTokenFromStorage(){
       try {
@@ -2620,12 +3344,14 @@
       if(gcalTokenClient && gcalTokenClient._clientId === clientId) return gcalTokenClient;
       gcalTokenClient = google.accounts.oauth2.initTokenClient({
         client_id: clientId,
-        scope: "https://www.googleapis.com/auth/calendar.events",
+        scope: "https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/drive.appdata",
         callback: (response) => {
           if(response && response.access_token){
             saveGcalToken(response.access_token, response.expires_in || 3600);
             fetchGcalUserInfo();
             renderGcalSection();
+            // 認証成功 → Drive同期開始
+            if(typeof syncDriveStartup === "function") syncDriveStartup();
           } else if(response && response.error){
             alert("Googleカレンダー認証に失敗：" + response.error);
           }
@@ -2660,11 +3386,12 @@
     }
 
     function logoutGcal(){
-      if(!confirm("Googleカレンダー連携を解除しますか？\n（既に送信した予定はGoogleカレンダー側に残ります）")) return;
+      if(!confirm("Google連携を解除しますか？\n（既に送信した予定はGoogleカレンダー側に残ります／Drive上の同期ファイルは残ります）")) return;
       if(gcalAccessToken && window.google && google.accounts && google.accounts.oauth2){
         try { google.accounts.oauth2.revoke(gcalAccessToken, () => {}); } catch(e){}
       }
       clearGcalToken();
+      if(typeof resetDriveSyncState === "function") resetDriveSyncState();
       renderGcalSection();
     }
 
@@ -2751,69 +3478,58 @@
       }
     }
 
+    // ============================================================
+    // Google連携：Client IDはアプリ全体で固定
+    // ============================================================
+    const FIXED_GCAL_CLIENT_ID = "904392031695-l4lebgl6i1qhqa6ueuppv4n9kdjjn5gk.apps.googleusercontent.com";
+    // テストユーザー登録申請フォーム（Google Forms）のURL
+    // ⚠️ Google Formsを作成後、ここのURLを実際の公開URLに差し替えてからGitHubにアップしてください
+    const TEST_USER_APPLY_URL = "https://forms.gle/REPLACE_WITH_YOUR_FORM_URL";
+    function getGcalClientId(){ return FIXED_GCAL_CLIENT_ID; }
+
     function renderGcalSection(){
       const el = document.getElementById("gcalSection");
       if(!el) return;
-      const clientId = getGcalClientId();
       const isAuth = isGcalAuthenticated();
       const allPlans = loadLogs().filter(l => l.type === "plan" && !l.repeat);
       const syncedCount = allPlans.filter(l => l.gcalEventId).length;
 
       let html = "";
-      if(!clientId){
+      if(!isAuth){
+        const applyDisabled = TEST_USER_APPLY_URL.includes("REPLACE_WITH_YOUR_FORM_URL");
         html = `
-          <p class="small">予定（plan）をGoogleカレンダーに送信できます。初回設定にはGoogle Cloud Consoleで取得した「クライアントID」が必要です。</p>
-          <label>クライアントID</label>
-          <input id="gcalClientIdInput" type="text" placeholder="例：123456...apps.googleusercontent.com" autocapitalize="off" autocomplete="off" spellcheck="false">
-          <div class="actions">
-            <button class="blue" onclick="saveAndUseClientId()">クライアントIDを保存</button>
-          </div>
-        `;
-      } else if(!isAuth){
-        const masked = clientId.length > 32 ? (clientId.substring(0, 16) + "..." + clientId.substring(clientId.length - 24)) : clientId;
-        html = `
-          <p class="small">クライアントID登録済み。Googleアカウントでログインして連携してください。</p>
-          <div class="gcal-info-row"><strong>Client ID:</strong> ${escapeHtml(masked)}</div>
+          <p class="small">Googleアカウントを連携すると、予定がGoogleカレンダーへ自動送信され、データはGoogle Driveに自動バックアップされます。別端末から同じGoogleアカウントで連携すれば、同じデータが利用できます。</p>
           <div class="actions">
             <button class="blue" onclick="loginGcal()">Googleアカウントで連携</button>
-            <button class="light" onclick="resetGcalClientId()">クライアントIDを変更</button>
           </div>
+          <div class="apply-divider"></div>
+          <p class="small"><strong>初めての方へ</strong><br>このアプリは現在テスト運用中のため、ご利用には事前のテストユーザー登録が必要です。下記から申請してください。承認には数日かかる場合があります。</p>
+          <div class="actions">
+            ${applyDisabled
+              ? `<button class="light" disabled style="opacity:.5;cursor:not-allowed;">登録申請（準備中）</button>`
+              : `<a class="apply-link-btn" href="${TEST_USER_APPLY_URL}" target="_blank" rel="noopener">登録を申請する（Google Formsが開きます）</a>`
+            }
+          </div>
+          ${applyDisabled ? `<p class="small" style="color:#bbb;font-size:11px;">※ アプリ管理者：申請URLを設定すると有効になります。</p>` : ""}
+          <p class="small" style="margin-top:8px;color:#888;">承認済みの方はそのまま「Googleアカウントで連携」を押してください。承認前のアカウントで連携を試みると「Access blocked」エラーになります。</p>
         `;
       } else {
+        const lastSync = _syncLastSuccessAt ? formatTimeAgo(_syncLastSuccessAt) : "未同期";
         html = `
           <div class="gcal-info-row">
             <strong>連携中：</strong>${escapeHtml(gcalUserEmail || "Googleアカウント")}<br>
-            <strong>同期状況：</strong>${syncedCount} / ${allPlans.length} 件の予定が送信済み
+            <strong>カレンダー同期：</strong>${syncedCount} / ${allPlans.length} 件の予定が送信済み<br>
+            <strong>Driveバックアップ：</strong>${_syncStatus === "synced" ? "✓ " + lastSync : (_syncStatus === "syncing" ? "同期中…" : (_syncStatus === "error" ? "エラー" : "待機中"))}
           </div>
           <div class="actions">
             <button class="blue" onclick="syncAllPlansToGcal()">予定を一括同期</button>
+            <button class="light" onclick="triggerDriveSync(true)">今すぐバックアップ</button>
             <button class="light" onclick="logoutGcal()">連携解除</button>
           </div>
-          <p class="small" style="margin-top:8px;">送信対象は「予定（plan）」のみ。行動ログ（actual）は送信されません。</p>
+          <p class="small" style="margin-top:8px;">予定はGoogleカレンダーへ自動送信、全データはGoogle Driveに自動バックアップされます。別端末で同じGoogleアカウントで連携すれば、同じデータが利用できます。</p>
         `;
       }
       el.innerHTML = html;
-    }
-
-    function saveAndUseClientId(){
-      const input = document.getElementById("gcalClientIdInput");
-      if(!input) return;
-      const id = input.value.trim();
-      if(!id || !id.endsWith(".apps.googleusercontent.com")){
-        alert("正しい形式のクライアントIDを入力してください（末尾が .apps.googleusercontent.com）");
-        return;
-      }
-      setGcalClientId(id);
-      gcalTokenClient = null;
-      initGcalTokenClient();
-      renderGcalSection();
-    }
-    function resetGcalClientId(){
-      if(!confirm("クライアントIDをリセットしますか？\n（連携も解除されます）")) return;
-      clearGcalToken();
-      localStorage.removeItem(GCAL_CLIENT_ID_KEY);
-      gcalTokenClient = null;
-      renderGcalSection();
     }
 
     // Googleライブラリ読み込み完了を待ってトークンクライアント初期化
@@ -2822,11 +3538,251 @@
       if(window.google && google.accounts && google.accounts.oauth2){
         initGcalTokenClient();
         renderGcalSection();
+        // 認証済みなら起動時sync
+        if(isGcalAuthenticated()) syncDriveStartup();
       } else {
         setTimeout(tryInitGcalAfterLoad, 400);
       }
     }
     tryInitGcalAfterLoad();
+    // ============================================================
+
+    // ============================================================
+    // Google Drive 自動同期（v56）
+    // データを Drive の appDataFolder に lifelog-data.json として保存
+    // ============================================================
+    const SYNC_KEYS = [STORAGE_KEY, CATEGORY_KEY, TEMPLATE_KEY, TAG_KEY, SUMMARY_KEY, QUIT_KEY];
+    const SYNC_FILE_NAME = "lifelog-data.json";
+    let _driveFileId = null;
+    let _syncStatus = "idle"; // idle, syncing, synced, error, not_connected
+    let _syncLastSuccessAt = null;
+    let _syncDebounceTimer = null;
+    let _initialSyncDone = false;
+
+    function setSyncStatus(status){
+      _syncStatus = status;
+      if(status === "synced") _syncLastSuccessAt = new Date();
+      renderSyncBadge();
+    }
+
+    function formatTimeAgo(date){
+      if(!date) return "";
+      const diff = Math.floor((Date.now() - date.getTime()) / 1000);
+      if(diff < 10) return "たった今";
+      if(diff < 60) return `${diff}秒前`;
+      if(diff < 3600) return `${Math.floor(diff/60)}分前`;
+      if(diff < 86400) return `${Math.floor(diff/3600)}時間前`;
+      return `${Math.floor(diff/86400)}日前`;
+    }
+
+    function renderSyncBadge(){
+      const el = document.getElementById("syncBadge");
+      if(!el) return;
+      const map = {
+        idle: { icon:"", text:"", cls:"" },
+        not_connected: { icon:"", text:"", cls:"" },
+        syncing: { icon:"⟳", text:"同期中…", cls:"sync-badge-busy" },
+        synced: { icon:"☁", text:`同期済 ${formatTimeAgo(_syncLastSuccessAt)}`, cls:"sync-badge-ok" },
+        error: { icon:"⚠", text:"同期エラー（再試行）", cls:"sync-badge-err" }
+      };
+      const m = map[_syncStatus] || map.idle;
+      if(!m.text){ el.style.display = "none"; return; }
+      el.style.display = "inline-flex";
+      el.className = "sync-badge " + m.cls;
+      el.innerHTML = `<span class="sync-icon">${m.icon}</span><span>${m.text}</span>`;
+      el.onclick = (_syncStatus === "error") ? (()=>triggerDriveSync(true)) : null;
+    }
+
+    // 「同期済 N分前」の表示を定期更新
+    setInterval(() => { if(_syncStatus === "synced") renderSyncBadge(); }, 30000);
+
+    async function driveListSyncFile(){
+      const res = await fetch(`https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&fields=files(id,name,modifiedTime)`, {
+        headers: { Authorization: "Bearer " + gcalAccessToken }
+      });
+      if(!res.ok) throw new Error("drive list "+res.status);
+      const data = await res.json();
+      return (data.files || []).find(f => f.name === SYNC_FILE_NAME) || null;
+    }
+
+    async function driveDownloadSyncFile(fileId){
+      const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+        headers: { Authorization: "Bearer " + gcalAccessToken }
+      });
+      if(!res.ok) throw new Error("drive get "+res.status);
+      return await res.json();
+    }
+
+    async function driveUploadSyncFile(fileId, content){
+      if(fileId){
+        const res = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+          method: "PATCH",
+          headers: { Authorization: "Bearer " + gcalAccessToken, "Content-Type": "application/json" },
+          body: JSON.stringify(content)
+        });
+        if(!res.ok) throw new Error("drive update "+res.status);
+        return await res.json();
+      } else {
+        const metadata = { name: SYNC_FILE_NAME, parents: ["appDataFolder"] };
+        const boundary = "boundary_lifelog_" + Date.now();
+        const body =
+          `--${boundary}\r\n` +
+          `Content-Type: application/json; charset=UTF-8\r\n\r\n` +
+          JSON.stringify(metadata) + `\r\n` +
+          `--${boundary}\r\n` +
+          `Content-Type: application/json; charset=UTF-8\r\n\r\n` +
+          JSON.stringify(content) + `\r\n` +
+          `--${boundary}--`;
+        const res = await fetch(`https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart`, {
+          method: "POST",
+          headers: { Authorization: "Bearer " + gcalAccessToken, "Content-Type": `multipart/related; boundary=${boundary}` },
+          body
+        });
+        if(!res.ok) throw new Error("drive create "+res.status);
+        return await res.json();
+      }
+    }
+
+    function collectAllLocalData(){
+      return {
+        version: "v56",
+        updatedAt: new Date().toISOString(),
+        logs: loadLogs(),
+        categories: loadCategories(),
+        templates: loadFrequentPlans(),
+        tags: loadFrequentTags(),
+        summaries: loadDailySummaries(),
+        quitList: loadQuitList()
+      };
+    }
+
+    function applyAllLocalData(data){
+      _suppressSyncTrigger = true;
+      try {
+        if(Array.isArray(data.logs)) saveLogs(data.logs);
+        if(Array.isArray(data.categories)) saveCategories(data.categories);
+        if(Array.isArray(data.templates)) saveFrequentPlans(data.templates);
+        if(Array.isArray(data.tags)) saveFrequentTags(data.tags);
+        if(Array.isArray(data.summaries)) saveDailySummaries(data.summaries);
+        if(Array.isArray(data.quitList)) saveQuitList(data.quitList);
+      } finally {
+        _suppressSyncTrigger = false;
+      }
+    }
+
+    // ID単位、updatedAtで新しい方を採用してマージ
+    function mergeArraysById(local, remote, keyField, tsField){
+      const map = {};
+      (remote || []).forEach(r => { if(r && r[keyField] != null) map[r[keyField]] = r; });
+      (local || []).forEach(l => {
+        if(!l || l[keyField] == null) return;
+        const r = map[l[keyField]];
+        if(!r){ map[l[keyField]] = l; return; }
+        const lt = new Date(l[tsField] || l.updatedAt || 0).getTime();
+        const rt = new Date(r[tsField] || r.updatedAt || 0).getTime();
+        map[l[keyField]] = lt >= rt ? l : r;
+      });
+      return Object.values(map);
+    }
+
+    function mergeSummariesByDate(local, remote){
+      const merged = {};
+      (remote||[]).forEach(s => { if(s && s.date) merged[s.date] = s; });
+      (local||[]).forEach(s => {
+        if(!s || !s.date) return;
+        const r = merged[s.date];
+        if(!r){ merged[s.date] = s; return; }
+        const lt = new Date(s.updatedAt || 0).getTime();
+        const rt = new Date(r.updatedAt || 0).getTime();
+        merged[s.date] = lt >= rt ? s : r;
+      });
+      return Object.values(merged);
+    }
+
+    function mergeAllData(local, remote){
+      return {
+        version: "v56",
+        updatedAt: new Date().toISOString(),
+        logs: mergeArraysById(local.logs, remote.logs, "id", "updatedAt"),
+        categories: mergeArraysById(local.categories, remote.categories, "id", "updatedAt"),
+        templates: Array.from(new Set([...(local.templates||[]), ...(remote.templates||[])])),
+        tags: Array.from(new Set([...(local.tags||[]), ...(remote.tags||[])])),
+        summaries: mergeSummariesByDate(local.summaries, remote.summaries),
+        quitList: mergeArraysById(local.quitList, remote.quitList, "id", "updatedAt")
+      };
+    }
+
+    async function syncDriveStartup(){
+      if(!isGcalAuthenticated()){ setSyncStatus("not_connected"); return; }
+      if(_initialSyncDone) return;
+      setSyncStatus("syncing");
+      try {
+        const file = await driveListSyncFile();
+        const local = collectAllLocalData();
+        if(!file){
+          // 初回：ローカルをアップロード
+          const created = await driveUploadSyncFile(null, local);
+          _driveFileId = created.id;
+        } else {
+          _driveFileId = file.id;
+          const remote = await driveDownloadSyncFile(file.id);
+          const merged = mergeAllData(local, remote);
+          applyAllLocalData(merged);
+          // マージ結果をアップロード
+          await driveUploadSyncFile(file.id, merged);
+          // 画面リフレッシュ
+          try {
+            const tab = document.body.dataset.activeTab || "calendar";
+            if(tab === "calendar") renderCalendar();
+            else if(tab === "today" && typeof updateTodayBar === "function") updateTodayBar();
+            renderGcalSection();
+          } catch(e){ console.warn("UI refresh after sync failed:", e); }
+        }
+        setSyncStatus("synced");
+        _initialSyncDone = true;
+      } catch(e){
+        console.error("Drive startup sync failed:", e);
+        if(String(e.message||"").includes("401")) { clearGcalToken(); renderGcalSection(); }
+        setSyncStatus("error");
+      }
+    }
+
+    // データ変更時のデバウンス同期
+    function triggerDriveSync(immediate=false){
+      if(!isGcalAuthenticated()){ setSyncStatus("not_connected"); return; }
+      if(!_initialSyncDone && !immediate) return; // 起動同期が終わるまで自動同期は控える
+      if(_syncDebounceTimer) clearTimeout(_syncDebounceTimer);
+      const delay = immediate ? 0 : 3000;
+      _syncDebounceTimer = setTimeout(async () => {
+        setSyncStatus("syncing");
+        try {
+          const local = collectAllLocalData();
+          if(!_driveFileId){
+            const file = await driveListSyncFile();
+            if(file) _driveFileId = file.id;
+          }
+          if(_driveFileId){
+            await driveUploadSyncFile(_driveFileId, local);
+          } else {
+            const created = await driveUploadSyncFile(null, local);
+            _driveFileId = created.id;
+          }
+          setSyncStatus("synced");
+        } catch(e){
+          console.error("Drive sync failed:", e);
+          if(String(e.message||"").includes("401")) { clearGcalToken(); renderGcalSection(); }
+          setSyncStatus("error");
+        }
+      }, delay);
+    }
+
+    // 連携解除時の後始末
+    function resetDriveSyncState(){
+      _driveFileId = null;
+      _initialSyncDone = false;
+      _syncLastSuccessAt = null;
+      setSyncStatus("not_connected");
+    }
     // ============================================================
 
     // モバイル時、formScreen/reviewScreenがblockになったら自動スクロール
@@ -2855,7 +3811,8 @@
       });
     }
 
-    // 初期状態：カレンダータブ
+    // 初期状態：カレンダータブ + 保存テーマ適用
+    applyTheme(getCurrentTheme());
     document.body.dataset.activeTab = "calendar";
     document.body.dataset.showReview = "false";
     document.getElementById("menuScreen").style.display = "none";
