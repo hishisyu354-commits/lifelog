@@ -10,6 +10,16 @@
   <meta name="format-detection" content="telephone=no" />
   <meta name="mobile-web-app-capable" content="yes" />
   <title>生活ログMVP</title>
+  <!-- PWA -->
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#8b0026">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="生活ログ">
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     :root,
@@ -105,7 +115,26 @@
     .weekly-top-meta { font-size:11px; color:var(--muted); margin-top:2px; }
     .weekly-top-score { font-size:20px; font-weight:800; color:var(--main); flex-shrink:0; min-width:32px; text-align:right; }
 
-    /* カテゴリ別円グラフ */
+    /* タブの未入力バッジ */
+    .tab-badge { position:absolute; top:6px; right:calc(50% - 22px); background:#e74c3c; color:#fff; font-size:10px; font-weight:800; min-width:18px; height:18px; border-radius:9px; padding:0 5px; display:flex; align-items:center; justify-content:center; box-shadow:0 1px 3px rgba(0,0,0,.2); line-height:1; pointer-events:none; }
+
+    /* 繰り返し曜日ピッカー */
+    .weekday-picker { display:flex; gap:5px; flex-wrap:nowrap; width:100%; margin-top:6px; margin-bottom:8px; }
+    .weekday-cell { flex:1 1 0; min-width:0; height:44px; border-radius:10px; background:var(--soft-bg); border:1.5px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer; font-weight:700; font-size:14px; position:relative; user-select:none; transition:transform .08s, background .15s, color .15s, border-color .15s; margin:0; padding:0; color:var(--text); }
+    .weekday-cell input { position:absolute; opacity:0; pointer-events:none; width:0; height:0; }
+    .weekday-cell:active { transform:scale(.92); }
+    .weekday-cell.checked,
+    .weekday-cell:has(input:checked) { background:var(--main); color:#fff; border-color:var(--main); }
+
+    /* ホーム画面追加 促進バナー */
+    .pwa-banner { position:fixed; left:50%; transform:translateX(-50%); bottom:calc(82px + var(--safe-bottom)); width:calc(100% - 24px); max-width:456px; background:var(--card); color:var(--text); border:1px solid var(--border); border-left:4px solid var(--main); border-radius:12px; padding:12px 38px 12px 14px; box-shadow:0 4px 14px rgba(0,0,0,.18); z-index:9998; display:flex; align-items:center; gap:10px; animation:pwaBannerIn .35s ease; }
+    .pwa-banner-icon { font-size:22px; flex-shrink:0; }
+    .pwa-banner-body { flex:1; min-width:0; }
+    .pwa-banner-title { font-weight:800; font-size:13px; margin-bottom:2px; color:var(--main); }
+    .pwa-banner-text { font-size:11.5px; color:var(--muted); line-height:1.4; }
+    .pwa-banner-close { position:absolute; top:8px; right:8px; width:26px; height:26px; min-height:26px; padding:0; background:transparent; color:var(--muted); border:none; font-size:20px; line-height:1; cursor:pointer; border-radius:6px; }
+    .pwa-banner-close:active { background:var(--soft-bg); }
+    @keyframes pwaBannerIn { from{opacity:0; transform:translate(-50%, 20px);} to{opacity:1; transform:translate(-50%, 0);} }
     .category-pie-wrap { display:flex; flex-direction:column; align-items:center; gap:14px; padding:6px 0; }
     .category-pie-svg { width:200px; height:200px; flex-shrink:0; }
     .category-pie-legend { width:100%; }
@@ -733,6 +762,7 @@
       flex-direction:column;
       align-items:center;
       justify-content:center;
+      position:relative;
       gap:3px;
       font-size:10px;
       font-weight:700;
@@ -1542,7 +1572,7 @@
 
     function showRepeatForm(){
       hideRightPanels(); const f=document.getElementById("formScreen"); f.style.display="block";
-      f.innerHTML=`<h2>繰り返し予定の登録</h2><label>予定名</label><textarea id="repeatText" placeholder="例：授業、バイト、ジム"></textarea><label>カテゴリ</label><div class="category-row"><select id="repeatCategory">${categoryOptions()}</select><button class="mini-button" onclick="addCategory('repeatCategory')">追加</button><button class="mini-button danger" onclick="deleteSelectedCategory('repeatCategory')">削除</button></div><div class="row"><div><label>開始時刻</label><input id="repeatStartTime" type="time"></div><div><label>終了時刻</label><input id="repeatEndTime" type="time"></div></div><div class="row"><div><label>開始日</label><input id="repeatStartDate" type="date" value="${todayString()}"></div><div><label>終了日</label><input id="repeatEndDate" type="date" value="${todayString()}"></div></div><label>繰り返す曜日</label><div class="inline-row">${["日","月","火","水","木","金","土"].map((w,i)=>`<label style="margin:0;font-size:13px;"><input type="checkbox" name="repeatWeekday" value="${i}" style="width:auto;">${w}</label>`).join("")}</div><div class="actions"><button onclick="saveRepeatedPlans()">繰り返し予定を作成</button><button class="light" onclick="showMenu()">戻る</button></div>`;
+      f.innerHTML=`<h2>繰り返し予定の登録</h2><label>予定名</label><textarea id="repeatText" placeholder="例：授業、バイト、ジム"></textarea><label>カテゴリ</label><div class="category-row"><select id="repeatCategory">${categoryOptions()}</select><button class="mini-button" onclick="addCategory('repeatCategory')">追加</button><button class="mini-button danger" onclick="deleteSelectedCategory('repeatCategory')">削除</button></div><div class="row"><div><label>開始時刻</label><input id="repeatStartTime" type="time"></div><div><label>終了時刻</label><input id="repeatEndTime" type="time"></div></div><div class="row"><div><label>開始日</label><input id="repeatStartDate" type="date" value="${todayString()}"></div><div><label>終了日</label><input id="repeatEndDate" type="date" value="${todayString()}"></div></div><label>繰り返す曜日</label><div class="weekday-picker">${["日","月","火","水","木","金","土"].map((w,i)=>`<label class="weekday-cell"><input type="checkbox" name="repeatWeekday" value="${i}" onchange="this.parentElement.classList.toggle('checked', this.checked)"><span>${w}</span></label>`).join("")}</div><div class="actions"><button onclick="saveRepeatedPlans()">繰り返し予定を作成</button><button class="light" onclick="showMenu()">戻る</button></div>`;
     }
     function saveRepeatedPlans(){
       const text=repeatText.value.trim(), categoryId=repeatCategory.value, start=repeatStartTime.value, end=repeatEndTime.value, startDate=repeatStartDate.value, endDate=repeatEndDate.value;
@@ -3821,6 +3851,114 @@
     updateLiveStopwatchBar();
     setInterval(updateLiveStopwatchBar,1000);
     initMobileScrollObserver();
+
+    // ============================================================
+    // Service Worker 登録（PWA化、オフライン対応）
+    // ※ Claude/その他アプリ内のWebViewでは登録失敗するが実害なし（ログ抑制）
+    // ============================================================
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js", { scope: "./" })
+          .then((reg) => console.log("[SW] registered:", reg.scope))
+          .catch((err) => {
+            const msg = String(err && err.message || err);
+            // app-bound domain は WebView内プレビューで出る既知の制限、ログ不要
+            if (msg.includes("app-bound domain") || msg.includes("not allowed")) return;
+            console.warn("[SW] register failed:", err);
+          });
+      });
+    }
+
+    // ============================================================
+    // 未入力ハイライト：今日タブにバッジ表示
+    // 今日の actual ログのうち、充実度スコアが未入力のものがあれば
+    // 「今日」タブに赤い●を出して気付かせる
+    // ============================================================
+    function countUnscoredTodayActuals(){
+      const today = todayString();
+      const todayActuals = loadLogs().filter(l => l.date === today && l.type === "actual");
+      if(!todayActuals.length) return 0;
+      const summary = loadDailySummaries().find(s => s.date === today);
+      const scoredIds = new Set((summary && summary.scores ? summary.scores : []).filter(s=>s.score!=null).map(s => s.logId));
+      return todayActuals.filter(l => !scoredIds.has(l.id)).length;
+    }
+    function updateTodayBadge(){
+      const tab = document.querySelector('.bottom-nav .nav-tab[data-tab="today"]');
+      if(!tab) return;
+      // 既存バッジ削除
+      const old = tab.querySelector(".tab-badge");
+      if(old) old.remove();
+      const n = countUnscoredTodayActuals();
+      if(n > 0){
+        const badge = document.createElement("span");
+        badge.className = "tab-badge";
+        badge.textContent = n > 9 ? "9+" : String(n);
+        tab.appendChild(badge);
+      }
+    }
+    updateTodayBadge();
+    // データ変更時にバッジ更新するため、saveJSON経由で書き込まれた直後に再計算
+    // シンプルに1秒ごとに更新（軽量）
+    setInterval(updateTodayBadge, 5000);
+
+    // ============================================================
+    // ホーム画面に追加 促進バナー（初回起動から5回後 or 累計ログ3件以上で表示）
+    // ユーザーが「あとで」「追加した」「興味なし」を選べる
+    // ============================================================
+    const PWA_BANNER_KEY = "lifelogPwaBannerStateV1";
+    function getPwaBannerState(){ try { return JSON.parse(localStorage.getItem(PWA_BANNER_KEY)) || {}; } catch { return {}; } }
+    function setPwaBannerState(s){ localStorage.setItem(PWA_BANNER_KEY, JSON.stringify(s)); }
+    function isStandalone(){
+      return (window.navigator.standalone === true) ||
+             (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+    }
+    function checkPwaBanner(){
+      if(isStandalone()) return; // 既にPWAとして起動中なら表示しない
+      const state = getPwaBannerState();
+      if(state.dismissed || state.installed) return;
+      // 起動回数カウント
+      state.launches = (state.launches || 0) + 1;
+      setPwaBannerState(state);
+      // 表示条件：起動3回以上 or ログ3件以上
+      const logCount = loadLogs().length;
+      if(state.launches < 3 && logCount < 3) return;
+      // 一度表示したら次回まで間を空ける（前回表示から3日経過）
+      if(state.lastShownAt){
+        const last = new Date(state.lastShownAt).getTime();
+        if(Date.now() - last < 3 * 24 * 60 * 60 * 1000) return;
+      }
+      showPwaBanner();
+      state.lastShownAt = new Date().toISOString();
+      setPwaBannerState(state);
+    }
+    function showPwaBanner(){
+      if(document.getElementById("pwaBanner")) return;
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const banner = document.createElement("div");
+      banner.id = "pwaBanner";
+      banner.className = "pwa-banner";
+      banner.innerHTML = `
+        <div class="pwa-banner-icon">📱</div>
+        <div class="pwa-banner-body">
+          <div class="pwa-banner-title">ホーム画面に追加できます</div>
+          <div class="pwa-banner-text">${isIOS
+            ? "Safariの共有ボタン <span style='font-weight:800;'>(↑)</span> →「ホーム画面に追加」でアプリのように使えます。"
+            : "ブラウザのメニューから「ホーム画面に追加」または「インストール」を選べます。"
+          }</div>
+        </div>
+        <button class="pwa-banner-close" onclick="dismissPwaBanner()" aria-label="閉じる">×</button>
+      `;
+      document.body.appendChild(banner);
+    }
+    function dismissPwaBanner(){
+      const banner = document.getElementById("pwaBanner");
+      if(banner) banner.remove();
+      const state = getPwaBannerState();
+      state.dismissed = true;
+      setPwaBannerState(state);
+    }
+    // 起動から少し遅れて判定（他のUI描画優先）
+    setTimeout(checkPwaBanner, 2500);
   </script>
 </body>
 </html>
