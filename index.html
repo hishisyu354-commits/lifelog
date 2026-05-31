@@ -126,7 +126,14 @@
     .weekday-cell.checked,
     .weekday-cell:has(input:checked) { background:var(--main); color:#fff; border-color:var(--main); }
 
-    /* 週次振り返り：意図セクション */
+    /* スコープ切替（日次/週次/月次） */
+    .scope-switcher { display:flex; gap:0; margin:0 0 18px; background:var(--soft-bg); border:1px solid var(--border); border-radius:12px; padding:4px; }
+    .scope-btn { flex:1; padding:9px 4px; border:none; background:transparent; color:var(--muted); font-weight:700; font-size:13px; border-radius:8px; cursor:pointer; min-height:38px; transition:background .15s, color .15s; }
+    .scope-btn:active { transform:scale(.97); }
+    .scope-btn.active { background:var(--main); color:#fff; box-shadow:0 1px 3px rgba(0,0,0,.12); }
+
+    /* 月次トレンドチャート */
+    .monthly-trend-svg { width:100%; height:auto; max-width:340px; display:block; margin:8px auto; }
     .intent-match-summary { background:var(--soft-bg); border-left:3px solid var(--main); padding:8px 12px; border-radius:6px; font-size:12px; margin-top:10px; color:var(--text); }
     .intent-card { background:var(--soft-bg); border:1px solid var(--border); border-left:4px solid var(--main); border-radius:10px; padding:12px 14px; margin-bottom:12px; }
     .intent-card-label { font-size:11px; color:var(--muted); font-weight:700; margin-bottom:6px; }
@@ -964,11 +971,11 @@
 
           <h3 class="menu-section-title">記録・振り返り</h3>
           <div class="menu" style="margin-top:14px;">
-            <button class="light" onclick="showWeeklyReview()">週次振り返り</button>
             <button class="light" onclick="showReflectionNotebook()">振り返りノート</button>
             <button class="light" onclick="showQuitList()">やめたことログ</button>
             <button class="secondary" onclick="showRepeatForm()">繰り返し予定の登録</button>
           </div>
+          <p class="small" style="margin:6px 2px 0;color:#999;font-size:11px;">※ 日次・週次・月次の振り返りは「振り返り」タブから切り替えて見られます。</p>
 
           <h3 class="menu-section-title">データ整理</h3>
           <div class="menu" style="margin-top:14px;">
@@ -1016,7 +1023,7 @@
     </button>
     <button class="nav-tab" data-tab="today" onclick="switchTab('today')">
       <span class="nav-icon">🎯</span>
-      <span class="nav-label">今日</span>
+      <span class="nav-label">振り返り</span>
     </button>
     <button class="nav-tab" data-tab="trend" onclick="switchTab('trend')">
       <span class="nav-icon">📊</span>
@@ -1179,6 +1186,7 @@
       navigationContext = null; // タブ切替で戻り先コンテキストはリセット
       document.body.dataset.activeTab = tab;
       document.body.dataset.showReview = "false";
+      if(tab !== "today") _fromTodayTab = false;
       document.querySelectorAll(".nav-tab").forEach(btn => {
         btn.classList.toggle("active", btn.dataset.tab === tab);
       });
@@ -1191,6 +1199,10 @@
           break;
         case "today":
           {
+            _fromTodayTab = true;
+            _todayScope = "day"; // 毎回日次デフォルト
+            _weeklyOffsetWeeks = 0;
+            _monthlyOffsetMonths = 0;
             const today = todayString();
             selectedDate = today;
             currentCalendarDate = new Date(today + "T00:00:00");
@@ -1893,7 +1905,9 @@
 
     function showReview(dateArg){
       hideRightPanels(); const r=document.getElementById("reviewScreen"); r.style.display="block"; selectedDate=dateArg||selectedDate||todayString(); renderCalendar();
-      const logs=getDayLogs(selectedDate); let html=`<h2>${formatDateJapanese(selectedDate)} の行動振り返り</h2><p class="small">予定・行動を時系列順に表示します。</p><div class="actions"><button class="blue" onclick="showPlanForm('${selectedDate}')">予定を追加</button><button class="green" onclick="showActualForm('${selectedDate}')">行動を追加</button><button onclick="showStopwatch()">計測開始</button></div>`;
+      const logs=getDayLogs(selectedDate);
+      const scopeHeader = (_fromTodayTab ? buildScopeSwitcher("day") : "");
+      let html=scopeHeader + `<h2>${formatDateJapanese(selectedDate)} の行動振り返り</h2><p class="small">予定・行動を時系列順に表示します。</p><div class="actions"><button class="blue" onclick="showPlanForm('${selectedDate}')">予定を追加</button><button class="green" onclick="showActualForm('${selectedDate}')">行動を追加</button><button onclick="showStopwatch()">計測開始</button></div>`;
       html+=buildPieChart(logs)+buildGapPrompts(logs,selectedDate);
       if(!logs.length) html+=`<div class="empty">この日はまだ何も記録されていません。</div>`;
       logs.forEach(log=>{ const cat=getCategoryById(log.categoryId||"none"), label=log.type==="plan"?"予定":"行動", cls=log.type==="plan"?"plan":"actual"; html+=`<div class="log-item ${cls}"><div class="log-content-row"><div class="log-main"><div class="log-meta">${log.start}〜${log.end} / ${label}</div><div class="log-title">${escapeHtml(log.text)}</div><span class="category-pill"><span class="category-dot" style="background:${cat.color}"></span>${escapeHtml(cat.name)}</span>${log.repeat?`<span class="detail-badge">繰り返し</span>`:""}${log.detail?`<span class="detail-badge">詳細あり</span>`:""}${renderUntitledHelper(log)}</div><div class="mini-actions"><button class="blue" onclick="showDetail(${log.id})">詳細</button><button class="light" onclick="showLogMenu(${log.id})">編集</button></div></div></div>`; });
@@ -2610,6 +2624,34 @@
     // 週次振り返り画面 + 今週の意図機能
     // ============================================================
     let _weeklyOffsetWeeks = 0; // 0=今週、-1=先週、+1=来週
+    let _monthlyOffsetMonths = 0; // 0=今月、-1=先月、+1=来月
+    let _fromTodayTab = false; // 振り返りタブ経由かどうか
+    let _todayScope = "day"; // "day" / "week" / "month"
+
+    function buildScopeSwitcher(active){
+      return `<div class="scope-switcher">
+        <button class="scope-btn ${active==="day"?"active":""}" onclick="setTodayScope('day')">日次</button>
+        <button class="scope-btn ${active==="week"?"active":""}" onclick="setTodayScope('week')">週次</button>
+        <button class="scope-btn ${active==="month"?"active":""}" onclick="setTodayScope('month')">月次</button>
+      </div>`;
+    }
+    function setTodayScope(scope){
+      _todayScope = scope;
+      _fromTodayTab = true;
+      // 切替時は offset をリセット
+      if(scope === "week") _weeklyOffsetWeeks = 0;
+      if(scope === "month") _monthlyOffsetMonths = 0;
+      if(scope === "day"){
+        const today = todayString();
+        selectedDate = today;
+        currentCalendarDate = new Date(today + "T00:00:00");
+        showReview(today);
+      } else if(scope === "week"){
+        showWeeklyReview();
+      } else if(scope === "month"){
+        showMonthlyReview();
+      }
+    }
 
     // 月曜起点の週の月曜日を返す
     function getMondayOfWeek(date){
@@ -2790,7 +2832,7 @@
         `;
       }
 
-      let html = `<h2>週次振り返り</h2>${headerNav}
+      let html = (_fromTodayTab ? buildScopeSwitcher("week") : "") + `<h2>週次振り返り</h2>${headerNav}
         ${intentSection}
         <h3 class="menu-section-title">この週のサマリ</h3>
         <div class="weekly-summary-grid">
@@ -2865,6 +2907,155 @@
       upsertWeeklyIntent(weekStartDate, text, keywords);
       showSaveToast("意図を保存しました");
       showWeeklyReview();
+    }
+
+    // ============================================================
+    // 月次振り返り
+    // ============================================================
+    function showMonthlyReview(offsetChange=null){
+      hideRightPanels(); closeQuickMenu();
+      if(offsetChange !== null) _monthlyOffsetMonths += offsetChange;
+      const today = new Date();
+      const baseMonth = new Date(today.getFullYear(), today.getMonth() + _monthlyOffsetMonths, 1);
+      const year = baseMonth.getFullYear(), month = baseMonth.getMonth();
+      const monthStart = new Date(year, month, 1);
+      const monthEnd = new Date(year, month + 1, 0); // 末日
+      const daysInMonth = monthEnd.getDate();
+      const monthDates = [];
+      for(let d=1; d<=daysInMonth; d++){
+        monthDates.push(toDateString(new Date(year, month, d)));
+      }
+      const isFuture = _monthlyOffsetMonths > 0;
+      const logs = loadLogs().filter(l => monthDates.includes(l.date));
+      const summaries = loadDailySummaries().filter(s => monthDates.includes(s.date));
+
+      // 集計
+      const periodLabel = `${year}年 ${month+1}月`;
+      const planCount = logs.filter(l => l.type==="plan" && !l.repeat).length;
+      const actualCount = logs.filter(l => l.type==="actual").length;
+      const allScores = [];
+      summaries.forEach(s => (s.scores||[]).forEach(sc => { if(sc.score != null) allScores.push(sc); }));
+      const avgScore = allScores.length ? (allScores.reduce((a,b)=>a+(b.score||0),0)/allScores.length).toFixed(1) : null;
+      const top5 = [...allScores].sort((a,b)=>b.score-a.score).slice(0,5);
+      // ハッシュタグ
+      const tagCounts = {};
+      logs.forEach(l => {
+        const tags = (l.detail||"").match(/#[\p{L}\p{N}_]+/gu) || [];
+        tags.forEach(t => tagCounts[t] = (tagCounts[t]||0)+1);
+      });
+      const topTags = Object.entries(tagCounts).sort((a,b)=>b[1]-a[1]).slice(0,8);
+      // カテゴリ別時間配分
+      const catMinutes = {};
+      logs.filter(l => l.type==="actual").forEach(l => {
+        const [sh,sm]=(l.start||"0:0").split(":").map(Number);
+        const [eh,em]=(l.end||"0:0").split(":").map(Number);
+        const dur = (eh*60+em)-(sh*60+sm);
+        if(dur>0){ const cid = l.categoryId||"none"; catMinutes[cid] = (catMinutes[cid]||0) + dur; }
+      });
+      const catEntries = Object.entries(catMinutes).sort((a,b)=>b[1]-a[1]);
+      const totalMin = catEntries.reduce((a,b)=>a+b[1],0);
+      // 月内充実度推移（日別平均）
+      const dailyAvg = monthDates.map(date => {
+        const s = summaries.find(x => x.date === date);
+        if(!s || !s.scores || !s.scores.length) return { date, avg:null, day:parseInt(date.split("-")[2],10) };
+        const valid = s.scores.filter(sc => sc.score != null);
+        if(!valid.length) return { date, avg:null, day:parseInt(date.split("-")[2],10) };
+        return { date, avg: valid.reduce((a,b)=>a+b.score,0)/valid.length, day:parseInt(date.split("-")[2],10) };
+      });
+      // やめたこと（quitDateがこの月）
+      const quitItems = loadQuitList().filter(q => {
+        if(!q.quitDate) return false;
+        const d = new Date(q.quitDate);
+        return d.getFullYear() === year && d.getMonth() === month;
+      });
+
+      const r = document.getElementById("reviewScreen"); r.style.display = "block";
+      const headerNav = `<div class="weekly-nav">
+        <button class="mini-button" onclick="showMonthlyReview(-1)">‹ 前月</button>
+        <span class="weekly-period">${periodLabel}</span>
+        <button class="mini-button" onclick="showMonthlyReview(1)" ${isFuture?'disabled':''}>翌月 ›</button>
+      </div>`;
+
+      let html = (_fromTodayTab ? buildScopeSwitcher("month") : "") + `<h2>月次振り返り</h2>${headerNav}
+        <div class="weekly-summary-grid">
+          <div class="weekly-stat"><div class="weekly-stat-label">予定</div><div class="weekly-stat-value">${planCount}<span>件</span></div></div>
+          <div class="weekly-stat"><div class="weekly-stat-label">行動</div><div class="weekly-stat-value">${actualCount}<span>件</span></div></div>
+          <div class="weekly-stat"><div class="weekly-stat-label">平均充実度</div><div class="weekly-stat-value">${avgScore !== null ? avgScore : '—'}<span>${avgScore !== null ? '/10' : ''}</span></div></div>
+        </div>`;
+
+      // 月内充実度推移グラフ
+      const hasAnyScore = dailyAvg.some(d => d.avg !== null);
+      if(hasAnyScore){
+        html += `<h3 class="menu-section-title">月内の充実度推移</h3>${buildMonthlyTrendChart(dailyAvg)}`;
+      }
+
+      if(catEntries.length){
+        html += `<h3 class="menu-section-title">カテゴリ別の時間配分（行動）</h3>${buildCategoryPie(catEntries, totalMin)}`;
+      }
+
+      if(top5.length){
+        html += `<h3 class="menu-section-title">充実度が高かった行動 TOP5</h3>`;
+        top5.forEach((sc, i) => {
+          const log = loadLogs().find(l => l.id === sc.logId);
+          if(!log) return;
+          const cat = getCategoryById(log.categoryId||"none");
+          html += `<div class="weekly-top-item">
+            <div class="weekly-top-rank">${i+1}</div>
+            <div class="weekly-top-body">
+              <div class="weekly-top-title">${escapeHtml(log.text)}</div>
+              <div class="weekly-top-meta">${formatDateJapanese(log.date)} / ${log.start}〜${log.end} <span class="category-pill"><span class="category-dot" style="background:${cat.color}"></span>${escapeHtml(cat.name)}</span></div>
+            </div>
+            <div class="weekly-top-score">${sc.score}</div>
+          </div>`;
+        });
+      }
+
+      if(topTags.length){
+        html += `<h3 class="menu-section-title">よく使ったハッシュタグ</h3><div class="tag-cloud">${topTags.map(([t,c])=>`<button class="tag-chip" onclick="showReflectionNotebook('${t}')">${escapeHtml(t)} ${c}</button>`).join("")}</div>`;
+      }
+
+      if(quitItems.length){
+        html += `<h3 class="menu-section-title">この月にやめたこと</h3>`;
+        quitItems.forEach(q => {
+          html += `<div class="quit-item" style="margin-bottom:8px;">
+            <div class="quit-title">${escapeHtml(q.text)}</div>
+            ${q.quitDate ? `<div class="quit-period">${q.quitDate} にやめた</div>` : ""}
+            ${q.reason ? `<div class="quit-reason">${escapeHtml(q.reason)}</div>` : ""}
+          </div>`;
+        });
+      }
+
+      if(!planCount && !actualCount && !avgScore && !topTags.length && !quitItems.length){
+        html += `<div class="empty">この月はまだ記録がありません。</div>`;
+      }
+
+      html += `<div class="actions"><button class="light" onclick="showMenu()">戻る</button></div>`;
+      r.innerHTML = html;
+    }
+
+    function buildMonthlyTrendChart(dailyAvg){
+      const W = 320, H = 140, padL = 24, padR = 10, padT = 12, padB = 22;
+      const innerW = W - padL - padR, innerH = H - padT - padB;
+      const n = dailyAvg.length;
+      // X座標：日付（1〜末日）を等間隔
+      const xFor = (day) => padL + ((day - 1) / Math.max(n - 1, 1)) * innerW;
+      // Y座標：0〜10
+      const yFor = (score) => padT + (1 - score/10) * innerH;
+      // 折れ線：avg が null でない日のみつなぐ
+      const validPoints = dailyAvg.filter(d => d.avg !== null).map(d => ({ x: xFor(d.day), y: yFor(d.avg), d }));
+      const poly = validPoints.map(p => `${p.x},${p.y}`).join(" ");
+      const dots = validPoints.map(p => `<circle class="chart-dot" cx="${p.x}" cy="${p.y}" r="3"><title>${p.d.date}：${p.d.avg.toFixed(1)}</title></circle>`).join("");
+      // Y軸ラベル（0, 5, 10）
+      const yLabels = [0, 5, 10].map(v => `<text x="${padL-4}" y="${yFor(v)+3}" text-anchor="end" font-size="9" fill="var(--muted)">${v}</text>`).join("");
+      const yGrid = [0, 5, 10].map(v => `<line x1="${padL}" x2="${W-padR}" y1="${yFor(v)}" y2="${yFor(v)}" stroke="var(--border)" stroke-dasharray="2,3"></line>`).join("");
+      // X軸ラベル（1, 中, 末）
+      const midDay = Math.ceil(n/2);
+      const xLabels = [1, midDay, n].map(d => `<text x="${xFor(d)}" y="${H-6}" text-anchor="middle" font-size="9" fill="var(--muted)">${d}</text>`).join("");
+      return `<svg viewBox="0 0 ${W} ${H}" class="monthly-trend-svg" aria-label="月内充実度推移">
+        ${yGrid}${yLabels}${xLabels}
+        ${validPoints.length>=2 ? `<polyline class="chart-line" points="${poly}" fill="none" stroke="var(--main)" stroke-width="2"></polyline>` : ""}
+        ${dots}
+      </svg>`;
     }
 
     // カテゴリ別円グラフ（SVGドーナツ）+ 凡例
