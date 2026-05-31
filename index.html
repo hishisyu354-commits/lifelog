@@ -126,6 +126,26 @@
     .weekday-cell.checked,
     .weekday-cell:has(input:checked) { background:var(--main); color:#fff; border-color:var(--main); }
 
+    /* 週次振り返り：意図セクション */
+    .intent-match-summary { background:var(--soft-bg); border-left:3px solid var(--main); padding:8px 12px; border-radius:6px; font-size:12px; margin-top:10px; color:var(--text); }
+    .intent-card { background:var(--soft-bg); border:1px solid var(--border); border-left:4px solid var(--main); border-radius:10px; padding:12px 14px; margin-bottom:12px; }
+    .intent-card-label { font-size:11px; color:var(--muted); font-weight:700; margin-bottom:6px; }
+    .intent-card-text { font-size:14px; line-height:1.6; color:var(--text); white-space:pre-wrap; }
+    .intent-keywords-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+    .intent-kw-chip { display:inline-flex; align-items:center; padding:3px 9px; background:var(--card); border:1px solid var(--main); color:var(--main); border-radius:999px; font-size:11px; font-weight:700; }
+    .intent-fact-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-bottom:8px; }
+    .intent-fact-label { font-size:11px; color:var(--muted); font-weight:700; margin-bottom:4px; }
+    .intent-fact-total { font-size:13px; margin-bottom:10px; padding-bottom:8px; border-bottom:1px dashed var(--border); }
+    .intent-fact-total strong { color:var(--main); }
+    .intent-fact-keywords { display:flex; flex-direction:column; gap:5px; }
+    .intent-kw-row { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:5px 0; }
+    .intent-kw-meta { font-size:11px; color:var(--muted); font-weight:600; }
+    .intent-logs-expand { margin-top:8px; }
+    .intent-logs-expand summary { cursor:pointer; font-size:12px; font-weight:700; color:var(--main); padding:8px 0; }
+    .intent-log-item { background:var(--soft-bg); border:1px solid var(--border); border-radius:8px; padding:8px 10px; margin-top:6px; }
+    .intent-log-meta { font-size:11px; color:var(--muted); margin-bottom:2px; }
+    .intent-log-title { font-size:13px; font-weight:700; line-height:1.4; }
+
     /* ホーム画面追加 促進バナー */
     .pwa-banner { position:fixed; left:50%; transform:translateX(-50%); bottom:calc(82px + var(--safe-bottom)); width:calc(100% - 24px); max-width:456px; background:var(--card); color:var(--text); border:1px solid var(--border); border-left:4px solid var(--main); border-radius:12px; padding:12px 38px 12px 14px; box-shadow:0 4px 14px rgba(0,0,0,.18); z-index:9998; display:flex; align-items:center; gap:10px; animation:pwaBannerIn .35s ease; }
     .pwa-banner-icon { font-size:22px; flex-shrink:0; }
@@ -1023,6 +1043,7 @@
     const GCAL_TOKEN_KEY = "dailyLifeGcalTokenV1";
     const GCAL_USER_KEY = "dailyLifeGcalUserV1";
     const QUIT_KEY = "dailyLifeQuitItemsV1";
+    const WEEKLY_INTENT_KEY = "dailyLifeWeeklyIntentsV1";
     const THEME_KEY = "dailyLifeThemeV1";
     const DEFAULT_CATEGORIES = [
       { id:"none", name:"カテゴリなし", color:"#95a5a6" },
@@ -1065,6 +1086,18 @@
     function saveDailySummaries(summaries){ saveJSON(SUMMARY_KEY, summaries); }
     function loadQuitList(){ return loadJSON(QUIT_KEY, []); }
     function saveQuitList(list){ saveJSON(QUIT_KEY, list); }
+    function loadWeeklyIntents(){ return loadJSON(WEEKLY_INTENT_KEY, []); }
+    function saveWeeklyIntents(list){ saveJSON(WEEKLY_INTENT_KEY, list); }
+    function getWeeklyIntent(weekStartDate){
+      return loadWeeklyIntents().find(w => w.weekStartDate === weekStartDate) || null;
+    }
+    function upsertWeeklyIntent(weekStartDate, text, keywords){
+      const all = loadWeeklyIntents();
+      const idx = all.findIndex(w => w.weekStartDate === weekStartDate);
+      const item = { weekStartDate, text, keywords, updatedAt: new Date().toISOString() };
+      if(idx >= 0) all[idx] = item; else all.push(item);
+      saveWeeklyIntents(all);
+    }
     function saveFrequentTags(t){ saveJSON(TAG_KEY,t); }
 
     function getCategoryById(id){ return loadCategories().find(c=>c.id===id) || loadCategories()[0]; }
@@ -2574,15 +2607,79 @@
     // ============================================================
     // 週次振り返り画面
     // ============================================================
+    // 週次振り返り画面 + 今週の意図機能
+    // ============================================================
     let _weeklyOffsetWeeks = 0; // 0=今週、-1=先週、+1=来週
+
+    // 月曜起点の週の月曜日を返す
+    function getMondayOfWeek(date){
+      const d = new Date(date);
+      const dow = d.getDay();
+      const diff = dow === 0 ? -6 : 1 - dow;
+      d.setDate(d.getDate() + diff);
+      d.setHours(0,0,0,0);
+      return d;
+    }
+
+    // 意図テキストから自動でキーワードを抽出（句読点・空白で分割、2文字以上）
+    function extractAutoKeywords(text){
+      if(!text) return [];
+      return text.split(/[\s\n、。．，,\.！!\?？「」『』（）\(\)]+/)
+                 .map(w => w.trim())
+                 .filter(w => w.length >= 2);
+    }
+    // 意図に関連するログを抽出（部分一致、大文字小文字無視）
+    function findIntentMatches(intent, logs){
+      const userKeywords = Array.isArray(intent.keywords) ? intent.keywords.filter(k => k && String(k).length >= 1) : [];
+      const autoKeywords = extractAutoKeywords(intent.text || "");
+      const allKeywords = Array.from(new Set([...userKeywords, ...autoKeywords].map(k => String(k).toLowerCase())));
+      if(!allKeywords.length) return { matches: [], byKeyword: {}, totalMinutes: 0 };
+      const matchedIds = new Set();
+      const byKeyword = {};
+      logs.forEach(log => {
+        const cat = getCategoryById(log.categoryId || "none");
+        const blob = ((log.text||"") + " " + (log.detail||"") + " " + (cat.name||"")).toLowerCase();
+        allKeywords.forEach(kw => {
+          if(blob.includes(kw)){
+            matchedIds.add(log.id);
+            if(!byKeyword[kw]) byKeyword[kw] = { count:0, minutes:0, logIds:[] };
+            if(!byKeyword[kw].logIds.includes(log.id)){
+              byKeyword[kw].logIds.push(log.id);
+              byKeyword[kw].count += 1;
+              const [sh,sm]=(log.start||"0:0").split(":").map(Number);
+              const [eh,em]=(log.end||"0:0").split(":").map(Number);
+              const dur = (eh*60+em) - (sh*60+sm);
+              if(dur > 0) byKeyword[kw].minutes += dur;
+            }
+          }
+        });
+      });
+      const matches = logs.filter(l => matchedIds.has(l.id));
+      const totalMinutes = matches.reduce((acc, log) => {
+        const [sh,sm]=(log.start||"0:0").split(":").map(Number);
+        const [eh,em]=(log.end||"0:0").split(":").map(Number);
+        const dur = (eh*60+em) - (sh*60+sm);
+        return acc + (dur > 0 ? dur : 0);
+      }, 0);
+      return { matches, byKeyword, totalMinutes };
+    }
+
+    function formatMinutesAsHM(min){
+      if(!min) return "0分";
+      const h = Math.floor(min/60), m = min%60;
+      if(h && m) return `${h}時間${m}分`;
+      if(h) return `${h}時間`;
+      return `${m}分`;
+    }
+
     function showWeeklyReview(offsetChange=null){
       hideRightPanels(); closeQuickMenu();
       if(offsetChange !== null) _weeklyOffsetWeeks += offsetChange;
-      // 週の起点：日曜
+      // 月曜起点
       const today = new Date();
-      const dow = today.getDay();
-      const weekStart = new Date(today);
-      weekStart.setDate(today.getDate() - dow + _weeklyOffsetWeeks * 7);
+      const baseMonday = getMondayOfWeek(today);
+      const weekStart = new Date(baseMonday);
+      weekStart.setDate(baseMonday.getDate() + _weeklyOffsetWeeks * 7);
       weekStart.setHours(0,0,0,0);
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekStart.getDate() + 6);
@@ -2591,6 +2688,9 @@
         const d = new Date(weekStart); d.setDate(weekStart.getDate()+i);
         weekDates.push(toDateString(d));
       }
+      const weekStartDateStr = toDateString(weekStart);
+      const isCurrentWeek = (_weeklyOffsetWeeks === 0);
+      const isFuture = (_weeklyOffsetWeeks > 0);
       const logs = loadLogs().filter(l => weekDates.includes(l.date));
       const summaries = loadDailySummaries().filter(s => weekDates.includes(s.date));
 
@@ -2598,20 +2698,16 @@
       const periodLabel = `${weekStart.getFullYear()}/${weekStart.getMonth()+1}/${weekStart.getDate()} 〜 ${weekEnd.getMonth()+1}/${weekEnd.getDate()}`;
       const planCount = logs.filter(l => l.type==="plan" && !l.repeat).length;
       const actualCount = logs.filter(l => l.type==="actual").length;
-      // 充実度の集計
       const allScores = [];
       summaries.forEach(s => (s.scores||[]).forEach(sc => { if(sc.score != null) allScores.push(sc); }));
       const avgScore = allScores.length ? (allScores.reduce((a,b)=>a+(b.score||0),0)/allScores.length).toFixed(1) : null;
-      // 充実度TOP3
       const top3 = [...allScores].sort((a,b)=>b.score-a.score).slice(0,3);
-      // ハッシュタグ集計
       const tagCounts = {};
       logs.forEach(l => {
         const tags = (l.detail||"").match(/#[\p{L}\p{N}_]+/gu) || [];
         tags.forEach(t => tagCounts[t] = (tagCounts[t]||0)+1);
       });
       const topTags = Object.entries(tagCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
-      // カテゴリ別時間配分（行動ログのみ）
       const catMinutes = {};
       logs.filter(l => l.type==="actual").forEach(l => {
         const [sh,sm]=(l.start||"0:0").split(":").map(Number);
@@ -2626,22 +2722,86 @@
       const headerNav = `<div class="weekly-nav">
         <button class="mini-button" onclick="showWeeklyReview(-1)">‹ 前週</button>
         <span class="weekly-period">${periodLabel}</span>
-        <button class="mini-button" onclick="showWeeklyReview(1)" ${_weeklyOffsetWeeks>=0?'disabled':''}>翌週 ›</button>
+        <button class="mini-button" onclick="showWeeklyReview(1)" ${isFuture?'disabled':''}>翌週 ›</button>
       </div>`;
 
+      // ===== 「この週の意図」セクション =====
+      const intent = getWeeklyIntent(weekStartDateStr);
+      let intentSection = "";
+      if(isCurrentWeek){
+        // 今週：入力フォーム
+        const currentText = intent ? intent.text : "";
+        const currentKeywords = intent && intent.keywords ? intent.keywords.join(" ") : "";
+        intentSection = `
+          <h3 class="menu-section-title">この週の意図</h3>
+          <p class="small">今週、自分が大事にしたいことを書きます。数値目標ではなく、質的な向き合い方として。達成・未達成の判定は出ません。</p>
+          <label>意図（自由記述、複数行可）</label>
+          <textarea id="weeklyIntentText" placeholder="例：本を読む時間を取り戻したい&#10;家族と話す機会を増やしたい&#10;体を動かしてみる">${escapeHtml(currentText)}</textarea>
+          <label>関連キーワード（任意・空白区切り）</label>
+          <input id="weeklyIntentKeywords" type="text" placeholder="例：読書 本 家族 運動" value="${escapeHtml(currentKeywords)}">
+          <p class="small" style="margin-top:4px;color:#999;font-size:11px;">来週この画面を開くと、これらのキーワードに該当した先週のログが集計されます。</p>
+          <div class="actions"><button class="blue" onclick="saveCurrentWeekIntent('${weekStartDateStr}')">意図を保存</button></div>
+        `;
+        // 既に意図がある場合、今週のログとのマッチも併せて表示（リアルタイム参照）
+        if(intent && (intent.text || (intent.keywords||[]).length)){
+          const matches = findIntentMatches(intent, logs);
+          if(matches.matches.length){
+            intentSection += `<div class="intent-match-summary"><strong>今週ここまでの該当ログ：</strong>${matches.matches.length}件 / 合計 ${formatMinutesAsHM(matches.totalMinutes)}</div>`;
+          }
+        }
+      } else if(intent && (intent.text || (intent.keywords||[]).length)) {
+        // 過去の週：書いた意図と該当ログの対比表示
+        const matches = findIntentMatches(intent, logs);
+        intentSection = `
+          <h3 class="menu-section-title">この週の意図と事実</h3>
+          <div class="intent-card">
+            <div class="intent-card-label">あなたが書いていたこと</div>
+            <div class="intent-card-text">${escapeHtml(intent.text || "(意図テキストなし)").replace(/\n/g,"<br>")}</div>
+            ${(intent.keywords||[]).length ? `<div class="intent-keywords-row">${intent.keywords.map(k=>`<span class="intent-kw-chip">${escapeHtml(k)}</span>`).join("")}</div>` : ""}
+          </div>
+        `;
+        if(matches.matches.length){
+          intentSection += `
+            <div class="intent-fact-card">
+              <div class="intent-fact-label">この週の事実</div>
+              <div class="intent-fact-total">該当ログ：<strong>${matches.matches.length}件</strong> / 合計 <strong>${formatMinutesAsHM(matches.totalMinutes)}</strong></div>
+              <div class="intent-fact-keywords">`;
+          Object.entries(matches.byKeyword).sort((a,b)=>b[1].minutes-a[1].minutes).forEach(([kw, info]) => {
+            intentSection += `<div class="intent-kw-row"><span class="intent-kw-chip">${escapeHtml(kw)}</span><span class="intent-kw-meta">${info.count}件・${formatMinutesAsHM(info.minutes)}</span></div>`;
+          });
+          intentSection += `</div></div>`;
+          // 該当ログのプレビュー（最大5件）
+          intentSection += `<details class="intent-logs-expand"><summary>該当ログを見る（${matches.matches.length}件）</summary>`;
+          matches.matches.slice(0, 30).forEach(log => {
+            const cat = getCategoryById(log.categoryId || "none");
+            const label = log.type === "plan" ? "予定" : "行動";
+            intentSection += `<div class="intent-log-item"><div class="intent-log-meta">${formatDateJapanese(log.date)} / ${log.start}〜${log.end} / ${label}</div><div class="intent-log-title">${escapeHtml(log.text)}</div><span class="category-pill"><span class="category-dot" style="background:${cat.color}"></span>${escapeHtml(cat.name)}</span></div>`;
+          });
+          intentSection += `</details>`;
+        } else {
+          intentSection += `<div class="empty" style="margin-top:8px;">該当するログは見つかりませんでした。<br>キーワードを変えると当てはまる記録が見つかるかもしれません。</div>`;
+        }
+        intentSection += `<div class="actions" style="margin-top:8px;"><button class="light" onclick="editPastWeekIntent('${weekStartDateStr}')">意図を編集</button></div>`;
+      } else if(!isCurrentWeek){
+        intentSection = `
+          <h3 class="menu-section-title">この週の意図</h3>
+          <div class="empty">この週には意図が書かれていません。<br>後からでも追加できます。</div>
+          <div class="actions"><button class="light" onclick="editPastWeekIntent('${weekStartDateStr}')">この週の意図を追加</button></div>
+        `;
+      }
+
       let html = `<h2>週次振り返り</h2>${headerNav}
+        ${intentSection}
+        <h3 class="menu-section-title">この週のサマリ</h3>
         <div class="weekly-summary-grid">
           <div class="weekly-stat"><div class="weekly-stat-label">予定</div><div class="weekly-stat-value">${planCount}<span>件</span></div></div>
           <div class="weekly-stat"><div class="weekly-stat-label">行動</div><div class="weekly-stat-value">${actualCount}<span>件</span></div></div>
           <div class="weekly-stat"><div class="weekly-stat-label">平均充実度</div><div class="weekly-stat-value">${avgScore !== null ? avgScore : '—'}<span>${avgScore !== null ? '/10' : ''}</span></div></div>
         </div>`;
 
-      // カテゴリ別円グラフ
       if(catEntries.length){
         html += `<h3 class="menu-section-title">カテゴリ別の時間配分（行動）</h3>${buildCategoryPie(catEntries, totalMin)}`;
       }
-
-      // 充実度TOP3
       if(top3.length){
         html += `<h3 class="menu-section-title">充実度が高かった行動 TOP3</h3>`;
         top3.forEach((sc, i) => {
@@ -2658,18 +2818,53 @@
           </div>`;
         });
       }
-
-      // 頻出ハッシュタグ
       if(topTags.length){
         html += `<h3 class="menu-section-title">よく使ったハッシュタグ</h3><div class="tag-cloud">${topTags.map(([t,c])=>`<button class="tag-chip" onclick="showReflectionNotebook('${t}')">${escapeHtml(t)} ${c}</button>`).join("")}</div>`;
       }
-
       if(!planCount && !actualCount && !avgScore && !topTags.length){
         html += `<div class="empty">この週はまだ記録がありません。</div>`;
       }
 
       html += `<div class="actions"><button class="light" onclick="showMenu()">戻る</button></div>`;
       r.innerHTML = html;
+    }
+
+    function saveCurrentWeekIntent(weekStartDate){
+      const textEl = document.getElementById("weeklyIntentText");
+      const kwEl = document.getElementById("weeklyIntentKeywords");
+      const text = (textEl ? textEl.value : "").trim();
+      const keywords = (kwEl ? kwEl.value : "").split(/[\s,、,]+/).map(s=>s.trim()).filter(s=>s.length>0);
+      if(!text && !keywords.length){
+        if(!confirm("意図とキーワードの両方が空欄ですが、保存しますか？")) return;
+      }
+      upsertWeeklyIntent(weekStartDate, text, keywords);
+      showSaveToast("今週の意図を保存しました");
+      showWeeklyReview();
+    }
+    function editPastWeekIntent(weekStartDate){
+      const intent = getWeeklyIntent(weekStartDate) || { weekStartDate, text:"", keywords:[] };
+      hideRightPanels();
+      const f = document.getElementById("formScreen"); f.style.display = "block";
+      const d = new Date(weekStartDate + "T00:00:00");
+      const wkEnd = new Date(d); wkEnd.setDate(d.getDate()+6);
+      const periodLabel = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} 〜 ${wkEnd.getMonth()+1}/${wkEnd.getDate()}`;
+      f.innerHTML = `<h2>意図の編集</h2>
+        <p class="small">期間：${periodLabel}</p>
+        <label>意図</label>
+        <textarea id="pastIntentText" placeholder="例：本を読む時間を取り戻したい">${escapeHtml(intent.text||"")}</textarea>
+        <label>関連キーワード（空白区切り）</label>
+        <input id="pastIntentKeywords" type="text" value="${escapeHtml((intent.keywords||[]).join(" "))}" placeholder="例：読書 本 家族">
+        <div class="actions">
+          <button class="blue" onclick="savePastWeekIntent('${weekStartDate}')">保存</button>
+          <button class="light" onclick="showWeeklyReview()">戻る</button>
+        </div>`;
+    }
+    function savePastWeekIntent(weekStartDate){
+      const text = (document.getElementById("pastIntentText").value || "").trim();
+      const keywords = (document.getElementById("pastIntentKeywords").value || "").split(/[\s,、,]+/).map(s=>s.trim()).filter(s=>s.length>0);
+      upsertWeeklyIntent(weekStartDate, text, keywords);
+      showSaveToast("意図を保存しました");
+      showWeeklyReview();
     }
 
     // カテゴリ別円グラフ（SVGドーナツ）+ 凡例
@@ -3580,7 +3775,7 @@
     // Google Drive 自動同期（v56）
     // データを Drive の appDataFolder に lifelog-data.json として保存
     // ============================================================
-    const SYNC_KEYS = [STORAGE_KEY, CATEGORY_KEY, TEMPLATE_KEY, TAG_KEY, SUMMARY_KEY, QUIT_KEY];
+    const SYNC_KEYS = [STORAGE_KEY, CATEGORY_KEY, TEMPLATE_KEY, TAG_KEY, SUMMARY_KEY, QUIT_KEY, WEEKLY_INTENT_KEY];
     const SYNC_FILE_NAME = "lifelog-data.json";
     let _driveFileId = null;
     let _syncStatus = "idle"; // idle, syncing, synced, error, not_connected
@@ -3681,7 +3876,8 @@
         templates: loadFrequentPlans(),
         tags: loadFrequentTags(),
         summaries: loadDailySummaries(),
-        quitList: loadQuitList()
+        quitList: loadQuitList(),
+        weeklyIntents: loadWeeklyIntents()
       };
     }
 
@@ -3694,6 +3890,7 @@
         if(Array.isArray(data.tags)) saveFrequentTags(data.tags);
         if(Array.isArray(data.summaries)) saveDailySummaries(data.summaries);
         if(Array.isArray(data.quitList)) saveQuitList(data.quitList);
+        if(Array.isArray(data.weeklyIntents)) saveWeeklyIntents(data.weeklyIntents);
       } finally {
         _suppressSyncTrigger = false;
       }
@@ -3729,6 +3926,20 @@
     }
 
     function mergeAllData(local, remote){
+      // weeklyIntentsはweekStartDateを一意キーとしてマージ
+      const mergeWeeklyIntents = (a, b) => {
+        const map = {};
+        (b||[]).forEach(x => { if(x && x.weekStartDate) map[x.weekStartDate] = x; });
+        (a||[]).forEach(x => {
+          if(!x || !x.weekStartDate) return;
+          const r = map[x.weekStartDate];
+          if(!r){ map[x.weekStartDate] = x; return; }
+          const lt = new Date(x.updatedAt || 0).getTime();
+          const rt = new Date(r.updatedAt || 0).getTime();
+          map[x.weekStartDate] = lt >= rt ? x : r;
+        });
+        return Object.values(map);
+      };
       return {
         version: "v56",
         updatedAt: new Date().toISOString(),
@@ -3737,7 +3948,8 @@
         templates: Array.from(new Set([...(local.templates||[]), ...(remote.templates||[])])),
         tags: Array.from(new Set([...(local.tags||[]), ...(remote.tags||[])])),
         summaries: mergeSummariesByDate(local.summaries, remote.summaries),
-        quitList: mergeArraysById(local.quitList, remote.quitList, "id", "updatedAt")
+        quitList: mergeArraysById(local.quitList, remote.quitList, "id", "updatedAt"),
+        weeklyIntents: mergeWeeklyIntents(local.weeklyIntents, remote.weeklyIntents)
       };
     }
 
