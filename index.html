@@ -49,7 +49,7 @@
     @keyframes syncSpin { from{transform:rotate(0)} to{transform:rotate(360deg)} }
 
     /* トースト通知 */
-    .save-toast { position:fixed; bottom:120px; left:50%; transform:translateX(-50%) translateY(20px); background:rgba(20,20,20,.9); color:#fff; padding:11px 22px; border-radius:22px; font-size:13px; font-weight:600; opacity:0; transition:opacity .25s, transform .25s; pointer-events:none; z-index:9999; max-width:80%; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,.2); }
+    .save-toast { position:fixed; bottom:140px; left:50%; transform:translateX(-50%) translateY(20px); background:rgba(20,20,20,.94); color:#fff; padding:14px 26px; border-radius:24px; font-size:14.5px; font-weight:700; opacity:0; transition:opacity .25s, transform .25s; pointer-events:none; z-index:9999; max-width:80%; text-align:center; box-shadow:0 6px 18px rgba(0,0,0,.28); letter-spacing:.02em; }
     .save-toast.visible { opacity:1; transform:translateX(-50%) translateY(0); }
 
     /* マイクボタン（音声入力） */
@@ -150,6 +150,11 @@
     .intent-logs-expand { margin-top:8px; }
     .intent-logs-expand summary { cursor:pointer; font-size:12px; font-weight:700; color:var(--main); padding:8px 0; }
     .intent-log-item { background:var(--soft-bg); border:1px solid var(--border); border-radius:8px; padding:8px 10px; margin-top:6px; }
+
+    /* タップ可能なログアイテム */
+    .log-tappable { cursor:pointer; transition:transform .1s ease, background .15s ease, box-shadow .15s ease; position:relative; }
+    .log-tappable:active { transform:scale(.985); background:var(--soft-bg); }
+    .log-tappable::after { content:"›"; position:absolute; right:14px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:24px; font-weight:300; opacity:.55; pointer-events:none; }
     .intent-log-meta { font-size:11px; color:var(--muted); margin-bottom:2px; }
     .intent-log-title { font-size:13px; font-weight:700; line-height:1.4; }
 
@@ -598,13 +603,12 @@
       z-index:95;
     }
     .fab{
-      width:60px;
-      height:60px;
+      width:64px;
+      height:64px;
       border-radius:50%;
       background:var(--main);
       color:white;
-      font-size:30px;
-      font-weight:300;
+      font-weight:800;
       box-shadow:0 6px 18px rgba(139,0,38,.4);
       display:flex;
       align-items:center;
@@ -613,11 +617,26 @@
       transition:transform .15s ease;
       padding:0;
       line-height:1;
-      min-height:60px;
+      min-height:64px;
+      position:relative;
+      border:none;
+      -webkit-tap-highlight-color:transparent;
+      -webkit-user-select:none;
+      user-select:none;
+      -webkit-touch-callout:none;
     }
+    .fab-label{ font-size:10px; font-weight:800; line-height:1.15; text-align:center; pointer-events:none; letter-spacing:0; }
+    .fab-ring{ position:absolute; top:-5px; left:-5px; width:calc(100% + 10px); height:calc(100% + 10px); pointer-events:none; transform:rotate(-90deg); opacity:0; transition:opacity .15s ease; }
+    .fab-ring.active{ opacity:1; }
+    .fab-ring-track{ fill:none; stroke:rgba(255,255,255,.18); stroke-width:4; }
+    .fab-ring-progress{ fill:none; stroke:#ffd250; stroke-width:4; stroke-linecap:round; stroke-dasharray:289; stroke-dashoffset:289; }
+    .fab-ring.active .fab-ring-progress{ transition:stroke-dashoffset 1s linear; stroke-dashoffset:0; }
+    .fab.long-pressing{ transform:scale(1.08); }
     .fab.open{
       transform:rotate(45deg);
     }
+    .fab.open .fab-label{ opacity:0; }
+    .fab.open::after{ content:"＋"; position:absolute; font-size:30px; font-weight:300; }
     .fab-menu{
       position:absolute;
       right:0;
@@ -1011,7 +1030,13 @@
         <span>予定を追加</span>
       </button>
     </div>
-    <button class="fab" id="fabBtn" onclick="toggleFab()" aria-label="記録を追加">＋</button>
+    <button class="fab" id="fabBtn" aria-label="長押しで計測開始、タップで記録メニュー">
+      <svg class="fab-ring" id="fabRing" viewBox="0 0 100 100" aria-hidden="true">
+        <circle cx="50" cy="50" r="46" class="fab-ring-track"></circle>
+        <circle cx="50" cy="50" r="46" class="fab-ring-progress" id="fabRingProgress"></circle>
+      </svg>
+      <span class="fab-label">長押しで<br>計測</span>
+    </button>
   </div>
 
   <button class="close-review-btn" id="closeReviewBtn" onclick="closeReview()" aria-label="カレンダーに戻る">×</button>
@@ -1646,9 +1671,12 @@
       }
     }
 
-    function startStopwatch(){
+    function startStopwatch(silent){
       const running=loadRunningStopwatch();
-      if(running && running.startAt && !confirm("すでに計測中です。新しく開始すると上書きされます。")) return;
+      if(running && running.startAt){
+        if(silent){ showSaveToast("すでに計測中です"); return false; }
+        if(!confirm("すでに計測中です。新しく開始すると上書きされます。")) return false;
+      }
       stopwatchStart=new Date();
       saveRunningStopwatch({ startAt: stopwatchStart.toISOString() });
       clearStopwatchTimer();
@@ -1657,6 +1685,7 @@
       if(document.getElementById("timerStatus")) timerStatus.textContent=`計測中：${formatTime(stopwatchStart)} 開始`;
       if(document.getElementById("stopwatchSaveArea")) stopwatchSaveArea.innerHTML="";
       updateLiveStopwatchBar();
+      return true;
     }
 
     function stopStopwatch(){
@@ -1907,23 +1936,31 @@
       hideRightPanels(); const r=document.getElementById("reviewScreen"); r.style.display="block"; selectedDate=dateArg||selectedDate||todayString(); renderCalendar();
       const logs=getDayLogs(selectedDate);
       const scopeHeader = (_fromTodayTab ? buildScopeSwitcher("day") : "");
-      let html=scopeHeader + `<h2>${formatDateJapanese(selectedDate)} の行動振り返り</h2><p class="small">予定・行動を時系列順に表示します。</p><div class="actions"><button class="blue" onclick="showPlanForm('${selectedDate}')">予定を追加</button><button class="green" onclick="showActualForm('${selectedDate}')">行動を追加</button><button onclick="showStopwatch()">計測開始</button></div>`;
+      let html=scopeHeader + `<h2>${formatDateJapanese(selectedDate)} の行動振り返り</h2><p class="small">予定・行動を時系列順に表示します。</p><div class="actions"><button class="blue" onclick="showPlanForm('${selectedDate}')">予定を追加</button><button class="green" onclick="showActualForm('${selectedDate}')">行動を追加</button></div>`;
       html+=buildPieChart(logs)+buildGapPrompts(logs,selectedDate);
       if(!logs.length) html+=`<div class="empty">この日はまだ何も記録されていません。</div>`;
-      logs.forEach(log=>{ const cat=getCategoryById(log.categoryId||"none"), label=log.type==="plan"?"予定":"行動", cls=log.type==="plan"?"plan":"actual"; html+=`<div class="log-item ${cls}"><div class="log-content-row"><div class="log-main"><div class="log-meta">${log.start}〜${log.end} / ${label}</div><div class="log-title">${escapeHtml(log.text)}</div><span class="category-pill"><span class="category-dot" style="background:${cat.color}"></span>${escapeHtml(cat.name)}</span>${log.repeat?`<span class="detail-badge">繰り返し</span>`:""}${log.detail?`<span class="detail-badge">詳細あり</span>`:""}${renderUntitledHelper(log)}</div><div class="mini-actions"><button class="blue" onclick="showDetail(${log.id})">詳細</button><button class="light" onclick="showLogMenu(${log.id})">編集</button></div></div></div>`; });
+      logs.forEach(log=>{ const cat=getCategoryById(log.categoryId||"none"), label=log.type==="plan"?"予定":"行動", cls=log.type==="plan"?"plan":"actual"; html+=`<div class="log-item ${cls} log-tappable" onclick="showLogEditor(${log.id})" role="button" tabindex="0"><div class="log-content-row"><div class="log-main"><div class="log-meta">${log.start}〜${log.end} / ${label}</div><div class="log-title">${escapeHtml(log.text)}</div><span class="category-pill"><span class="category-dot" style="background:${cat.color}"></span>${escapeHtml(cat.name)}</span>${log.repeat?`<span class="detail-badge">繰り返し</span>`:""}${log.detail?`<span class="detail-badge">詳細あり</span>`:""}${renderUntitledHelper(log)}</div></div></div>`; });
       html+=`<div class="actions"><button class="light" onclick="showMenu()">戻る</button><button class="danger" onclick="clearDateLogs('${selectedDate}')">この日の記録を全削除</button></div>`; r.innerHTML=html;
       attachReviewSwipe();
     }
     function getDayLogs(date){ return loadLogs().filter(l=>l.date===date).sort((a,b)=>a.start.localeCompare(b.start)); }
     function getLogById(id){ return loadLogs().find(l=>l.id===id); }
-    function showLogMenu(id){ const log=getLogById(id); if(!log) return; hideRightPanels(); const r=document.getElementById("reviewScreen"); r.style.display="block"; const editLabel=log.type==="plan"?"予定の変更":"行動の変更"; const gcalBadge = log.gcalEventId ? `<span class="gcal-synced-badge">📅 GCal同期済み</span>` : ""; const gcalBtn = (log.type === "plan" && isGcalAuthenticated()) ? `<button class="green" onclick="sendSingleLogToGcal(${id})">📅 ${log.gcalEventId ? "Googleカレンダーで更新" : "Googleカレンダーに送る"}</button>` : ""; r.innerHTML=`<h2>編集メニュー</h2><div class="log-item ${log.type}"><div class="log-meta">${formatDateJapanese(log.date)} / ${log.start}〜${log.end}${gcalBadge}</div><div class="log-title">${escapeHtml(log.text)}</div></div><div class="actions"><button onclick="showEditLogForm(${id})">${editLabel}</button>${gcalBtn}<button class="danger" onclick="confirmDeleteLog(${id})">削除</button><button class="light" onclick="navigateAfterSave('${log.date}')">戻る</button></div>`; }
-    function showEditLogForm(id){
-      const log=getLogById(id); if(!log) return;
-      hideRightPanels(); const f=document.getElementById("formScreen"); f.style.display="block";
-      const title=log.type==="plan"?"予定の変更":"行動の変更";
-      const textLabel=log.type==="plan"?"予定":"行動";
-      f.innerHTML=`
-        <h2 class="form-title">${title}</h2>
+    function showLogMenu(id){ showLogEditor(id); }
+    function showEditLogForm(id){ showLogEditor(id); }
+    function showDetail(id){ showLogEditor(id); }
+
+    function showLogEditor(id){
+      const log = getLogById(id); if(!log) return;
+      hideRightPanels();
+      const f = document.getElementById("formScreen"); f.style.display = "block";
+      const title = log.type === "plan" ? "予定の編集" : "行動の編集";
+      const textLabel = log.type === "plan" ? "予定" : "行動";
+      const gcalBadge = log.gcalEventId ? ` <span class="gcal-synced-badge" style="font-size:11px;font-weight:600;">📅 GCal同期済み</span>` : "";
+      const gcalBtn = (log.type === "plan" && isGcalAuthenticated())
+        ? `<button class="green" onclick="sendSingleLogToGcal(${id})">📅 ${log.gcalEventId ? "Googleカレンダーで更新" : "Googleカレンダーに送る"}</button>`
+        : "";
+      f.innerHTML = `
+        <h2 class="form-title">${title}${gcalBadge}</h2>
         <div class="form-grid">
           <div class="form-field">
             <label class="mini-label">日付</label>
@@ -1946,14 +1983,45 @@
             <div class="form-field"><label class="mini-label">終了時刻</label><input id="editEnd" type="time" value="${log.end}" class="compact-input"></div>
           </div>
         </div>
-        <div class="form-actions-compact">
-          <button onclick="saveEditedLog(${id})">保存</button>
+        <label style="margin-top:12px;">詳細メモ</label>
+        <textarea id="detailText" placeholder="例：感じたこと、反省、#集中 #学び など">${escapeHtml(log.detail||"")}</textarea>
+        <div class="mic-row">
+          <button type="button" class="mic-btn" onclick="toggleVoiceInput('detailText','detail')" id="micBtn-detail" aria-label="音声入力">🎤<span class="mic-label">音声</span></button>
+        </div>
+        <div class="tag-template-row">
+          <select id="frequentTagSelect">${frequentTagOptions()}</select>
+          <button class="mini-button" onclick="insertFrequentTag()">使う</button>
+          <button class="mini-button" onclick="addFrequentTag()">追加</button>
+          <button class="mini-button danger" onclick="deleteSelectedFrequentTag()">削除</button>
+        </div>
+        <p class="small">ハッシュタグを入れると振り返りノートで検索できます。</p>
+        <div class="actions">
+          <button onclick="saveLogEditor(${id})">保存</button>
+          ${gcalBtn}
+          <button class="danger" onclick="confirmDeleteLog(${id})">削除</button>
           <button class="light" onclick="navigateAfterSave('${log.date}')">戻る</button>
         </div>`;
     }
-    function saveEditedLog(id){ const date=editDate.value, text=editText.value.trim(), start=editStart.value, end=editEnd.value, categoryId=editCategory.value; if(!date||!text||!start||!end||end<=start){ alert("入力を確認して！"); return; } saveLogs(loadLogs().map(l=>l.id===id?{...l,date,text,start,end,categoryId}:l)); navigateAfterSave(date); }
-    function showDetail(id){ const log=getLogById(id); if(!log) return; const cat=getCategoryById(log.categoryId||"none"); hideRightPanels(); const r=document.getElementById("reviewScreen"); r.style.display="block"; r.innerHTML=`<h2>詳細</h2><div class="log-item ${log.type}"><div class="log-meta">${formatDateJapanese(log.date)} / ${log.start}〜${log.end}</div><div class="log-title">${escapeHtml(log.text)}</div><span class="category-pill"><span class="category-dot" style="background:${cat.color}"></span>${escapeHtml(cat.name)}</span></div><label>詳細メモ</label><textarea id="detailText" placeholder="例：感じたこと、反省、#集中 #学び など">${escapeHtml(log.detail||"")}</textarea><div class="mic-row"><button type="button" class="mic-btn" onclick="toggleVoiceInput('detailText','detail')" id="micBtn-detail" aria-label="音声入力">🎤<span class="mic-label">音声</span></button></div><div class="tag-template-row"><select id="frequentTagSelect">${frequentTagOptions()}</select><button class="mini-button" onclick="insertFrequentTag()">使う</button><button class="mini-button" onclick="addFrequentTag()">追加</button><button class="mini-button danger" onclick="deleteSelectedFrequentTag()">削除</button></div><p class="small">ハッシュタグを入れると振り返りノートで検索できます。</p><div class="actions"><button onclick="saveDetail(${id})">詳細を保存</button><button class="light" onclick="navigateAfterSave('${log.date}')">戻る</button></div>`; }
-    function saveDetail(id){ const detail=detailText.value.trim(); saveLogs(loadLogs().map(l=>l.id===id?{...l,detail}:l)); showDetail(id); }
+
+    function saveLogEditor(id){
+      const date = editDate.value;
+      const text = editText.value.trim();
+      const start = editStart.value;
+      const end = editEnd.value;
+      const categoryId = editCategory.value;
+      const detail = (document.getElementById("detailText") ? detailText.value : "").trim();
+      if(!date || !text || !start || !end || end <= start){ alert("入力を確認して！"); return; }
+      saveLogs(loadLogs().map(l => l.id === id ? {...l, date, text, start, end, categoryId, detail, updatedAt: new Date().toISOString()} : l));
+      // 触覚フィードバック（端末対応時のみ）
+      try { if(navigator.vibrate) navigator.vibrate(20); } catch(_){}
+      // 視覚フィードバック：チェックマーク付きトースト＋表示時間を長めに
+      showSaveToast("✓ 保存しました", 2400);
+      navigateAfterSave(date);
+    }
+
+    // 互換性のための旧関数（既存のonclickハンドラから呼ばれる可能性に備える）
+    function saveEditedLog(id){ saveLogEditor(id); }
+    function saveDetail(id){ saveLogEditor(id); }
     function confirmDeleteLog(id){
       const log = getLogById(id);
       if(!log){ alert("対象の記録が見つかりません。画面を更新してください。"); return; }
@@ -4271,6 +4339,85 @@
     updateLiveStopwatchBar();
     setInterval(updateLiveStopwatchBar,1000);
     initMobileScrollObserver();
+
+    // ============================================================
+    // FAB長押しで即計測開始
+    // - シングルタップ：従来通りクイックメニュー（toggleFab）
+    // - 長押し1秒：リングが1周描かれて、計測がバックグラウンドで開始
+    // ============================================================
+    (function initFabLongPress(){
+      const fabBtn = document.getElementById("fabBtn");
+      const fabRing = document.getElementById("fabRing");
+      if(!fabBtn) return;
+
+      let pressTimer = null;
+      let longPressTriggered = false;
+      let pressActive = false;
+
+      function startPress(e){
+        if(pressActive) return;
+        // FABが開いている時（クイックメニュー展開中）は長押し計測を無効化
+        if(fabBtn.classList.contains("open")) return;
+        pressActive = true;
+        longPressTriggered = false;
+        fabBtn.classList.add("long-pressing");
+        if(fabRing) fabRing.classList.add("active");
+        // 開始時に軽い振動
+        try { if(navigator.vibrate) navigator.vibrate(10); } catch(_){}
+        if(pressTimer) clearTimeout(pressTimer);
+        pressTimer = setTimeout(() => {
+          longPressTriggered = true;
+          // 完了時の強めの振動
+          try { if(navigator.vibrate) navigator.vibrate([0, 60, 40, 60]); } catch(_){}
+          // バックグラウンドで計測開始
+          const ok = startStopwatch(true);
+          if(ok){
+            showSaveToast("計測を開始しました。終了はヘッダーから");
+          }
+          endPress(true);
+        }, 1000);
+      }
+
+      function endPress(fromTimer){
+        if(pressTimer){ clearTimeout(pressTimer); pressTimer = null; }
+        fabBtn.classList.remove("long-pressing");
+        if(fabRing) fabRing.classList.remove("active");
+        pressActive = false;
+        // タイマー完了後でない場合は longPressTriggered=false のまま（クリックを許可）
+      }
+
+      // タッチ系
+      fabBtn.addEventListener("touchstart", (e) => {
+        startPress(e);
+      }, { passive: true });
+      fabBtn.addEventListener("touchend", () => endPress(false));
+      fabBtn.addEventListener("touchcancel", () => endPress(false));
+      fabBtn.addEventListener("touchmove", (e) => {
+        // 指が大きく動いたらキャンセル（誤動作防止）
+        const t = e.touches[0]; if(!t) return;
+        const rect = fabBtn.getBoundingClientRect();
+        if(t.clientX < rect.left - 20 || t.clientX > rect.right + 20 ||
+           t.clientY < rect.top - 20 || t.clientY > rect.bottom + 20){
+          endPress(false);
+        }
+      }, { passive: true });
+
+      // マウス系（PCテスト用）
+      fabBtn.addEventListener("mousedown", startPress);
+      fabBtn.addEventListener("mouseup", () => endPress(false));
+      fabBtn.addEventListener("mouseleave", () => endPress(false));
+
+      // クリックハンドラ：長押しが発動していたら抑制、そうでなければtoggleFab
+      fabBtn.addEventListener("click", (e) => {
+        if(longPressTriggered){
+          longPressTriggered = false;
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+        toggleFab();
+      });
+    })();
 
     // ============================================================
     // Service Worker 登録（PWA化、オフライン対応）
