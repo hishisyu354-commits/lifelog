@@ -3478,6 +3478,19 @@
         cell.innerHTML=`<div class="day-number">${date.getDate()}</div><div class="day-plans">${planChips}${more}</div>`;
         cell.onclick=()=>{
           if(Date.now() < _swipeSuppressClickUntil) return;
+          const now = Date.now();
+          if(_lastDayTapDate === dateStr && now - _lastDayTapTime < DOUBLE_TAP_THRESHOLD_MS){
+            // ダブルタップ → 日次振り返りへ直接遷移
+            _lastDayTapDate = null;
+            _lastDayTapTime = 0;
+            closeDateContextMenu();
+            selectedDate = dateStr;
+            _fromTodayTab = false; // カレンダー経由なのでスコープ切替UIは出さない
+            showReview(dateStr);
+            return;
+          }
+          _lastDayTapDate = dateStr;
+          _lastDayTapTime = now;
           openDateContextMenu(dateStr, cell);
         };
         pageEl.appendChild(cell);
@@ -3487,6 +3500,10 @@
     // 指追従カルーセル（月間カレンダー）
     let _monthSwipeAttached=false;
     let _swipeSuppressClickUntil=0;
+    // ダブルタップ検出用
+    let _lastDayTapDate = null;
+    let _lastDayTapTime = 0;
+    const DOUBLE_TAP_THRESHOLD_MS = 400;
     function attachMonthSwipe(){
       if(_monthSwipeAttached) return;
       const viewport=document.getElementById("monthViewport");
