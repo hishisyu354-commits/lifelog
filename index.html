@@ -465,7 +465,7 @@
     .month-slider { display:flex; width:300%; transform:translateX(-33.3333%); will-change:transform; }
     .month-slider:not(.dragging) { transition:transform .28s cubic-bezier(.2,.7,.3,1); }
     .month-page { width:33.3333%; flex-shrink:0; display:grid; grid-template-columns:repeat(7,1fr); gap:3px; padding:0 2px; box-sizing:border-box; }
-    .day-cell { min-height:80px; border-radius:8px; background:#fafafa; border:1px solid #e3e3e3; padding:4px 3px; cursor:pointer; transition:background .12s, transform .08s; overflow:hidden; }
+    .day-cell { min-height:80px; border-radius:8px; background:#fafafa; border:1px solid #e3e3e3; padding:4px 3px; cursor:pointer; transition:background .12s, transform .08s; overflow:hidden; touch-action:manipulation; -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none; }
     .day-cell:hover { background:#f1f1f1; } .day-cell:active { transform:scale(.96); } .day-cell.outside { opacity:.28; } .day-cell.today { border:2px solid var(--main); background:#fff4f7; } .day-cell.selected { background:var(--main); color:#fff; border-color:var(--main); }
     .day-number { font-weight:800; font-size:13px; line-height:1; margin-bottom:2px; }
     .day-plans { display:flex; flex-direction:column; gap:2px; }
@@ -3544,16 +3544,37 @@
         }).join("");
         const more=dayPlans.length>maxShow?`<div class="day-plan-more">+${dayPlans.length-maxShow}</div>`:"";
         cell.innerHTML=`<div class="day-number">${date.getDate()}</div><div class="day-plans">${planChips}${more}</div>`;
-        cell.onclick=()=>{
+        // ダブルタップ判定をtouchstartでも先回り検知（iOSの遅延を回避）
+        cell.addEventListener("touchstart", (ev) => {
           if(Date.now() < _swipeSuppressClickUntil) return;
           const now = Date.now();
           if(_lastDayTapDate === dateStr && now - _lastDayTapTime < DOUBLE_TAP_THRESHOLD_MS){
-            // ダブルタップ → 日次振り返りへ直接遷移
+            // ダブルタップ確定 → デフォルトのclickイベント抑制＆即遷移
+            ev.preventDefault();
+            _lastDayTapDate = null;
+            _lastDayTapTime = 0;
+            cell._doubleTapTriggered = true;
+            closeDateContextMenu();
+            selectedDate = dateStr;
+            _fromTodayTab = false;
+            showReview(dateStr);
+            // touchstartで処理した直後に発火するclickを抑制するフラグ
+            setTimeout(() => { cell._doubleTapTriggered = false; }, 600);
+          }
+        }, { passive: false });
+
+        cell.onclick=()=>{
+          if(Date.now() < _swipeSuppressClickUntil) return;
+          // touchstart側で既にダブルタップ処理済みなら何もしない
+          if(cell._doubleTapTriggered){ cell._doubleTapTriggered = false; return; }
+          const now = Date.now();
+          if(_lastDayTapDate === dateStr && now - _lastDayTapTime < DOUBLE_TAP_THRESHOLD_MS){
+            // ダブルタップ検出（フォールバック、PCマウスやtouchstart漏れ時）
             _lastDayTapDate = null;
             _lastDayTapTime = 0;
             closeDateContextMenu();
             selectedDate = dateStr;
-            _fromTodayTab = false; // カレンダー経由なのでスコープ切替UIは出さない
+            _fromTodayTab = false;
             showReview(dateStr);
             return;
           }
@@ -3571,7 +3592,7 @@
     // ダブルタップ検出用
     let _lastDayTapDate = null;
     let _lastDayTapTime = 0;
-    const DOUBLE_TAP_THRESHOLD_MS = 400;
+    const DOUBLE_TAP_THRESHOLD_MS = 500;
     function attachMonthSwipe(){
       if(_monthSwipeAttached) return;
       const viewport=document.getElementById("monthViewport");
