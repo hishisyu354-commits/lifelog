@@ -5445,9 +5445,10 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
               if(currentTab === "calendar"){
                 document.body.dataset.showReview = "true";
               }
-              // モバイルでは右ペインまでスクロール
+              // モバイル：カレンダータブは右ペイン（カレンダーの下）へ、その他タブは最上部（ヘッダー）へ揃える
               if(window.innerWidth <= 850){
-                scrollToRightPanelMobile();
+                if(currentTab === "calendar") scrollToRightPanelMobile();
+                else scrollToTopMobile();
               }
             }
           }
