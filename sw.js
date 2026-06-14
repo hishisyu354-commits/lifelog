@@ -1,6 +1,6 @@
-// 生活ログMVP Service Worker
+// Lifelog Service Worker
 // バージョンを上げるとキャッシュがリフレッシュされる
-const CACHE_NAME = "lifelog-mvp-v56-3";
+const CACHE_NAME = "lifelog-v57";
 const APP_SHELL = [
   "./",
   "./index.html",

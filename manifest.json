@@ -1,6 +1,6 @@
 {
-  "name": "生活ログ",
-  "short_name": "生活ログ",
+  "name": "Lifelog",
+  "short_name": "Lifelog",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
