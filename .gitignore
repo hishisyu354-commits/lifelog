@@ -1,0 +1,13 @@
+# OpenAI key (never commit)
+.openai_key
+*.key
+
+# Generated image candidates (not part of the published site)
+icon-candidates/
+
+# Python
+tools/__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
