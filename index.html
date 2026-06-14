@@ -923,6 +923,128 @@
       body[data-active-tab="calendar"]:not([data-show-review="true"]) .right-pane { display:none; }
       body[data-active-tab="calendar"][data-show-review="true"] .left-pane { display:none; }
     }
+    /* ============================================================
+       CALM EDITORIAL — デザイン刷新パイロット（上書きレイヤー）
+       対象: 共通シェル（ヘッダー/今日バー/下部ナビ/カード/ボタン/FAB）＋カレンダー画面
+       ※ 既存ルールを上書きする層。確認後、全画面へ展開＆コード統合予定。
+          丸ごと削除すれば従来デザインに戻せます。
+       ============================================================ */
+    :root {
+      --radius-xl:24px; --radius-lg:20px; --radius-md:14px; --radius-sm:10px;
+      --shadow-sm:0 1px 2px rgba(20,18,16,.05);
+      --shadow-md:0 6px 20px rgba(20,18,16,.07), 0 1px 4px rgba(20,18,16,.04);
+      --shadow-lg:0 16px 40px rgba(20,18,16,.13);
+      --ease:cubic-bezier(.2,.7,.3,1);
+    }
+    /* 既定テーマ（赤・ライト）を上質なニュートラル基調に再調整 */
+    :root,
+    body[data-theme="red-light"] {
+      --main:#8b0026; --sub:#74001f;
+      --bg:#f3f2ef; --card:#ffffff;
+      --text:#1c1a18; --muted:#8c8884;
+      --border:#ebe9e4; --soft-bg:#f7f6f3;
+      --accent:#9b1230; --accent-soft:#f7eaed; --accent-line:#ead4da;
+      --notice-bg:#fbf7ec; --notice-border:#e7dcc0;
+    }
+
+    /* --- ページ地 --- */
+    html { background:#e9e7e2; }
+    body { background:var(--bg); box-shadow:0 0 40px rgba(20,18,16,.10); }
+
+    /* --- ヘッダー：クリムゾンの帯をやめ、静かなナビバーに --- */
+    header {
+      background:var(--bg); color:var(--text);
+      border-bottom:1px solid var(--border); box-shadow:none;
+      font-size:17px; font-weight:700; letter-spacing:.01em;
+      min-height:calc(50px + var(--safe-top));
+    }
+    .header-title { font-size:17px; font-weight:700; letter-spacing:.02em; }
+    .sync-badge { background:var(--soft-bg); color:var(--muted); border:1px solid var(--border); font-weight:600; }
+    .sync-badge-busy { background:var(--soft-bg); }
+    .sync-badge-ok { background:var(--accent-soft); color:var(--accent); border-color:var(--accent-line); }
+    .sync-badge-err { background:#fbe9e7; color:#c0392b; border-color:#f3c9c2; }
+
+    /* --- 今日バー：色帯をやめ、静かなサブテキストに --- */
+    .today-bar {
+      background:transparent; color:var(--muted);
+      font-size:12.5px; font-weight:600; letter-spacing:.02em;
+      padding:9px max(16px,var(--safe-right)) 2px max(16px,var(--safe-left));
+    }
+
+    /* --- カード／見出し --- */
+    .card { background:var(--card); border:none; border-radius:var(--radius-lg); box-shadow:var(--shadow-md); padding:20px; }
+    h2 { font-size:19px; font-weight:800; letter-spacing:.01em; }
+    .empty { background:var(--soft-bg); color:var(--muted); border-radius:var(--radius-md); }
+    .notice { background:var(--notice-bg); border-left:4px solid var(--notice-border); border-radius:var(--radius-md); }
+
+    /* --- ボタン洗練 --- */
+    button { border-radius:var(--radius-md); font-weight:700; letter-spacing:.01em; }
+    button.light { background:var(--soft-bg); color:var(--text); border:1px solid var(--border); }
+    button.light:active { background:var(--border); }
+
+    /* --- 下部ナビ：ペーパー＋ブラー＋線アイコン --- */
+    .bottom-nav {
+      background:var(--card);
+      background:color-mix(in srgb, var(--card) 86%, transparent);
+      -webkit-backdrop-filter:saturate(180%) blur(20px);
+      backdrop-filter:saturate(180%) blur(20px);
+      border-top:1px solid var(--border); box-shadow:none;
+    }
+    .nav-tab { color:var(--muted); opacity:1; gap:5px; font-weight:600; }
+    .nav-tab::before { display:none !important; }
+    .nav-icon { font-size:0; }
+    .nav-tab .nav-icon svg {
+      width:25px; height:25px; display:block;
+      fill:none; stroke:currentColor; stroke-width:1.7;
+      stroke-linecap:round; stroke-linejoin:round;
+      transition:stroke .15s, transform .12s var(--ease);
+    }
+    .nav-label { font-size:10.5px; letter-spacing:.02em; font-weight:600; }
+    .nav-tab.active { color:var(--accent); opacity:1; }
+    .nav-tab:active { transform:none; opacity:1; }
+    .nav-tab:active .nav-icon svg { transform:scale(.86); }
+
+    /* --- カレンダー画面 --- */
+    .view-toggle-row { margin-bottom:14px; }
+    .toggle-view-btn {
+      background:var(--soft-bg); color:var(--accent);
+      border:1px solid var(--border); border-radius:999px;
+      font-weight:700; font-size:13px; padding:9px 16px;
+    }
+    .toggle-view-btn:active { background:var(--border); }
+    .calendar-header { margin-bottom:14px; }
+    .calendar-title { font-size:25px; font-weight:800; letter-spacing:-.01em; }
+    .today-jump-btn {
+      background:var(--accent-soft); color:var(--accent);
+      border:1px solid var(--accent-line); border-radius:999px;
+      font-weight:700; padding:7px 16px; min-height:34px;
+    }
+    .weekday-row { gap:4px; margin-bottom:8px; }
+    .weekday { font-size:11px; font-weight:700; color:var(--muted); letter-spacing:.05em; }
+    .month-page { gap:4px; }
+    .day-cell {
+      background:var(--soft-bg); border:none; border-radius:12px;
+      min-height:78px; padding:6px 5px;
+      transition:background .15s var(--ease), transform .08s;
+    }
+    .day-cell:hover { background:var(--border); }
+    .day-cell:active { transform:scale(.96); }
+    .day-cell.outside { opacity:.32; }
+    .day-cell.today { border:none; background:var(--accent-soft); }
+    .day-cell.today .day-number {
+      display:inline-flex; align-items:center; justify-content:center;
+      min-width:21px; height:21px; padding:0 5px; margin-bottom:3px;
+      background:var(--main); color:#fff; border-radius:999px;
+    }
+    .day-cell.selected { background:var(--main); border:none; box-shadow:var(--shadow-md); }
+    .day-cell.selected.today .day-number { background:#fff; color:var(--main); }
+    .day-number { font-size:13px; font-weight:700; }
+    .day-plan-chip { border-radius:6px; padding:2px 6px; font-size:10px; font-weight:600; }
+    .day-plan-more { font-size:9px; color:var(--muted); font-weight:600; }
+
+    /* --- FAB --- */
+    .fab { box-shadow:0 8px 22px rgba(139,0,38,.32); }
+    .fab-menu { border-radius:18px; box-shadow:var(--shadow-lg); border:1px solid var(--border); }
   </style>
 </head>
 <body>
@@ -1043,23 +1165,23 @@
 
   <nav class="bottom-nav" id="bottomNav">
     <button class="nav-tab active" data-tab="calendar" onclick="switchTab('calendar')">
-      <span class="nav-icon">📅</span>
+      <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16" rx="3.2"/><path d="M3 9.2h18"/><path d="M8 2.6v3.6"/><path d="M16 2.6v3.6"/></svg></span>
       <span class="nav-label">カレンダー</span>
     </button>
     <button class="nav-tab" data-tab="today" onclick="switchTab('today')">
-      <span class="nav-icon">🎯</span>
+      <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.4"/><circle cx="12" cy="12" r="3.4"/></svg></span>
       <span class="nav-label">振り返り</span>
     </button>
     <button class="nav-tab" data-tab="trend" onclick="switchTab('trend')">
-      <span class="nav-icon">📊</span>
+      <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4v16h16"/><path d="M7.5 14.5l3.4-4 3 2.4 4.6-6"/></svg></span>
       <span class="nav-label">推移</span>
     </button>
     <button class="nav-tab" data-tab="record" onclick="switchTab('record')">
-      <span class="nav-icon">✏️</span>
+      <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l.9-3.6a2 2 0 0 1 .53-.95L16.4 4.46a1.6 1.6 0 0 1 2.26 0l.88.88a1.6 1.6 0 0 1 0 2.26L8.55 18.57a2 2 0 0 1-.95.53L4 20z"/><path d="M14.3 6.6l3.1 3.1"/></svg></span>
       <span class="nav-label">記録</span>
     </button>
     <button class="nav-tab" data-tab="menu" onclick="switchTab('menu')">
-      <span class="nav-icon">☰</span>
+      <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg></span>
       <span class="nav-label">メニュー</span>
     </button>
   </nav>
