@@ -4560,7 +4560,11 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
           }
           _lastDayTapDate = dateStr;
           _lastDayTapTime = now;
-          openDateContextMenu(dateStr, cell);
+          // シングルタップ＝その日付を選択するだけ（ポップアップは出さない）。ダブルタップで振り返りへ。
+          selectedDate = dateStr;
+          document.querySelectorAll('.month-page .day-cell.selected').forEach(c => c.classList.remove('selected'));
+          cell.classList.add('selected');
+          renderDayHome(dateStr);
         };
         pageEl.appendChild(cell);
       }
