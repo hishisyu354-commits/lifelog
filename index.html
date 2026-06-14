@@ -4545,10 +4545,14 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
       const cats = loadCategories();
       const byId = id => cats.find(c=>c.id===id) || cats[0];
       const valid = logs.map(logWithMinutes).filter(l=>l.duration>0);
-      const mins = new Array(1440).fill("#ebe8e3");
-      valid.forEach(l=>{ for(let i=Math.max(0,l.startMin);i<Math.min(1440,l.endMin);i++) mins[i]=l.color; });
-      let segs=[], cur=mins[0], st=0;
-      for(let i=1;i<=1440;i++){ if(i===1440||mins[i]!==cur){ segs.push(`${cur} ${(st/1440*360).toFixed(2)}deg ${(i/1440*360).toFixed(2)}deg`); cur=mins[i]; st=i; } }
+      // 充填率リング：12時位置(上)から時計回りに記録済み分を連続で充填。カテゴリ別に色分け、残りはグレー。
+      // （時刻対応の24hリングは振り返り画面にあるためここでは使わない）
+      const ringParts = Object.values(valid.reduce((acc,l)=>{ const k=l.categoryId||"none"; (acc[k]=acc[k]||{color:l.color,mn:0}).mn+=l.duration; return acc; },{})).sort((a,b)=>b.mn-a.mn);
+      const ringTotal = ringParts.reduce((s,p)=>s+p.mn,0);
+      const ringDenom = Math.max(1440, ringTotal);
+      let segs=[], _acc=0;
+      ringParts.forEach(p=>{ segs.push(`${p.color} ${(_acc/ringDenom*360).toFixed(2)}deg ${((_acc+p.mn)/ringDenom*360).toFixed(2)}deg`); _acc+=p.mn; });
+      if(_acc < ringDenom) segs.push(`#ebe8e3 ${(_acc/ringDenom*360).toFixed(2)}deg 360deg`);
       const fr = calculateFillRate(date);
       const total = fr.totalMinutes;
       const centerVal = total<60 ? `${total}` : (total%60===0 ? `${total/60}` : (total/60).toFixed(1));
