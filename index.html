@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="生活ログ" />
@@ -2040,6 +2040,10 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
     let stopwatchInterval = null;
 
     function todayString(){ const d=new Date(); return toDateString(d); }
+    // 衝突しない一意ID（Date.now()は同一msで衝突しデータ消失の原因になる）
+    function newId(){ return (typeof crypto!=="undefined" && crypto.randomUUID) ? crypto.randomUUID() : (Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,10)); }
+    // タグチップ用：data-tag を読んで検索（onclickに生のタグ文字列を埋め込まない）
+    function openTag(el){ if(el && el.dataset) showReflectionNotebook(el.dataset.tag||""); }
     function toDateString(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
     function formatDateJapanese(s){ const d=new Date(s+"T00:00:00"); const w=["日","月","火","水","木","金","土"][d.getDay()]; const [,m,day]=s.split("-"); return `${Number(m)}月${Number(day)}日（${w}）`; }
     function formatTime(d){ return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`; }
@@ -2119,14 +2123,15 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
       const logs = loadLogs();
 
       logs.push({
-        id: Date.now(),
+        id: newId(),
         date: toDateString(startObj),
         type: "actual",
         text: "無題",
         start: formatTime(startObj),
         end: formatTime(endObj),
         categoryId: "none",
-        detail: ""
+        detail: "",
+        updatedAt: new Date().toISOString()
       });
 
       saveLogs(logs);
@@ -2217,22 +2222,6 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
       }
       // calendar / today / その他 → カレンダーへ
       switchTab("calendar");
-    }
-
-    // 記録タブ：予定/行動/SWへの導線をreviewScreenに表示
-    function showRecordMenu(){
-      hideRightPanels();
-      const r = document.getElementById("reviewScreen");
-      r.style.display = "block";
-      r.innerHTML = `
-        <h2>記録する</h2>
-        <p class="small">今からの予定、過去にやった行動、または計測中の行動を記録できます。</p>
-        <div class="menu" style="margin-top:14px;">
-          <button class="green" onclick="showActualForm()">✓ 行動を追加</button>
-          <button onclick="showStopwatch()">● ストップウォッチで記録</button>
-          <button class="blue" onclick="showPlanForm()">＋ 予定を追加</button>
-        </div>
-      `;
     }
 
     // 保存・キャンセル後の戻り先を、現在のタブ/ビューに応じて決定する
@@ -2650,7 +2639,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
             else if(rule==="weekday") m=(wd>=1&&wd<=5);
             else if(rule==="weekly") m=(wd===dow);
             else if(rule==="monthly") m=(d.getDate()===dom);
-            if(m){ entries.push({id:Date.now()+n, date:toDateString(d), type:"plan", text, start, end, categoryId, detail:"", repeat:true, repeatGroupId:groupId, updatedAt:new Date().toISOString()}); n++; }
+            if(m){ entries.push({id:newId(), date:toDateString(d), type:"plan", text, start, end, categoryId, detail:"", repeat:true, repeatGroupId:groupId, updatedAt:new Date().toISOString()}); n++; }
           }
           if(!entries.length){ alert("繰り返し対象の日がありません"); return; }
           const logs2=loadLogs(); logs2.push(...entries); saveLogs(logs2); selectedDate=date; currentCalendarDate=new Date(date+"T00:00:00");
@@ -2659,7 +2648,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
           return;
         }
       }
-      const logs=loadLogs(); logs.push({id:Date.now(), date, type, text, start, end, categoryId, detail:"", updatedAt:new Date().toISOString()}); saveLogs(logs); selectedDate=date; currentCalendarDate=new Date(date+"T00:00:00");
+      const logs=loadLogs(); logs.push({id:newId(), date, type, text, start, end, categoryId, detail:"", updatedAt:new Date().toISOString()}); saveLogs(logs); selectedDate=date; currentCalendarDate=new Date(date+"T00:00:00");
       showSaveToast(type==="plan" ? "予定を保存しました" : "行動を保存しました");
       navigateAfterSave(date);
     }
@@ -2678,17 +2667,6 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
       toast._hideTimer = setTimeout(() => toast.classList.remove("visible"), duration);
     }
 
-    function showRepeatForm(){
-      hideRightPanels(); const f=document.getElementById("formScreen"); f.style.display="block";
-      f.innerHTML=`<h2>繰り返し予定の登録</h2><label>予定名</label><textarea id="repeatText" placeholder="例：授業、バイト、ジム"></textarea><label>カテゴリ</label><div class="category-row"><select id="repeatCategory">${categoryOptions()}</select><button class="mini-button" onclick="addCategory('repeatCategory')">追加</button><button class="mini-button danger" onclick="deleteSelectedCategory('repeatCategory')">削除</button></div><div class="row"><div><label>開始時刻</label><input id="repeatStartTime" type="time"></div><div><label>終了時刻</label><input id="repeatEndTime" type="time"></div></div><div class="row"><div><label>開始日</label><input id="repeatStartDate" type="date" value="${todayString()}"></div><div><label>終了日</label><input id="repeatEndDate" type="date" value="${todayString()}"></div></div><label>繰り返す曜日</label><div class="weekday-picker">${["日","月","火","水","木","金","土"].map((w,i)=>`<label class="weekday-cell"><input type="checkbox" name="repeatWeekday" value="${i}" onchange="this.parentElement.classList.toggle('checked', this.checked)"><span>${w}</span></label>`).join("")}</div><div class="actions"><button onclick="saveRepeatedPlans()">繰り返し予定を作成</button><button class="light" onclick="showMenu()">戻る</button></div>`;
-    }
-    function saveRepeatedPlans(){
-      const text=repeatText.value.trim(), categoryId=repeatCategory.value, start=repeatStartTime.value, end=repeatEndTime.value, startDate=repeatStartDate.value, endDate=repeatEndDate.value;
-      const weekdays=Array.from(document.querySelectorAll('input[name="repeatWeekday"]:checked')).map(x=>Number(x.value));
-      if(!text||!start||!end||!startDate||!endDate||!weekdays.length){ alert("未入力の項目があります"); return; } if(end<=start||endDate<startDate){ alert("時間か日付の指定が不正です"); return; }
-      const logs=loadLogs(); let count=0; for(let d=new Date(startDate+"T00:00:00"), last=new Date(endDate+"T00:00:00"); d<=last; d.setDate(d.getDate()+1)){ if(weekdays.includes(d.getDay())){ logs.push({id:Date.now()+count,date:toDateString(d),type:"plan",text,start,end,categoryId,detail:"",repeat:true}); count++; } }
-      saveLogs(logs); alert(`${count}件の繰り返し予定を作成しました`); showReview(startDate);
-    }
 
     function loadRunningStopwatch(){ return loadJSON(STOPWATCH_KEY, null); }
     function saveRunningStopwatch(data){ saveJSON(STOPWATCH_KEY, data); }
@@ -2751,7 +2729,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
       const text=swText.value.trim(), categoryId=swCategory.value;
       if(!text){ alert("内容を入力して！"); return; }
       const logs=loadLogs();
-      logs.push({id:Date.now(),date,type:"actual",text,start,end,categoryId,detail:""});
+      logs.push({id:newId(),date,type:"actual",text,start,end,categoryId,detail:"",updatedAt:new Date().toISOString()});
       saveLogs(logs);
       clearRunningStopwatch();
       stopwatchStart=null;
@@ -3595,7 +3573,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
 
     function extractTags(text){ return [...new Set(String(text||"").replace(/\n/g," ").split(" ").filter(w=>w.startsWith("#")&&w.length>1))]; }
     function getAllTaggedLogs(){ return loadLogs().filter(l=>l.detail&&extractTags(l.detail).length).map(l=>({...l,tags:extractTags(l.detail)})).sort((a,b)=>a.date!==b.date?a.date.localeCompare(b.date):a.start.localeCompare(b.start)); }
-    function showReflectionNotebook(searchTag=""){ hideRightPanels(); closeQuickMenu(); const tagged=getAllTaggedLogs(), counts={}; tagged.forEach(l=>l.tags.forEach(t=>counts[t]=(counts[t]||0)+1)); const tags=Object.entries(counts).sort((a,b)=>b[1]-a[1]); const normalized=String(searchTag||"").trim(), target=normalized&&!normalized.startsWith("#")?"#"+normalized:normalized; const results=target?tagged.filter(l=>l.tags.includes(target)):[]; const r=document.getElementById("reviewScreen"); r.style.display="block"; let html=`<h2>振り返りノート</h2><p class="small">詳細メモの #タグ で過去の予定・行動を検索できます。</p><label>ハッシュタグ検索</label><div class="category-row"><input id="tagSearchInput" type="text" placeholder="#集中、#反省 など" value="${escapeHtml(target)}"><button class="blue" onclick="showReflectionNotebook(tagSearchInput.value)">検索</button></div>`; if(tags.length){ html+=`<div class="tag-cloud">${tags.map(([t,c])=>`<button class="tag-chip" onclick="showReflectionNotebook('${t}')">${escapeHtml(t)} ${c}</button>`).join("")}</div>`; } else html+=`<div class="empty">まだハッシュタグ付きの詳細メモがありません。</div>`; if(!target&&tags.length) html+=`<div class="empty">検索前は本文を表示しません。タグをクリックすると該当メモだけ表示します。</div>`; if(target) html+=`<div class="date-title">検索中：${escapeHtml(target)} / ${results.length}件</div>`; results.forEach(log=>{ const cat=getCategoryById(log.categoryId||"none"), label=log.type==="plan"?"予定":"行動"; html+=`<div class="notebook-result"><div class="log-meta">${formatDateJapanese(log.date)} / ${log.start}〜${log.end} / ${label}</div><div class="log-title">${escapeHtml(log.text)}</div><span class="category-pill"><span class="category-dot" style="background:${cat.color}"></span>${escapeHtml(cat.name)}</span><div class="notebook-detail">${escapeHtml(log.detail)}</div><div class="notebook-tags">${log.tags.map(t=>`<button class="tag-chip" onclick="showReflectionNotebook('${t}')">${escapeHtml(t)}</button>`).join("")}</div><div class="actions"><button class="blue" onclick="showDetail(${log.id})">詳細を編集</button><button class="light" onclick="showReview('${log.date}')">この日を見る</button></div></div>`; }); if(target&&!results.length) html+=`<div class="empty">${escapeHtml(target)} が付いた詳細メモはまだありません。</div>`; html+=`<div class="actions"><button class="light" onclick="showMenu()">戻る</button></div>`; r.innerHTML=html; }
+    function showReflectionNotebook(searchTag=""){ hideRightPanels(); closeQuickMenu(); const tagged=getAllTaggedLogs(), counts={}; tagged.forEach(l=>l.tags.forEach(t=>counts[t]=(counts[t]||0)+1)); const tags=Object.entries(counts).sort((a,b)=>b[1]-a[1]); const normalized=String(searchTag||"").trim(), target=normalized&&!normalized.startsWith("#")?"#"+normalized:normalized; const results=target?tagged.filter(l=>l.tags.includes(target)):[]; const r=document.getElementById("reviewScreen"); r.style.display="block"; let html=`<h2>振り返りノート</h2><p class="small">詳細メモの #タグ で過去の予定・行動を検索できます。</p><label>ハッシュタグ検索</label><div class="category-row"><input id="tagSearchInput" type="text" placeholder="#集中、#反省 など" value="${escapeHtml(target)}"><button class="blue" onclick="showReflectionNotebook(tagSearchInput.value)">検索</button></div>`; if(tags.length){ html+=`<div class="tag-cloud">${tags.map(([t,c])=>`<button class="tag-chip" data-tag="${escapeHtml(t)}" onclick="openTag(this)">${escapeHtml(t)} ${c}</button>`).join("")}</div>`; } else html+=`<div class="empty">まだハッシュタグ付きの詳細メモがありません。</div>`; if(!target&&tags.length) html+=`<div class="empty">検索前は本文を表示しません。タグをクリックすると該当メモだけ表示します。</div>`; if(target) html+=`<div class="date-title">検索中：${escapeHtml(target)} / ${results.length}件</div>`; results.forEach(log=>{ const cat=getCategoryById(log.categoryId||"none"), label=log.type==="plan"?"予定":"行動"; html+=`<div class="notebook-result"><div class="log-meta">${formatDateJapanese(log.date)} / ${log.start}〜${log.end} / ${label}</div><div class="log-title">${escapeHtml(log.text)}</div><span class="category-pill"><span class="category-dot" style="background:${cat.color}"></span>${escapeHtml(cat.name)}</span><div class="notebook-detail">${escapeHtml(log.detail)}</div><div class="notebook-tags">${log.tags.map(t=>`<button class="tag-chip" data-tag="${escapeHtml(t)}" onclick="openTag(this)">${escapeHtml(t)}</button>`).join("")}</div><div class="actions"><button class="blue" onclick="showDetail(${log.id})">詳細を編集</button><button class="light" onclick="showReview('${log.date}')">この日を見る</button></div></div>`; }); if(target&&!results.length) html+=`<div class="empty">${escapeHtml(target)} が付いた詳細メモはまだありません。</div>`; html+=`<div class="actions"><button class="light" onclick="showMenu()">戻る</button></div>`; r.innerHTML=html; }
 
     // ============================================================
     // やめたことログ（独立した記録領域）
@@ -3656,7 +3634,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
         const idx = list.findIndex(q=>q.id===id);
         if(idx>=0) list[idx] = { ...list[idx], text, startedDate, quitDate, reason, updatedAt:new Date().toISOString() };
       } else {
-        list.push({ id:Date.now(), text, startedDate, quitDate, reason, updatedAt:new Date().toISOString() });
+        list.push({ id:newId(), text, startedDate, quitDate, reason, updatedAt:new Date().toISOString() });
       }
       saveQuitList(list);
       showSaveToast("やめたことを記録しました");
@@ -3954,7 +3932,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
         });
       }
       if(topTags.length){
-        html += `<h3 class="menu-section-title">よく使ったハッシュタグ</h3><div class="tag-cloud">${topTags.map(([t,c])=>`<button class="tag-chip" onclick="showReflectionNotebook('${t}')">${escapeHtml(t)} ${c}</button>`).join("")}</div>`;
+        html += `<h3 class="menu-section-title">よく使ったハッシュタグ</h3><div class="tag-cloud">${topTags.map(([t,c])=>`<button class="tag-chip" data-tag="${escapeHtml(t)}" onclick="openTag(this)">${escapeHtml(t)} ${c}</button>`).join("")}</div>`;
       }
       if(!planCount && !actualCount && !avgScore && !topTags.length){
         html += `<div class="empty">この週はまだ記録がありません。</div>`;
@@ -4104,7 +4082,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
       }
 
       if(topTags.length){
-        html += `<h3 class="menu-section-title">よく使ったハッシュタグ</h3><div class="tag-cloud">${topTags.map(([t,c])=>`<button class="tag-chip" onclick="showReflectionNotebook('${t}')">${escapeHtml(t)} ${c}</button>`).join("")}</div>`;
+        html += `<h3 class="menu-section-title">よく使ったハッシュタグ</h3><div class="tag-cloud">${topTags.map(([t,c])=>`<button class="tag-chip" data-tag="${escapeHtml(t)}" onclick="openTag(this)">${escapeHtml(t)} ${c}</button>`).join("")}</div>`;
       }
 
       if(quitItems.length){
@@ -4486,8 +4464,6 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
         }, "削除");
       }, "次へ");
     }
-    function exportData(){ const data={version:1,exportedAt:new Date().toISOString(),logs:loadLogs(),categories:loadCategories(),frequentPlans:loadFrequentPlans(),frequentTags:loadFrequentTags(),summaries:loadDailySummaries()}; const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=`daily-log-backup-${todayString()}.json`; a.click(); URL.revokeObjectURL(url); }
-    function importData(e){ const file=e.target.files[0]; if(!file) return; const reader=new FileReader(); reader.onload=ev=>{ try{ const data=JSON.parse(ev.target.result); if(!Array.isArray(data.logs)){ alert("ログデータが見つかりません"); return; } if(!confirm("現在のデータを上書きします。実行しますか？")) return; saveLogs(data.logs); if(Array.isArray(data.categories)) saveCategories(data.categories); if(Array.isArray(data.frequentPlans)) saveFrequentPlans(data.frequentPlans); if(Array.isArray(data.frequentTags)) saveFrequentTags(data.frequentTags); if(Array.isArray(data.summaries)) saveDailySummaries(data.summaries); alert("読み込み完了"); showMenu(); }catch{ alert("読み込みに失敗しました"); } }; reader.readAsText(file); }
 
     let calendarViewMode = "month"; // "month" or "week"
 
@@ -5011,7 +4987,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
     function loginGcal(){
       const client = initGcalTokenClient();
       if(!client){
-        alert("クライアントIDが未設定、またはGoogleライブラリがまだ読み込まれていません。少し時間を置いて再度お試しください。");
+        alert("Google連携にはインターネット接続が必要です。オフラインの場合は接続してから、オンラインなら少し時間を置いて再度お試しください。");
         return;
       }
       client.requestAccessToken();
@@ -5404,13 +5380,27 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
       _syncDebounceTimer = setTimeout(async () => {
         setSyncStatus("syncing");
         try {
-          const local = collectAllLocalData();
+          let local = collectAllLocalData();
           if(!_driveFileId){
             const file = await driveListSyncFile();
             if(file) _driveFileId = file.id;
           }
           if(_driveFileId){
-            await driveUploadSyncFile(_driveFileId, local);
+            // 競合安全：アップロード前にリモートを取得してマージし、その結果を書き戻す
+            let uploadData = local;
+            try {
+              const remote = await driveDownloadSyncFile(_driveFileId);
+              const merged = mergeAllData(local, remote);
+              applyAllLocalData(merged); // 取り込み中は _suppressSyncTrigger で再同期を抑止
+              uploadData = merged;
+            } catch(mergeErr){ console.warn("pre-sync merge skipped:", mergeErr); }
+            await driveUploadSyncFile(_driveFileId, uploadData);
+            // リモート側の新しい変更を取り込んだ場合に備えて受動的に再描画
+            try {
+              const tab = document.body.dataset.activeTab || "calendar";
+              if(tab === "calendar") renderCalendar();
+              else if(tab === "today" && typeof updateTodayBar === "function") updateTodayBar();
+            } catch(_) {}
           } else {
             const created = await driveUploadSyncFile(null, local);
             _driveFileId = created.id;
