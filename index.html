@@ -1847,6 +1847,19 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
     .peek-text{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .peek-empty{ font-size:11.5px; color:var(--muted); padding:2px 0; }
     .peek-more{ font-size:10.5px; color:var(--text-3); font-weight:600; padding-top:4px; }
+    /* ============================================================
+       ヒーローの高さを固定（タップしてもカレンダー位置がズレないように）
+       ============================================================ */
+    #dayHero{ height:184px; overflow:hidden; align-content:center; }
+    #dayHero .hero-ring{ width:clamp(118px,32vw,138px); height:clamp(118px,32vw,138px); }
+    #dayHero .hero-recorded{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    /* 狭幅でも縦積みにしない（縦積みだと高さが変動するため）。常に横並びで一定高に */
+    @media (max-width:412px){
+      #dayHero{ grid-template-columns:auto 1fr; row-gap:0; justify-items:stretch; text-align:left; height:184px; }
+      #dayHero .hero-stats{ width:auto; align-items:stretch; }
+      #dayHero .hero-date{ justify-content:flex-start; }
+      #dayHero .hero-legend{ align-items:stretch; }
+    }
   </style>
 </head>
 <body>
@@ -2268,7 +2281,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
     function showDayPeek(dateStr, cell){
       closeDayPeek();
       if(!cell) return;
-      const logs = getDayLogs(dateStr);
+      const logs = getDayLogs(dateStr).filter(l => l.type === "plan");
       const d = new Date(dateStr + "T00:00:00");
       const dow = ["日","月","火","水","木","金","土"][d.getDay()];
       const cats = loadCategories(), byId = id => cats.find(c => c.id === id) || cats[0];
@@ -2279,8 +2292,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
       } else {
         rows = logs.slice(0, maxShow).map(l => {
           const cat = byId(l.categoryId || "none");
-          const cls = l.type === "plan" ? "peek-dot plan" : "peek-dot";
-          return `<div class="peek-row"><span class="${cls}" style="--pc:${cat.color}"></span><span class="peek-time">${l.start}</span><span class="peek-text">${escapeHtml(l.text || (l.type === "plan" ? "予定" : "行動"))}</span></div>`;
+          return `<div class="peek-row"><span class="peek-dot" style="--pc:${cat.color}"></span><span class="peek-time">${l.start}</span><span class="peek-text">${escapeHtml(l.text || "予定")}</span></div>`;
         }).join("");
         if(logs.length > maxShow) rows += `<div class="peek-more">ほか${logs.length - maxShow}件</div>`;
       }
@@ -4543,7 +4555,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
       const centerUnit = total<60 ? "分" : "時間";
       const catMin = {};
       valid.forEach(l=>{ const k=l.categoryId||"none"; catMin[k]=(catMin[k]||0)+l.duration; });
-      const top = Object.entries(catMin).map(([id,mn])=>({c:byId(id),m:mn})).sort((a,b)=>b.m-a.m).slice(0,3);
+      const top = Object.entries(catMin).map(([id,mn])=>({c:byId(id),m:mn})).sort((a,b)=>b.m-a.m).slice(0,2);
       const legend = top.map(t=>`<div class="legend-row"><span class="lg-dot" style="background:${t.c.color}"></span><span class="lg-name">${escapeHtml(t.c.name)}</span><span class="lg-time">${minutesToHourText(t.m)}</span></div>`).join("");
 
       heroEl.className = "is-tappable";
