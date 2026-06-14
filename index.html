@@ -1826,6 +1826,27 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
   .week-event { border-radius:8px; padding:2px 4px; }
 }
 
+    /* ============================================================
+       選択セルの赤枠（タップで移動）＋ 日付プレビュー小窓
+       ============================================================ */
+    /* 今日は丸ディスクのみ（旧CSSの2px枠の漏れを打ち消す） */
+    .day-cell.today { border:none; border-top:1px solid var(--hairline); background:transparent; }
+    /* 選択＝タップ位置に移動する赤枠チップ */
+    .day-cell.selected { background:var(--accent-soft); border-top-color:transparent; border-radius:10px; box-shadow:inset 0 0 0 2px var(--accent); }
+    .day-cell.selected .day-number { box-shadow:none; color:var(--accent); }
+    .day-cell.selected.today .day-number { background:var(--main); color:#fff !important; box-shadow:none; }
+
+    /* 日付プレビュー小窓（PC右クリック風・画面ロックなし） */
+    .day-peek{ position:fixed; z-index:150; background:var(--card); border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow-lg); padding:8px 10px; min-width:138px; max-width:210px; opacity:0; transform:scale(.96); transform-origin:top left; transition:opacity .12s var(--ease), transform .12s var(--ease); }
+    .day-peek.show{ opacity:1; transform:scale(1); }
+    .peek-head{ font-size:11.5px; font-weight:800; color:var(--accent); margin-bottom:6px; padding-bottom:5px; border-bottom:1px solid var(--hairline); }
+    .peek-row{ display:flex; align-items:center; gap:7px; padding:3px 0; font-size:11.5px; color:var(--text); }
+    .peek-dot{ width:7px; height:7px; border-radius:50%; flex:0 0 auto; background:var(--pc, var(--muted)); }
+    .peek-dot.plan{ background:transparent; box-shadow:inset 0 0 0 1.4px var(--pc, var(--muted)); }
+    .peek-time{ color:var(--muted); font-variant-numeric:tabular-nums; font-weight:700; flex:0 0 auto; }
+    .peek-text{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .peek-empty{ font-size:11.5px; color:var(--muted); padding:2px 0; }
+    .peek-more{ font-size:10.5px; color:var(--text-3); font-weight:600; padding-top:4px; }
   </style>
 </head>
 <body>
@@ -2236,6 +2257,56 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
     }
 
     // 月間カレンダーの日付タップ → 3択アクションシート
+    // 日付プレビュー小窓（PC右クリック風）。画面ロックなし：外側pointerdown/スクロールで閉じ、別日タップは1タップで選択。
+    let _dayPeekDismiss = null, _dayPeekScroll = null;
+    function closeDayPeek(){
+      const p = document.getElementById("dayPeek");
+      if(p) p.remove();
+      if(_dayPeekDismiss){ document.removeEventListener("pointerdown", _dayPeekDismiss, true); _dayPeekDismiss = null; }
+      if(_dayPeekScroll){ window.removeEventListener("scroll", _dayPeekScroll, true); _dayPeekScroll = null; }
+    }
+    function showDayPeek(dateStr, cell){
+      closeDayPeek();
+      if(!cell) return;
+      const logs = getDayLogs(dateStr);
+      const d = new Date(dateStr + "T00:00:00");
+      const dow = ["日","月","火","水","木","金","土"][d.getDay()];
+      const cats = loadCategories(), byId = id => cats.find(c => c.id === id) || cats[0];
+      const maxShow = 5;
+      let rows;
+      if(!logs.length){
+        rows = `<div class="peek-empty">予定なし</div>`;
+      } else {
+        rows = logs.slice(0, maxShow).map(l => {
+          const cat = byId(l.categoryId || "none");
+          const cls = l.type === "plan" ? "peek-dot plan" : "peek-dot";
+          return `<div class="peek-row"><span class="${cls}" style="--pc:${cat.color}"></span><span class="peek-time">${l.start}</span><span class="peek-text">${escapeHtml(l.text || (l.type === "plan" ? "予定" : "行動"))}</span></div>`;
+        }).join("");
+        if(logs.length > maxShow) rows += `<div class="peek-more">ほか${logs.length - maxShow}件</div>`;
+      }
+      const peek = document.createElement("div");
+      peek.id = "dayPeek"; peek.className = "day-peek";
+      peek.innerHTML = `<div class="peek-head">${d.getMonth()+1}月${d.getDate()}日（${dow}）</div>${rows}`;
+      document.body.appendChild(peek);
+      // 位置：タップしたセルの近く（はみ出しはクランプ）。cellは再描画されず生きているので座標は正確。
+      const rect = cell.getBoundingClientRect();
+      const pw = peek.offsetWidth || 180, ph = peek.offsetHeight || 120;
+      const vw = window.innerWidth, vh = window.innerHeight;
+      let left = rect.left, top = rect.bottom + 6;
+      if(left + pw > vw - 8) left = vw - pw - 8;
+      if(left < 8) left = 8;
+      if(top + ph > vh - 8) top = rect.top - ph - 6;
+      if(top < 8) top = 8;
+      peek.style.left = left + "px"; peek.style.top = top + "px";
+      requestAnimationFrame(() => peek.classList.add("show"));
+      // 画面ロックなしで閉じる：小窓外の pointerdown / スクロールで閉じる（別日タップはそのまま選択される）
+      _dayPeekDismiss = (e) => { if(!peek.contains(e.target)) closeDayPeek(); };
+      _dayPeekScroll = () => closeDayPeek();
+      setTimeout(() => {
+        document.addEventListener("pointerdown", _dayPeekDismiss, true);
+        window.addEventListener("scroll", _dayPeekScroll, true);
+      }, 0);
+    }
     function openDateContextMenu(date, anchorEl){
       closeDateContextMenu();
       selectedDate = date;
@@ -4534,7 +4605,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
             _lastDayTapDate = null;
             _lastDayTapTime = 0;
             cell._doubleTapTriggered = true;
-            closeDateContextMenu();
+            closeDateContextMenu(); closeDayPeek();
             selectedDate = dateStr;
             _fromTodayTab = false;
             showReview(dateStr);
@@ -4552,7 +4623,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
             // ダブルタップ検出（フォールバック、PCマウスやtouchstart漏れ時）
             _lastDayTapDate = null;
             _lastDayTapTime = 0;
-            closeDateContextMenu();
+            closeDateContextMenu(); closeDayPeek();
             selectedDate = dateStr;
             _fromTodayTab = false;
             showReview(dateStr);
@@ -4560,11 +4631,12 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
           }
           _lastDayTapDate = dateStr;
           _lastDayTapTime = now;
-          // シングルタップ＝その日付を選択するだけ（ポップアップは出さない）。ダブルタップで振り返りへ。
+          // シングルタップ＝その日付を選択し、近くに小窓でその日の予定をプレビュー。ダブルタップで振り返りへ。
           selectedDate = dateStr;
           document.querySelectorAll('.month-page .day-cell.selected').forEach(c => c.classList.remove('selected'));
           cell.classList.add('selected');
           renderDayHome(dateStr);
+          showDayPeek(dateStr, cell);
         };
         pageEl.appendChild(cell);
       }
