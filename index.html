@@ -1004,47 +1004,229 @@
     .nav-tab:active { transform:none; opacity:1; }
     .nav-tab:active .nav-icon svg { transform:scale(.86); }
 
-    /* --- カレンダー画面 --- */
-    .view-toggle-row { margin-bottom:14px; }
-    .toggle-view-btn {
-      background:var(--soft-bg); color:var(--accent);
-      border:1px solid var(--border); border-radius:999px;
-      font-weight:700; font-size:13px; padding:9px 16px;
-    }
-    .toggle-view-btn:active { background:var(--border); }
-    .calendar-header { margin-bottom:14px; }
-    .calendar-title { font-size:25px; font-weight:800; letter-spacing:-.01em; }
-    .today-jump-btn {
-      background:var(--accent-soft); color:var(--accent);
-      border:1px solid var(--accent-line); border-radius:999px;
-      font-weight:700; padding:7px 16px; min-height:34px;
-    }
-    .weekday-row { gap:4px; margin-bottom:8px; }
-    .weekday { font-size:11px; font-weight:700; color:var(--muted); letter-spacing:.05em; }
-    .month-page { gap:4px; }
-    .day-cell {
-      background:var(--soft-bg); border:none; border-radius:12px;
-      min-height:78px; padding:6px 5px;
-      transition:background .15s var(--ease), transform .08s;
-    }
-    .day-cell:hover { background:var(--border); }
-    .day-cell:active { transform:scale(.96); }
-    .day-cell.outside { opacity:.32; }
-    .day-cell.today { border:none; background:var(--accent-soft); }
-    .day-cell.today .day-number {
-      display:inline-flex; align-items:center; justify-content:center;
-      min-width:21px; height:21px; padding:0 5px; margin-bottom:3px;
-      background:var(--main); color:#fff; border-radius:999px;
-    }
-    .day-cell.selected { background:var(--main); border:none; box-shadow:var(--shadow-md); }
-    .day-cell.selected.today .day-number { background:#fff; color:var(--main); }
-    .day-number { font-size:13px; font-weight:700; }
-    .day-plan-chip { border-radius:6px; padding:2px 6px; font-size:10px; font-weight:600; }
-    .day-plan-more { font-size:9px; color:var(--muted); font-weight:600; }
+/* ============================================================
+   TODAY RING + LIVING AGENDA — final home redesign
+   (extends the CALM EDITORIAL override layer: new craft tokens,
+   per-theme accents, 24h-ring hero, hairline month grid, day agenda)
+   ============================================================ */
 
-    /* --- FAB --- */
-    .fab { box-shadow:0 8px 22px rgba(139,0,38,.32); }
-    .fab-menu { border-radius:18px; box-shadow:var(--shadow-lg); border:1px solid var(--border); }
+/* --- New craft tokens (extend :root; safe, additive) --- */
+:root{
+  --hairline:rgba(28,26,24,.08);        /* Notion-grade 8% hairline, never #ccc */
+  --hairline-strong:rgba(28,26,24,.14);
+  --text-2:rgba(28,26,24,.55);          /* secondary tier */
+  --text-3:rgba(28,26,24,.34);          /* tertiary tier */
+  --sun:#bd5b67; --sat:#6981a8;
+  --dot-empty:rgba(28,26,24,.13);
+}
+/* Accent tokens for the other 7 themes (only red-light defined them at theme
+   level). Mirrors the red-light values, tinted per palette so the hero ring
+   center figure, meter, today disc, and CTA never fall back to unset. */
+body[data-theme="blue-light"] { --accent:#1f5fa8; --accent-soft:#eaf1fb; --accent-line:#cfe0f3; }
+body[data-theme="green-light"]{ --accent:#1e7a48; --accent-soft:#e9f6ee; --accent-line:#cfe9d8; }
+body[data-theme="mono-light"] { --accent:#2b2b2b; --accent-soft:#efefef; --accent-line:#dcdcdc; }
+body[data-theme="red-dark"]   { --accent:#e0668a; --accent-soft:#2a1820; --accent-line:#4a2230; }
+body[data-theme="blue-dark"]  { --accent:#5ea0e6; --accent-soft:#152333; --accent-line:#244055; }
+body[data-theme="green-dark"] { --accent:#56c98a; --accent-soft:#13261b; --accent-line:#214733; }
+body[data-theme="mono-dark"]  { --accent:#d6d6d6; --accent-soft:#1e1e1e; --accent-line:#3a3a3a; }
+
+/* ============================================================
+   1) TODAY HERO — the 24h ring as the brand hero, bound to selectedDate
+   ============================================================ */
+#dayHero{
+  position:relative; margin:2px 0 18px; padding:18px 18px 16px;
+  border-radius:var(--radius-lg);
+  background:
+    radial-gradient(125% 95% at 16% 0%, var(--accent-soft) 0%, transparent 56%),
+    var(--card);
+  box-shadow:var(--shadow-md);
+  display:grid; grid-template-columns:auto 1fr; align-items:center; column-gap:16px;
+  overflow:hidden; -webkit-tap-highlight-color:transparent;
+  animation:homeFade .28s var(--ease);
+}
+@keyframes homeFade{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;} }
+#dayHero.is-tappable{ cursor:pointer; transition:transform .18s var(--ease), box-shadow .18s var(--ease); }
+#dayHero.is-tappable:active{ transform:scale(.985); box-shadow:var(--shadow-sm); }
+#dayHero::before{   /* hairline crimson accent rail */
+  content:""; position:absolute; left:18px; right:18px; top:0; height:2px;
+  background:var(--accent); border-radius:0 0 2px 2px; opacity:.9;
+}
+
+/* RING REGION — self-contained masked conic donut (buildClockChart left untouched) */
+#dayHero .hero-ring{ position:relative; flex:0 0 auto; width:138px; height:138px; align-self:center; }
+#dayHero .hero-donut{ width:100%; height:100%; border-radius:50%;
+  -webkit-mask:radial-gradient(closest-side, #0000 60%, #000 61%);
+  mask:radial-gradient(closest-side, #0000 60%, #000 61%); }
+/* center figure sits over the ring hole (anchored on the UN-transformed .hero-ring) */
+#dayHero .ring-center{
+  position:absolute; inset:0; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; pointer-events:none; text-align:center;
+}
+#dayHero .rc-value{ font-size:19px; font-weight:800; line-height:1; color:var(--text); font-variant-numeric:tabular-nums; letter-spacing:-.02em; }
+#dayHero .rc-unit{ font-size:9.5px; font-weight:700; color:var(--muted); margin-top:3px; letter-spacing:.05em; }
+
+/* STAT REGION */
+#dayHero .hero-stats{ min-width:0; display:flex; flex-direction:column; gap:9px; }
+#dayHero .hero-eyebrow{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--accent); }
+#dayHero .hero-eyebrow.is-other{ color:var(--muted); }
+#dayHero .hero-date{
+  font-size:38px; font-weight:800; line-height:.95; color:var(--text);
+  letter-spacing:-.035em; font-variant-numeric:tabular-nums;
+  display:flex; align-items:baseline; gap:7px;
+}
+#dayHero .hero-date .hd-dow{ font-size:14px; font-weight:700; color:var(--muted); letter-spacing:0; }
+#dayHero .hero-recorded{ font-size:13px; font-weight:600; color:var(--muted); line-height:1.3; }
+#dayHero .hero-recorded strong{ color:var(--text); font-weight:800; font-variant-numeric:tabular-nums; }
+#dayHero .hero-meter{ height:5px; border-radius:999px; background:var(--soft-bg); box-shadow:inset 0 0 0 1px var(--hairline); overflow:hidden; }
+#dayHero .hero-meter > i{ display:block; height:100%; border-radius:999px; background:var(--accent); transition:width .5s var(--ease); }
+#dayHero .hero-legend{ display:flex; flex-direction:column; gap:5px; margin-top:1px; }
+#dayHero .legend-row{ display:flex; align-items:center; gap:7px; font-size:12px; color:var(--text); }
+#dayHero .legend-row .lg-dot{ width:8px; height:8px; border-radius:3px; flex-shrink:0; }
+#dayHero .legend-row .lg-name{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; }
+#dayHero .legend-row .lg-time{ color:var(--muted); font-weight:700; font-variant-numeric:tabular-nums; font-size:11.5px; }
+
+/* HERO EMPTY / GHOST STATE — pure CSS dashed ring (safest zero-data render) */
+#dayHero.is-empty{ grid-template-columns:auto 1fr; }
+#dayHero .ghost-ring{
+  width:128px; height:128px; border-radius:50%; flex:0 0 auto;
+  border:9px dashed var(--accent-line); box-shadow:inset 0 0 0 1px var(--soft-bg);
+  display:flex; align-items:center; justify-content:center; color:var(--accent);
+  background:radial-gradient(closest-side, var(--card) 56%, transparent 58%);
+  animation:ghostPulse 3.2s var(--ease) infinite;
+}
+#dayHero .ghost-ring svg{ width:28px; height:28px; stroke:var(--accent); fill:none; stroke-width:1.6; stroke-linecap:round; opacity:.75; }
+@keyframes ghostPulse{ 0%,100%{opacity:.8;} 50%{opacity:1;} }
+#dayHero.is-empty .hero-empty-copy h3{ font-size:17px; font-weight:800; color:var(--text); margin:0 0 4px; letter-spacing:-.01em; }
+#dayHero.is-empty .hero-empty-copy p{ font-size:12.5px; color:var(--muted); margin:0 0 12px; line-height:1.5; }
+#dayHero.is-empty .hero-cta{
+  display:inline-flex; align-items:center; gap:6px; background:var(--accent); color:#fff; border:none;
+  border-radius:999px; padding:11px 18px; font-size:13.5px; font-weight:700;
+  box-shadow:0 6px 16px rgba(139,0,38,.22); transition:transform .16s var(--ease);
+}
+#dayHero.is-empty .hero-cta:active{ transform:scale(.95); }
+
+/* narrow-column fallback: stack ring over stats under ~412px */
+@media (max-width:412px){
+  #dayHero{ grid-template-columns:1fr; row-gap:12px; justify-items:center; text-align:center; }
+  #dayHero .hero-stats{ width:100%; align-items:center; }
+  #dayHero .hero-date{ justify-content:center; }
+  #dayHero .hero-legend{ align-items:stretch; width:100%; max-width:236px; }
+}
+
+/* ============================================================
+   2) MONTH GRID — quiet hairline scanning surface + plan/actual dot track
+   (refines override 1007-1063; keeps the clean single-ring 3-state model)
+   ============================================================ */
+.view-toggle-row { margin-bottom:14px; }
+.toggle-view-btn { background:var(--soft-bg); color:var(--accent); border:1px solid var(--border); border-radius:999px; font-weight:700; font-size:12.5px; padding:8px 15px; gap:7px; }
+.toggle-view-btn:active { background:var(--border); }
+.toggle-view-icon { font-size:0; }
+.toggle-view-btn svg { width:15px; height:15px; display:block; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+
+.calendar-header { margin-bottom:4px; align-items:baseline; }
+.calendar-title { font-size:27px; font-weight:800; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+.today-jump-btn { background:transparent; color:var(--accent); border:1px solid var(--accent-line); border-radius:999px; font-weight:700; font-size:12.5px; padding:7px 16px; min-height:32px; }
+.today-jump-btn:active { background:var(--accent-soft); }
+
+.weekday-row { gap:0; margin:14px 0 0; border-bottom:1px solid var(--hairline); }
+.weekday { font-size:11px; font-weight:700; color:var(--text-3); letter-spacing:.05em; padding:0 0 7px; text-align:center; }
+.weekday:first-child { color:var(--sun); }
+.weekday:last-child  { color:var(--sat); }
+
+.month-page { gap:0; padding:0; }
+.day-cell{
+  background:transparent; border:none; border-top:1px solid var(--hairline);
+  border-radius:0; min-height:60px; padding:6px 3px 5px;
+  display:flex; flex-direction:column; align-items:stretch;
+  transition:background .14s var(--ease); overflow:hidden;
+}
+.day-cell:hover { background:var(--soft-bg); }
+.day-cell:active { transform:none; background:var(--soft-bg); }
+.day-cell.outside { opacity:.32; }
+
+.day-number{
+  font-size:13.5px; font-weight:700; line-height:1; color:var(--text);
+  width:27px; height:27px; align-self:flex-start; margin-bottom:4px;
+  display:inline-flex; align-items:center; justify-content:center; border-radius:999px;
+  font-variant-numeric:tabular-nums; letter-spacing:-.01em;
+  transition:background .15s, color .15s, box-shadow .15s;
+}
+.month-page .day-cell:nth-child(7n+1) .day-number { color:var(--sun); }
+.month-page .day-cell:nth-child(7n)   .day-number { color:var(--sat); }
+
+/* clean single-ring 3-state model (preserved from override 1051-1055) */
+.day-cell.today .day-number { background:var(--main); color:#fff !important; font-weight:800; }
+.day-cell.selected { background:transparent; border-top:1px solid var(--hairline); box-shadow:none; }
+.day-cell.selected .day-number { box-shadow:0 0 0 2px var(--accent) inset; color:var(--accent); }
+.day-cell.selected.today .day-number { background:var(--main); color:#fff !important; box-shadow:none; }
+
+/* keep plan chips for plan TITLES, tighter; cap to 2 in the denser cell */
+.day-plans { gap:2px; }
+.day-plan-chip { border-radius:5px; padding:1px 5px; font-size:9px; font-weight:600; line-height:1.4; }
+.day-plan-more { font-size:8.5px; color:var(--muted); font-weight:600; }
+.day-cell.selected .day-plan-chip { background:var(--card) !important; color:var(--text) !important; border-left-color:var(--border) !important; }
+.day-cell.selected .day-plan-more { color:var(--muted) !important; }
+
+/* reserved-height dot track (no jitter): actual = filled, plan = hollow ring */
+.day-dots{ display:flex; align-items:center; gap:3px; height:7px; margin-top:auto; padding-top:2px; }
+.day-dot{ width:5px; height:5px; border-radius:50%; flex:0 0 auto; background:var(--dot-cat, var(--dot-empty)); }
+.day-dot.plan{ background:transparent; box-shadow:inset 0 0 0 1.4px var(--dot-cat, var(--text-3)); }
+.day-dot.more{ width:auto; height:auto; border-radius:0; background:transparent; font-size:8.5px; font-weight:700; line-height:1; color:var(--text-3); font-variant-numeric:tabular-nums; margin-left:1px; }
+.day-cell.outside .day-dot{ opacity:.5; }
+
+/* ============================================================
+   3) DAY AGENDA — always-visible per-record timeline below the grid
+   ============================================================ */
+#dayAgenda{ margin-top:14px; padding-top:14px; border-top:1px solid var(--hairline); animation:homeFade .28s var(--ease); }
+.agenda-head{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:12px; }
+.agenda-head-left{ display:flex; align-items:baseline; gap:10px; min-width:0; }
+.agenda-eyebrow{ font-size:11px; font-weight:700; letter-spacing:.10em; text-transform:uppercase; color:var(--accent); }
+.agenda-eyebrow.is-other{ color:var(--text-3); }
+.agenda-date{ font-size:16px; font-weight:800; letter-spacing:-.01em; color:var(--text); font-variant-numeric:tabular-nums; }
+.agenda-add{ display:flex; gap:8px; flex:0 0 auto; }
+.agenda-add button{
+  min-height:34px; padding:7px 13px; border-radius:999px; font-size:12.5px; font-weight:700; line-height:1;
+  border:1px solid var(--border); background:var(--soft-bg); color:var(--text);
+  transition:transform .12s var(--ease), background .15s;
+}
+.agenda-add button.plan{ color:var(--accent); border-color:var(--accent-line); background:var(--accent-soft); }
+.agenda-add button:active{ transform:scale(.95); }
+
+/* the existing .log-item rows, made the hero reading surface */
+#dayAgenda .log-item{
+  border:none; border-bottom:1px solid var(--hairline); border-radius:0;
+  background:transparent; padding:13px 2px 13px 13px; margin:0; box-shadow:none; min-height:54px;
+  border-left:3px solid var(--evt, var(--border));
+  transition:background .15s var(--ease);
+}
+#dayAgenda .log-item:last-of-type{ border-bottom:none; }
+#dayAgenda .log-item:active{ background:var(--soft-bg); }
+#dayAgenda .log-meta{ font-size:11.5px; font-weight:600; color:var(--muted); font-variant-numeric:tabular-nums; letter-spacing:.02em; margin-bottom:3px; }
+#dayAgenda .log-title{ font-size:16px; font-weight:700; line-height:1.3; color:var(--text); letter-spacing:-.01em; }
+#dayAgenda .log-item.plan .log-title{ font-weight:500; color:var(--text-2); }   /* plans read lighter than done actuals */
+#dayAgenda .category-pill{ font-size:11px; background:var(--soft-bg); color:var(--muted); }
+#dayAgenda .detail-badge{ font-size:10px; }
+
+/* AGENDA EMPTY STATE — faint timeline baseline + headline + one CTA */
+.agenda-empty{ display:flex; flex-direction:column; align-items:center; text-align:center; padding:22px 16px 8px; }
+.agenda-empty-tick{ width:54px; height:1px; background:var(--hairline-strong); position:relative; margin:0 0 20px; }
+.agenda-empty-tick::before, .agenda-empty-tick::after{ content:""; position:absolute; top:-3px; width:1px; height:7px; background:var(--hairline-strong); }
+.agenda-empty-tick::before{ left:0; } .agenda-empty-tick::after{ right:0; }
+.agenda-empty-title{ font-size:16px; font-weight:800; color:var(--text); letter-spacing:.01em; margin:0; }
+.agenda-empty-sub{ font-size:12.5px; color:var(--muted); margin:7px 0 18px; line-height:1.5; max-width:240px; }
+.agenda-empty-cta{
+  display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding:0 24px; border-radius:999px;
+  background:var(--accent); color:#fff; font-size:14px; font-weight:700; letter-spacing:.02em; border:none;
+  box-shadow:0 6px 18px rgba(139,0,38,.22); transition:transform .16s var(--ease);
+}
+.agenda-empty-cta:active{ transform:scale(.96); }
+
+/* footer hint quieter and theme-aware */
+.left-pane p.small{ color:var(--text-3) !important; }
+
+/* --- FAB (unchanged from override) --- */
+.fab { box-shadow:0 8px 22px rgba(139,0,38,.32); }
+.fab-menu { border-radius:18px; box-shadow:var(--shadow-lg); border:1px solid var(--border); }
   </style>
 </head>
 <body>
@@ -1074,9 +1256,10 @@
   <main>
     <div class="layout">
       <section class="card left-pane">
+        <div id="dayHero" aria-live="polite"></div>
         <div class="view-toggle-row">
           <button class="toggle-view-btn" onclick="toggleCalendarView()">
-            <span class="toggle-view-icon">▤</span>
+            <span class="toggle-view-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9 4.5v15"/><path d="M15 4.5v15"/></svg></span>
             <span id="viewToggleLabel">週間予定へ</span>
           </button>
         </div>
@@ -1099,7 +1282,8 @@
         </div>
         <!-- 週間ビュー（タイムテーブル）用 -->
         <div id="calendarGrid" class="calendar-grid"></div>
-        <p class="small" style="margin:8px 2px 0;font-size:10.5px;color:#999;">日付タップで詳細・記録追加。左右スワイプで前後の月。</p>
+        <div id="dayAgenda" aria-live="polite"></div>
+        <p class="small" style="margin:12px 2px 0;font-size:10.5px;">日付タップでその日を上のリングと下の記録に表示。ダブルタップで振り返り。左右スワイプで前後の月。</p>
       </section>
 
       <div class="right-pane">
@@ -3643,6 +3827,78 @@
         requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ slider.classList.remove("dragging"); }); });
       }
       attachMonthSwipe();
+      renderDayHome(selectedDate);
+    }
+
+    // 選択日のヒーロー（24hリング＋サマリ）と当日アジェンダを描画。selectedDateが唯一の真実。
+    function renderDayHome(date){
+      date = date || selectedDate || todayString();
+      const heroEl = document.getElementById("dayHero");
+      const agendaEl = document.getElementById("dayAgenda");
+      if(!heroEl || !agendaEl) return;
+      const logs = getDayLogs(date);
+      const isToday = date === todayString();
+      const d = new Date(date+"T00:00:00");
+      const dow = ["日","月","火","水","木","金","土"][d.getDay()];
+
+      if(!logs.length){
+        heroEl.removeAttribute("onclick");
+        heroEl.className = "is-empty";
+        heroEl.innerHTML =
+          `<div class="ghost-ring"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></div>`+
+          `<div class="hero-empty-copy">`+
+            `<div class="hero-eyebrow ${isToday?'':'is-other'}">${isToday?'TODAY':(d.getMonth()+1)+'月'+d.getDate()+'日'}</div>`+
+            `<h3>${isToday?'今日をまだ記録していません':'この日の記録はありません'}</h3>`+
+            `<p>24時間のうち、何にどれだけ時間を使ったか残しましょう。</p>`+
+            `<button class="hero-cta" onclick="showActualForm('${date}')">＋ 行動を記録</button>`+
+          `</div>`;
+        agendaEl.innerHTML =
+          `<div class="agenda-empty"><div class="agenda-empty-tick"></div>`+
+            `<p class="agenda-empty-title">記録はまだありません</p>`+
+            `<p class="agenda-empty-sub">最初の行動や予定を追加すると、ここに時系列で並びます。</p>`+
+            `<button class="agenda-empty-cta" onclick="showActualForm('${date}')">行動を記録する</button></div>`;
+        return;
+      }
+
+      const cats = loadCategories();
+      const byId = id => cats.find(c=>c.id===id) || cats[0];
+      const valid = logs.map(logWithMinutes).filter(l=>l.duration>0);
+      const mins = new Array(1440).fill("#ebe8e3");
+      valid.forEach(l=>{ for(let i=Math.max(0,l.startMin);i<Math.min(1440,l.endMin);i++) mins[i]=l.color; });
+      let segs=[], cur=mins[0], st=0;
+      for(let i=1;i<=1440;i++){ if(i===1440||mins[i]!==cur){ segs.push(`${cur} ${(st/1440*360).toFixed(2)}deg ${(i/1440*360).toFixed(2)}deg`); cur=mins[i]; st=i; } }
+      const fr = calculateFillRate(date);
+      const total = fr.totalMinutes;
+      const centerVal = total<60 ? `${total}` : (total%60===0 ? `${total/60}` : (total/60).toFixed(1));
+      const centerUnit = total<60 ? "分" : "時間";
+      const catMin = {};
+      valid.forEach(l=>{ const k=l.categoryId||"none"; catMin[k]=(catMin[k]||0)+l.duration; });
+      const top = Object.entries(catMin).map(([id,mn])=>({c:byId(id),m:mn})).sort((a,b)=>b.m-a.m).slice(0,3);
+      const legend = top.map(t=>`<div class="legend-row"><span class="lg-dot" style="background:${t.c.color}"></span><span class="lg-name">${escapeHtml(t.c.name)}</span><span class="lg-time">${minutesToHourText(t.m)}</span></div>`).join("");
+
+      heroEl.className = "is-tappable";
+      heroEl.setAttribute("onclick", `showReview('${date}')`);
+      heroEl.innerHTML =
+        `<div class="hero-ring"><div class="hero-donut" style="background:conic-gradient(from 0deg, ${segs.join(",")})"></div>`+
+          `<div class="ring-center"><span class="rc-value">${centerVal}</span><span class="rc-unit">${centerUnit}</span></div></div>`+
+        `<div class="hero-stats">`+
+          `<div class="hero-eyebrow ${isToday?'':'is-other'}">${isToday?'TODAY':'SELECTED'}</div>`+
+          `<div class="hero-date">${d.getDate()}<span class="hd-dow">${d.getMonth()+1}月 ${dow}</span></div>`+
+          `<div class="hero-recorded"><strong>${minutesToHourText(total)}</strong> / 24時間（${Math.round(fr.rate)}%）</div>`+
+          `<div class="hero-meter"><i style="width:${Math.max(2,fr.rate)}%"></i></div>`+
+          (legend?`<div class="hero-legend">${legend}</div>`:``)+
+        `</div>`;
+
+      let html =
+        `<div class="agenda-head"><div class="agenda-head-left">`+
+          `<span class="agenda-eyebrow ${isToday?'':'is-other'}">${isToday?'TODAY':'記録'}</span>`+
+          `<span class="agenda-date">${d.getMonth()+1}月${d.getDate()}日（${dow}）</span></div>`+
+          `<div class="agenda-add"><button class="plan" onclick="showPlanForm('${date}')">＋予定</button><button onclick="showActualForm('${date}')">＋行動</button></div></div>`;
+      logs.forEach(log=>{
+        const cat=byId(log.categoryId||"none"), label=log.type==="plan"?"予定":"行動", cls=log.type==="plan"?"plan":"actual";
+        html+=`<div class="log-item ${cls} log-tappable" style="--evt:${cat.color}" onclick="showLogEditor(${log.id})" role="button" tabindex="0"><div class="log-content-row"><div class="log-main"><div class="log-meta">${log.start}〜${log.end} / ${label}</div><div class="log-title">${escapeHtml(log.text)}</div><span class="category-pill"><span class="category-dot" style="background:${cat.color}"></span>${escapeHtml(cat.name)}</span>${log.repeat?`<span class="detail-badge">繰り返し</span>`:""}${log.detail?`<span class="detail-badge">詳細あり</span>`:""}${renderUntitledHelper(log)}</div></div></div>`;
+      });
+      agendaEl.innerHTML = html;
     }
 
     function renderMonthPage(refDate, pageEl){
@@ -3659,13 +3915,16 @@
         if(date.getMonth()!==m) cell.classList.add("outside");
         if(dateStr===today) cell.classList.add("today");
         if(dateStr===selectedDate) cell.classList.add("selected");
-        const maxShow=4;
-        const planChips=dayPlans.slice(0,maxShow).map(p=>{
-          const cat=getCategoryById(p.categoryId||"none");
-          return `<div class="day-plan-chip" style="background:${cat.color}22;color:${cat.color};border-left:2px solid ${cat.color};" title="${escapeHtml(p.text)}">${escapeHtml(p.text)}</div>`;
+        // ドットトラック：行動＝塗り / 予定＝中抜き（カテゴリ色）。予約高さで行ズレ防止。
+        const dayActuals=dayLogs.filter(l=>l.type==="actual");
+        const dotItems=[...dayActuals.map(l=>({plan:false,l})), ...dayPlans.map(l=>({plan:true,l}))];
+        const maxDots=5;
+        const dotsHtml=dotItems.slice(0,maxDots).map(it=>{
+          const c=getCategoryById(it.l.categoryId||"none").color;
+          return `<span class="day-dot ${it.plan?'plan':''}" style="--dot-cat:${c}"></span>`;
         }).join("");
-        const more=dayPlans.length>maxShow?`<div class="day-plan-more">+${dayPlans.length-maxShow}</div>`:"";
-        cell.innerHTML=`<div class="day-number">${date.getDate()}</div><div class="day-plans">${planChips}${more}</div>`;
+        const moreDots=dotItems.length>maxDots?`<span class="day-dot more">+${dotItems.length-maxDots}</span>`:"";
+        cell.innerHTML=`<div class="day-number">${date.getDate()}</div><div class="day-dots">${dotsHtml}${moreDots}</div>`;
         // ダブルタップ判定をtouchstartでも先回り検知（iOSの遅延を回避）
         cell.addEventListener("touchstart", (ev) => {
           if(Date.now() < _swipeSuppressClickUntil) return;
@@ -3789,6 +4048,7 @@
       const grid=document.getElementById("calendarGrid");
       if(monthArea) monthArea.style.display = "none";
       if(grid) grid.style.display = "";
+      renderDayHome(selectedDate);
       const title=document.getElementById("calendarTitle");
       const logs=loadLogs();
       const today=todayString();
