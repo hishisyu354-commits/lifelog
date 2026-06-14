@@ -1860,6 +1860,15 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
       #dayHero .hero-date{ justify-content:flex-start; }
       #dayHero .hero-legend{ align-items:stretch; }
     }
+    /* ============================================================
+       振り返り画面：日付を自由選択できるネイティブ日付ピッカー
+       ============================================================ */
+    .review-date-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0 0 12px; }
+    .review-date-input{ width:auto; min-height:40px; font-size:18px; font-weight:800; color:var(--text); background:var(--soft-bg); border:1px solid var(--border); border-radius:10px; padding:6px 12px; -webkit-appearance:none; appearance:none; font-family:inherit; font-variant-numeric:tabular-nums; }
+    .review-date-input:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+    .review-date-input::-webkit-calendar-picker-indicator{ opacity:.55; cursor:pointer; }
+    body[data-theme$="-dark"] .review-date-input::-webkit-calendar-picker-indicator{ filter:invert(1); opacity:.6; }
+    .review-date-suffix{ font-size:17px; font-weight:800; color:var(--text); }
   </style>
 </head>
 <body>
@@ -2924,7 +2933,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
       hideRightPanels(); const r=document.getElementById("reviewScreen"); r.style.display="block"; selectedDate=dateArg||selectedDate||todayString(); renderCalendar();
       const logs=getDayLogs(selectedDate);
       const scopeHeader = (_fromTodayTab ? buildScopeSwitcher("day") : "");
-      let html=scopeHeader + `<h2>${formatDateJapanese(selectedDate)} の行動振り返り</h2><p class="small">予定・行動を時系列順に表示します。</p><div class="actions"><button class="blue" onclick="showPlanForm('${selectedDate}')">予定を追加</button><button class="green" onclick="showActualForm('${selectedDate}')">行動を追加</button></div>`;
+      let html=scopeHeader + `<div class="review-date-row"><input type="date" id="reviewDatePicker" class="review-date-input" value="${selectedDate}" onchange="if(this.value)showReview(this.value)" aria-label="振り返る日付を選択"><span class="review-date-suffix">の振り返り</span></div><div class="actions"><button class="blue" onclick="showPlanForm('${selectedDate}')">予定を追加</button><button class="green" onclick="showActualForm('${selectedDate}')">行動を追加</button></div>`;
       html+=buildPieChart(logs)+buildGapPrompts(logs,selectedDate);
       if(!logs.length) html+=`<div class="empty">この日はまだ何も記録されていません。</div>`;
       logs.forEach(log=>{ const cat=getCategoryById(log.categoryId||"none"), label=log.type==="plan"?"予定":"行動", cls=log.type==="plan"?"plan":"actual"; html+=`<div class="log-item ${cls} log-tappable" onclick="showLogEditor(${log.id})" role="button" tabindex="0"><div class="log-content-row"><div class="log-main"><div class="log-meta">${log.start}〜${log.end} / ${label}</div><div class="log-title">${escapeHtml(log.text)}</div><span class="category-pill"><span class="category-dot" style="background:${cat.color}"></span>${escapeHtml(cat.name)}</span>${log.repeat?`<span class="detail-badge">繰り返し</span>`:""}${log.detail?`<span class="detail-badge">詳細あり</span>`:""}${renderUntitledHelper(log)}</div></div></div>`; });
@@ -3032,21 +3041,15 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
     function minutesToHourText(n){ const h=Math.floor(n/60), m=n%60; if(h===0) return `${m}分`; if(m===0) return `${h}時間`; return `${h}時間${m}分`; }
     function logWithMinutes(log){ const cat=getCategoryById(log.categoryId||"none"), s=timeToMinutes(log.start), e=timeToMinutes(log.end); return {...log,startMin:s,endMin:e,duration:Math.max(0,e-s),color:cat.color,categoryName:cat.name}; }
     function buildDayActionCard(logs, date){
-      const fill=calculateFillRate(date);
       const summary=loadDailySummaries().find(s=>s.date===date);
-      const isToday = date === todayString();
-      const dateLabel = isToday ? "今日" : formatDateJapanese(date);
-
       if(summary){
         return `
           <div class="pie-wrap">
-            <h2>${dateLabel}の振り返り</h2>
-            <div class="score-result" style="margin-top:10px;">
+            <div class="score-result" style="margin-top:0;">
               <div>この日の総合充実度</div>
               <div class="score-result-value">${summary.totalFulfillment.toFixed(1)}</div>
               <div>/ 10</div>
             </div>
-            <p class="small">記録充填率：${summary.fillRate.toFixed(0)}% / 記録済み：${minutesToHourText(summary.loggedMinutes)}</p>
             <div class="actions">
               <button class="blue" onclick="showDailyFulfillment('${date}')">充実ポイントを修正する</button>
               <button class="light" onclick="showFulfillmentTrend()">充実度チャートを見る</button>
@@ -3054,15 +3057,8 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
           </div>
         `;
       }
-
       return `
         <div class="pie-wrap">
-          <div class="title-with-info">
-            <h2>${dateLabel}の振り返り</h2>
-            <button class="info-btn" onclick="this.parentElement.nextElementSibling.classList.toggle('show')" aria-label="ヒント">i</button>
-          </div>
-          <div class="info-hint">${isToday ? "今日は" : "この日は"}まだ充実ポイントが確定されていません。記録がある程度たまったら、その日の納得感を0〜10で振り返ってみましょう。</div>
-          <p class="small">現在の記録充填率：<strong>${fill.rate.toFixed(0)}%</strong>（記録済み：${minutesToHourText(fill.totalMinutes)} / 24時間）</p>
           <div class="actions">
             <button class="blue" onclick="showDailyFulfillment('${date}')">充実度を記録する</button>
           </div>
