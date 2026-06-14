@@ -1227,6 +1227,605 @@ body[data-theme="mono-dark"]  { --accent:#d6d6d6; --accent-soft:#1e1e1e; --accen
 /* --- FAB (unchanged from override) --- */
 .fab { box-shadow:0 8px 22px rgba(139,0,38,.32); }
 .fab-menu { border-radius:18px; box-shadow:var(--shadow-lg); border:1px solid var(--border); }
+
+    /* ============================================================
+       CALM EDITORIAL — 全画面統一レイヤー（振り返り/推移/記録/メニュー/週表示）
+       ============================================================ */
+/* ============================================================
+   CALM EDITORIAL — UNIFIED PER-AREA OVERRIDE LAYER
+   ------------------------------------------------------------
+   Merged, de-duplicated styling for: Reviews (weekly/monthly/
+   trends/quit-log), Daily-review screen + log lists + day
+   visuals, Forms/Inputs/Record+Stopwatch/Buttons, Menu/Settings/
+   Overlays, and the Week timetable.
+
+   Rules of the layer:
+   - Tokens only (radius/shadow/ease/text tiers/hairline/accent);
+     keeps all 8 themes intact.
+   - Additive: appended AFTER the home redesign rules (#dayHero,
+     #dayAgenda, .hero-*, .day-dots, .day-cell hairline grid,
+     header/today-bar/.bottom-nav/.nav-tab, .card, base button),
+     which retain id-level specificity and therefore still win on
+     the home screen. Nothing here re-declares those scoped rules.
+   - Fixed crimson emphasis glows (rgba(139,0,38,…)) match the
+     existing .fab pattern and are intentional across all themes.
+   ============================================================ */
+
+/* ============================================================
+   1) REVIEWS — weekly / monthly / trends / quit-log
+   ============================================================ */
+
+/* --- period navigation --- */
+.weekly-nav {
+  background:var(--card); border:1px solid var(--hairline);
+  border-radius:var(--radius-md); box-shadow:var(--shadow-sm);
+  padding:7px 8px; margin:8px 0 18px;
+}
+.weekly-period {
+  font-weight:700; letter-spacing:.01em; color:var(--text);
+  font-variant-numeric:tabular-nums;
+}
+
+/* --- summary stat grid --- */
+.weekly-summary-grid { gap:10px; margin:12px 0 20px; }
+.weekly-stat {
+  background:var(--card); border:1px solid var(--hairline);
+  border-radius:var(--radius-md); box-shadow:var(--shadow-sm);
+  padding:14px 8px;
+}
+.weekly-stat-label {
+  font-size:11px; font-weight:700; letter-spacing:.04em;
+  text-transform:uppercase; color:var(--text-3); margin-bottom:6px;
+}
+.weekly-stat-value {
+  font-size:24px; font-weight:800; color:var(--accent);
+  font-variant-numeric:tabular-nums; letter-spacing:-.01em;
+}
+.weekly-stat-value span {
+  font-size:11px; font-weight:600; color:var(--text-3);
+  font-variant-numeric:normal;
+}
+
+/* --- top items (ranked) --- */
+.weekly-top-item {
+  background:var(--card); border:1px solid var(--hairline);
+  border-radius:var(--radius-md); box-shadow:var(--shadow-sm);
+  padding:11px 12px; margin-bottom:9px; gap:12px;
+}
+.weekly-top-rank {
+  width:26px; height:26px; background:var(--accent-soft);
+  color:var(--accent); font-weight:800; font-size:13px;
+  font-variant-numeric:tabular-nums;
+  box-shadow:inset 0 0 0 1px var(--accent-line);
+}
+.weekly-top-title { font-weight:700; color:var(--text); }
+.weekly-top-meta {
+  color:var(--text-3); margin-top:3px; font-variant-numeric:tabular-nums;
+}
+.weekly-top-score {
+  font-size:20px; font-weight:800; color:var(--accent);
+  font-variant-numeric:tabular-nums;
+}
+
+/* --- scope switcher (segmented control) --- */
+.scope-switcher {
+  background:var(--soft-bg); border:1px solid var(--hairline);
+  border-radius:999px; box-shadow:inset 0 0 0 1px var(--hairline);
+  padding:4px; margin:0 0 20px;
+}
+.scope-btn {
+  color:var(--text-2); font-weight:700; border-radius:999px;
+  transition:background .18s var(--ease), color .18s var(--ease), box-shadow .18s var(--ease);
+}
+.scope-btn.active {
+  background:var(--card); color:var(--accent);
+  box-shadow:var(--shadow-sm), inset 0 0 0 1px var(--accent-line);
+}
+
+/* --- monthly trend chart --- */
+.monthly-trend-svg {
+  background:var(--soft-bg); border:1px solid var(--hairline);
+  border-radius:var(--radius-md); box-shadow:var(--shadow-sm);
+  padding:10px 8px; margin:10px auto; box-sizing:border-box;
+  font-variant-numeric:tabular-nums;
+}
+/* NOTE: .chart-* are shared by every fulfillment/trend SVG (recolor is
+   intentional for cohesion). Strokes use --card so dots read on any bg. */
+.chart-grid-line { stroke:var(--hairline); }
+.chart-dot { fill:var(--accent); stroke:var(--card); }
+.chart-line { stroke:var(--accent); }
+
+/* --- intent: match summary + intent card --- */
+.intent-match-summary {
+  background:var(--accent-soft); border-left:3px solid var(--accent);
+  border-radius:var(--radius-sm); padding:9px 12px; margin-top:12px;
+  color:var(--text); font-variant-numeric:tabular-nums;
+}
+.intent-match-summary strong { color:var(--accent); }
+.intent-card {
+  background:var(--card); border:1px solid var(--hairline);
+  border-left:4px solid var(--accent); border-radius:var(--radius-md);
+  box-shadow:var(--shadow-sm); padding:14px 16px; margin-bottom:14px;
+}
+.intent-card-label {
+  font-size:11px; font-weight:700; letter-spacing:.04em;
+  text-transform:uppercase; color:var(--text-3); margin-bottom:7px;
+}
+.intent-card-text { color:var(--text); line-height:1.65; }
+
+/* --- intent keyword chips (soft pills) --- */
+.intent-keywords-row { gap:7px; margin-top:10px; }
+.intent-kw-chip {
+  background:var(--accent-soft); border:1px solid var(--accent-line);
+  color:var(--accent); border-radius:999px; padding:3px 10px;
+  font-size:11px; font-weight:700;
+}
+
+/* --- intent fact card --- */
+.intent-fact-card {
+  background:var(--card); border:1px solid var(--hairline);
+  border-radius:var(--radius-md); box-shadow:var(--shadow-sm);
+  padding:14px 16px; margin-bottom:10px;
+}
+.intent-fact-label {
+  font-size:11px; font-weight:700; letter-spacing:.04em;
+  text-transform:uppercase; color:var(--text-3); margin-bottom:6px;
+}
+.intent-fact-total {
+  padding-bottom:9px; border-bottom:1px solid var(--hairline);
+  margin-bottom:11px; color:var(--text); font-variant-numeric:tabular-nums;
+}
+.intent-fact-total strong { color:var(--accent); }
+.intent-kw-row { padding:6px 0; border-bottom:1px solid var(--hairline); }
+.intent-kw-row:last-child { border-bottom:none; }
+.intent-kw-meta {
+  color:var(--text-2); font-weight:600; font-variant-numeric:tabular-nums;
+}
+
+/* --- intent: expandable logs --- */
+.intent-logs-expand { margin-top:10px; }
+.intent-logs-expand summary {
+  color:var(--accent); font-weight:700;
+  list-style:none; -webkit-tap-highlight-color:transparent;
+}
+.intent-logs-expand summary::-webkit-details-marker { display:none; }
+.intent-log-item {
+  background:var(--soft-bg); border:1px solid var(--hairline);
+  border-radius:var(--radius-sm); padding:9px 11px; margin-top:7px;
+}
+.intent-log-meta {
+  color:var(--text-3); margin-bottom:3px; font-variant-numeric:tabular-nums;
+}
+.intent-log-title { font-weight:700; color:var(--text); }
+
+/* --- quit log (やめたことログ) --- */
+.quit-item {
+  background:var(--card); border:1px solid var(--hairline);
+  border-left:4px solid var(--sub); border-radius:var(--radius-md);
+  box-shadow:var(--shadow-sm); padding:14px 16px; margin-bottom:12px;
+}
+.quit-title { font-weight:800; color:var(--text); }
+.quit-period {
+  color:var(--text-3); font-weight:600; font-variant-numeric:tabular-nums;
+}
+.quit-reason {
+  color:var(--text-2); line-height:1.55;
+  border-top:1px solid var(--hairline); padding-top:8px; margin-top:8px;
+}
+
+/* ============================================================
+   2) DAILY REVIEW SCREEN — log lists + day visuals
+   Bare-class rules below intentionally yield to the id-scoped
+   #dayAgenda / #dayHero home rules; they style the review,
+   notebook, gap, score, clock-ring and review-pie contexts.
+   ============================================================ */
+
+/* --- Log rows / cards: soft surface + hairline accent rail --- */
+.log-item, .notebook-result, .gap-card {
+  background:var(--soft-bg); border:none; border-radius:var(--radius-md);
+  box-shadow:var(--shadow-sm); padding:13px 14px; margin-bottom:10px;
+  border-left:3px solid var(--hairline-strong);
+}
+.log-item.plan, .plan { border-left-color:var(--sat); }
+.log-item.actual, .actual { border-left-color:var(--main); }
+.log-content-row { gap:12px; }
+.log-meta {
+  font-size:12px; font-weight:600; color:var(--muted);
+  font-variant-numeric:tabular-nums; letter-spacing:.02em; margin-bottom:4px;
+}
+.log-title {
+  font-size:16px; font-weight:700; line-height:1.35; color:var(--text);
+  letter-spacing:-.01em;
+}
+.log-item.plan .log-title { font-weight:500; color:var(--text-2); }
+
+/* tappable affordance: lighter, refined chevron */
+.log-tappable::after { color:var(--text-3); font-size:22px; opacity:1; right:13px; }
+.log-tappable:active { background:var(--soft-bg); box-shadow:var(--shadow-sm); }
+
+/* --- Mini action buttons inside rows --- */
+.mini-actions button {
+  border-radius:var(--radius-sm); background:var(--card); color:var(--text);
+  border:1px solid var(--hairline-strong); font-weight:600; box-shadow:var(--shadow-sm);
+}
+.mini-actions button:active { background:var(--soft-bg); }
+
+/* --- Badges / pills: soft-bg fill + hairline --- */
+.detail-badge, .category-pill {
+  background:var(--soft-bg); border:1px solid var(--hairline);
+  color:var(--muted); font-weight:700; border-radius:999px; padding:4px 9px;
+  letter-spacing:.01em;
+}
+.category-pill { color:var(--text-2); }
+.category-dot { width:8px; height:8px; box-shadow:0 0 0 1px var(--hairline); }
+
+/* --- Title + info affordance --- */
+.title-with-info { gap:9px; }
+.info-btn {
+  background:var(--soft-bg); border:1px solid var(--hairline-strong);
+  color:var(--muted); font-weight:700;
+}
+.info-btn:active { background:var(--border); transform:scale(.9); }
+.info-hint {
+  background:var(--notice-bg); border-left:4px solid var(--notice-border);
+  border-radius:var(--radius-md); color:var(--text-2); padding:11px 13px;
+}
+
+/* --- Empty / notice (refine spacing on top of home override) --- */
+.empty { color:var(--muted); padding:14px 16px; line-height:1.7; }
+.notice { padding:13px 15px; color:var(--text-2); }
+
+/* --- Score bar (fulfillment 0–10) --- */
+.score-row { border-left-color:var(--accent); background:var(--soft-bg); box-shadow:var(--shadow-sm); }
+.score-bar { gap:5px; }
+.score-cell {
+  border:1px solid var(--hairline-strong); background:var(--card); color:var(--text-2);
+  border-radius:var(--radius-sm); font-weight:700; font-variant-numeric:tabular-nums;
+  box-shadow:var(--shadow-sm);
+  transition:transform .14s var(--ease), background .14s, color .14s, border-color .14s;
+}
+.score-cell:hover { transform:scale(1.06); border-color:var(--accent-line); }
+.score-cell.active {
+  background:var(--accent); color:#fff; border-color:var(--accent);
+  box-shadow:0 4px 12px rgba(139,0,38,.22); /* fixed crimson emphasis */
+}
+
+/* --- Gap prompts: quiet card + restrained CTA --- */
+.gap-wrap { background:var(--soft-bg); border-radius:var(--radius-lg); padding:14px; margin:14px 0; }
+.gap-card { background:var(--card); border-left:3px solid var(--hairline-strong); }
+.gap-card .log-title { font-size:15px; }
+.gap-card button { margin-top:10px; }
+
+/* --- Review-screen clock ring: refine framing, keep conic intact --- */
+.clock-wrap {
+  background:var(--soft-bg); border-radius:var(--radius-lg); padding:16px 14px; margin:14px 0;
+}
+.clock-wrap h2 { margin-bottom:6px; }
+.clock-wrap .small { color:var(--text-2); margin-top:10px; }
+.clock-ring-area { padding:6px 0; }
+.clock-hour-label { color:var(--text-3); font-weight:700; }
+/* soft frame on the ring; the conic gradient + :before ticks are untouched */
+.clock-ring { box-shadow:inset 0 0 0 1px var(--hairline), var(--shadow-md); }
+/* inner hub sits on the card surface, theme-aware (was #fafafa) */
+.clock-ring:after { background:var(--card); box-shadow:0 0 0 1px var(--hairline); }
+
+/* --- Category pie + legend (review screen only; scoped off #dayHero) --- */
+.category-pie-wrap {
+  background:var(--soft-bg); border-radius:var(--radius-lg); padding:16px 14px; margin:14px 0; gap:16px;
+}
+.category-pie-legend .legend-row {
+  padding:6px 4px; border-bottom:1px solid var(--hairline);
+}
+.category-pie-legend .legend-row:last-child { border-bottom:none; }
+.category-pie-legend .legend-dot { border-radius:3px; box-shadow:0 0 0 1px var(--hairline); }
+.category-pie-legend .legend-name { font-weight:600; color:var(--text); }
+.category-pie-legend .legend-bar { background:var(--hairline); height:6px; }
+.category-pie-legend .legend-val { color:var(--muted); font-weight:600; font-variant-numeric:tabular-nums; }
+.category-pie-legend .legend-pct { color:var(--text); font-weight:700; font-variant-numeric:tabular-nums; }
+
+/* ============================================================
+   3) FORMS / INPUTS / RECORD + STOPWATCH / BUTTONS
+   ============================================================ */
+
+/* --- Base fields: hairline boxes, soft focus, accent ring (app-wide) --- */
+label { font-weight:700; color:var(--text); letter-spacing:.01em; margin:14px 0 6px; }
+input, select, textarea {
+  border:1px solid var(--border); border-radius:var(--radius-sm);
+  background:var(--card); color:var(--text);
+  box-shadow:var(--shadow-sm);
+  transition:border-color .15s var(--ease), box-shadow .15s var(--ease);
+}
+input::placeholder, textarea::placeholder { color:var(--text-3); }
+input:focus, select:focus, textarea:focus {
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px var(--accent-soft);
+}
+textarea, .compact-textarea { resize:vertical; }
+
+/* --- Field rows --- */
+.row, .time-row { gap:12px; }
+.inline-row, .category-row, .template-row, .tag-template-row, .compact-row { gap:8px; }
+
+/* --- Mini / icon action buttons: soft-bg chips, refined danger --- */
+.mini-button {
+  border-radius:var(--radius-md); background:var(--soft-bg); color:var(--text);
+  border:1px solid var(--border); box-shadow:none; font-weight:700;
+  transition:background .15s var(--ease), transform .08s var(--ease);
+}
+.mini-button:active { background:var(--border); }
+.icon-button {
+  border-radius:var(--radius-md); background:var(--soft-bg); color:var(--text);
+  border:1px solid var(--border); box-shadow:none; font-weight:800;
+}
+.mini-button.danger, .icon-button.danger {
+  background:var(--accent-soft); color:var(--accent);
+  border-color:var(--accent-line);
+}
+.mini-button.danger:active, .icon-button.danger:active { background:var(--accent-line); }
+
+/* --- Compact form group (record / edit / quit forms) --- */
+.form-title { color:var(--accent); font-weight:800; letter-spacing:.01em; }
+.form-grid, .form-field, .time-row .form-field { gap:6px; }
+.mini-label { color:var(--text-2); font-weight:700; letter-spacing:.02em; }
+.compact-input, .compact-textarea,
+.compact-row select, .compact-row input[type="text"] {
+  border:1px solid var(--border); border-radius:var(--radius-sm);
+  background:var(--card); color:var(--text); box-shadow:var(--shadow-sm);
+}
+.form-actions-compact { gap:8px; margin-top:16px; }
+
+/* --- Button palette: keep semantics, desaturate to editorial tones.
+   .light / .secondary stay token-driven; semantic colors are fixed hex
+   (intentionally NOT accent-tinted) with brighter dark-theme variants. --- */
+button { box-shadow:var(--shadow-sm); }
+button.secondary, button.light { background:var(--soft-bg); color:var(--text); border:1px solid var(--border); box-shadow:none; }
+button.secondary:active, button.light:active { background:var(--border); }
+button.danger { background:#b23a4e; }
+button.green  { background:#2f9159; }
+button.blue   { background:#3a78b5; }
+body[data-theme$="-dark"] button.danger { background:#c95267; }
+body[data-theme$="-dark"] button.green  { background:#3aa367; }
+body[data-theme$="-dark"] button.blue   { background:#5390c9; }
+
+/* --- Menu / action grids: unified gaps + radii --- */
+.menu { gap:10px; }
+.actions { gap:10px; margin-top:16px; }
+.actions button, .form-actions-compact button { border-radius:var(--radius-md); }
+
+/* --- Mic (voice) button: quiet chip, accent when active --- */
+.mic-btn {
+  background:var(--soft-bg); color:var(--muted);
+  border:1px solid var(--border); border-radius:var(--radius-md);
+  transition:background .15s var(--ease), color .15s var(--ease), transform .08s var(--ease);
+}
+.mic-btn.mic-active {
+  background:var(--accent); color:#fff; border-color:var(--accent);
+  animation:micPulse 1.2s ease-in-out infinite;
+}
+.mic-label { color:var(--muted); font-weight:600; }
+.mic-row { gap:6px; }
+
+/* --- Weekday picker: align active state to accent --- */
+.weekday-cell {
+  border:1px solid var(--border); background:var(--soft-bg);
+  border-radius:var(--radius-md); color:var(--text);
+}
+.weekday-cell.checked,
+.weekday-cell:has(input:checked) {
+  background:var(--accent); color:#fff; border-color:var(--accent);
+}
+
+/* --- Untitled helper card: soft accent surface, hairline chips --- */
+.untitled-helper {
+  background:var(--accent-soft); border:1px solid var(--accent-line);
+  border-radius:var(--radius-md);
+}
+.untitled-title { color:var(--text); }
+.untitled-sub { color:var(--text-2); }
+.untitled-option {
+  background:var(--card); color:var(--text);
+  border:1px solid var(--hairline); box-shadow:var(--shadow-sm);
+}
+.untitled-input {
+  border:1px solid var(--border); border-radius:var(--radius-sm);
+  background:var(--card); color:var(--text); box-shadow:var(--shadow-sm);
+}
+
+/* --- Stopwatch: big tabular timer figure, quiet info text --- */
+.timer-display {
+  font-variant-numeric:tabular-nums; letter-spacing:-.01em;
+  color:var(--text); font-weight:800;
+}
+.timer-info { color:var(--muted); }
+
+/* ============================================================
+   4) MENU / SETTINGS / OVERLAYS
+   ============================================================ */
+
+/* --- Section headers: quiet uppercase eyebrow, hairline rule --- */
+.menu-section-title {
+  color:var(--text-2);
+  border-bottom:1px solid var(--hairline);
+  letter-spacing:.06em;
+}
+
+/* --- Google Calendar settings block --- */
+#gcalSection p { color:var(--muted); }
+.gcal-info-row {
+  background:var(--soft-bg); border:1px solid var(--hairline);
+  border-radius:var(--radius-md); color:var(--text); box-shadow:var(--shadow-sm);
+}
+.gcal-info-row strong { color:var(--accent); }
+/* Synced badge: refined accent pill (soft-bg fill + hairline), not solid green.
+   Inline JS still sets its font-size/weight; the swatch text/emoji signals sync. */
+.gcal-synced-badge {
+  background:var(--accent-soft); color:var(--accent);
+  border:1px solid var(--accent-line); font-weight:700;
+  border-radius:999px; padding:2px 8px; letter-spacing:.01em;
+}
+
+/* --- Divider + the single CTA in this context --- */
+.apply-divider { background:var(--hairline); }
+.apply-link-btn {
+  background:var(--accent-soft); border:1px solid var(--accent-line);
+  color:var(--accent); border-radius:var(--radius-md); box-shadow:var(--shadow-sm);
+  transition:transform .08s var(--ease), background .15s var(--ease);
+}
+.apply-link-btn:active { background:var(--accent-line); transform:scale(.97); }
+
+/* --- Theme picker grid --- */
+.theme-grid { gap:12px; }
+.theme-card {
+  background:var(--soft-bg); border:1px solid var(--hairline);
+  border-radius:var(--radius-md); box-shadow:var(--shadow-sm);
+  transition:transform .08s var(--ease), border-color .15s var(--ease), box-shadow .15s var(--ease);
+}
+.theme-card.theme-active {
+  background:var(--card); border-color:var(--accent);
+  box-shadow:var(--shadow-md), inset 0 0 0 1px var(--accent);
+}
+.theme-swatch { border:1px solid var(--hairline-strong); box-shadow:var(--shadow-sm); }
+.theme-name { color:var(--text); }
+.theme-check { color:var(--accent); }
+
+/* --- Category management list --- */
+.category-list { margin:12px 0 18px; }
+.category-row-item {
+  background:var(--soft-bg); border:1px solid var(--hairline);
+  border-radius:var(--radius-md); box-shadow:var(--shadow-sm);
+  padding:11px 13px; margin-bottom:7px;
+}
+.category-row-name { color:var(--text); }
+.category-row-count { color:var(--text-2); font-variant-numeric:tabular-nums; }
+
+/* --- Duplicate-detection cards: align to the 'notice' family --- */
+.dup-pair {
+  background:var(--notice-bg); border:1px solid var(--notice-border);
+  border-radius:var(--radius-md); box-shadow:var(--shadow-sm);
+}
+.dup-header {
+  font-weight:700; border-bottom:1px solid var(--hairline); color:var(--text);
+}
+.dup-side {
+  background:var(--card); border:1px solid var(--hairline);
+  border-radius:var(--radius-sm); box-shadow:var(--shadow-sm);
+}
+.dup-meta { color:var(--text-2); font-variant-numeric:tabular-nums; }
+.dup-detail { color:var(--muted); }
+.dup-detail-empty { color:var(--text-3); }
+
+/* --- PWA install banner: card + restrained accent edge --- */
+.pwa-banner {
+  background:var(--card); border:1px solid var(--hairline);
+  border-left:3px solid var(--accent); border-radius:var(--radius-md);
+  box-shadow:var(--shadow-md);
+}
+.pwa-banner-title { color:var(--accent); }
+.pwa-banner-text { color:var(--muted); }
+.pwa-banner-close { color:var(--text-2); border-radius:var(--radius-sm); }
+.pwa-banner-close:active { background:var(--soft-bg); }
+
+/* --- Custom confirm dialog: theme-aware card, accent CTA --- */
+.custom-confirm-overlay.show { background:rgba(28,26,24,.55); }
+.custom-confirm-box {
+  background:var(--card); border-radius:var(--radius-lg); box-shadow:var(--shadow-lg);
+}
+.cc-message { color:var(--text); }
+.cc-actions button { border-radius:var(--radius-sm); }
+.cc-cancel { background:var(--soft-bg); color:var(--text); border:1px solid var(--hairline); }
+.cc-ok { background:var(--accent); color:#fff; }
+
+/* --- Save toast: deliberately high-contrast, theme-independent --- */
+.save-toast {
+  background:rgba(28,26,24,.94); color:#fff;
+  border-radius:999px; box-shadow:var(--shadow-lg);
+}
+
+/* ============================================================
+   5) WEEK TIMETABLE (週間タイムテーブル)
+   Event block backgrounds come from inline category colors in JS,
+   so .week-event background is intentionally left untouched.
+   ============================================================ */
+
+/* hint: quieter, theme-aware secondary text */
+.week-hint { font-size:11px; color:var(--text-2); line-height:1.5; margin:0 0 10px; padding:0 4px; }
+
+/* scroll frame: hairline + soft-shadow card */
+.week-timegrid-scroll {
+  border:1px solid var(--hairline); border-radius:var(--radius-md);
+  background:var(--card); box-shadow:var(--shadow-sm);
+}
+
+/* sticky header row: card bg + hairline rule */
+.week-timegrid-header { background:var(--card); border-bottom:1px solid var(--hairline-strong); }
+
+/* time column header + axis: soft-bg with hairline gutter */
+.week-time-col-header,
+.week-time-axis { background:var(--soft-bg); border-right:1px solid var(--hairline); }
+
+/* day header cells: hairline divider, refined spacing */
+.week-day-col-header {
+  border-right:1px solid var(--hairline); gap:4px;
+  transition:background .15s var(--ease);
+}
+.week-day-col-header:last-child { border-right:none; }
+.week-day-col-header:active { background:var(--soft-bg); }
+
+/* today / selected header: restrained accent tints */
+.week-day-col-header.today { background:var(--accent-soft); }
+.week-day-col-header.selected {
+  background:var(--accent-soft); box-shadow:inset 0 0 0 1px var(--accent-line);
+}
+
+/* weekday name label tiers + weekend hues from tokens */
+.week-day-col-name { font-size:11px; font-weight:700; color:var(--text-2); letter-spacing:.02em; }
+.week-day-col-name.sat { color:var(--sat); }
+.week-day-col-name.sun { color:var(--sun); }
+.week-day-col-header.today .week-day-col-name { color:var(--accent); }
+
+/* date number: tabular figures */
+.week-day-col-num { font-variant-numeric:tabular-nums; color:var(--text); }
+
+/* today circle: accent disc, soft fixed-crimson lift */
+.week-day-col-header.today .week-day-col-num {
+  background:var(--accent); color:#fff; box-shadow:0 2px 6px rgba(139,0,38,.22);
+}
+
+/* time labels: tertiary tier, tabular */
+.week-time-label { color:var(--text-3); font-weight:600; font-variant-numeric:tabular-nums; letter-spacing:.01em; }
+
+/* day body columns: hairline divider, gentle today wash */
+.week-day-col { border-right:1px solid var(--hairline); }
+.week-day-col:last-child { border-right:none; }
+.week-day-col.today { background:var(--accent-soft); }
+
+/* hour gridlines: true 8% hairline (no opaque grey) */
+.week-hour-line { background:var(--hairline); }
+
+/* now line: restrained accent marker */
+.week-now-line { background:var(--accent); }
+.week-now-line::before { background:var(--accent); box-shadow:0 0 0 2px var(--card); }
+
+/* events: soft rounded blocks, category color kept (inline bg).
+   Adds depth + crisp white type via subtle sheen + text-shadow. */
+.week-event {
+  border-radius:var(--radius-sm); padding:4px 6px;
+  box-shadow:var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,.18);
+  transition:transform .08s var(--ease), box-shadow .12s var(--ease);
+}
+.week-event:active { transform:scale(.97); box-shadow:var(--shadow-md); }
+.week-event.actual { opacity:.88; } /* actual reads slightly softer than plan */
+.week-event.plan   { opacity:1; }
+.week-event-time { font-weight:700; font-variant-numeric:tabular-nums; opacity:.92; text-shadow:0 1px 1px rgba(0,0,0,.18); }
+.week-event-text { font-weight:800; text-shadow:0 1px 1px rgba(0,0,0,.18); }
+
+/* ---- ≤480px: keep the premium feel while compact ---- */
+@media (max-width:480px) {
+  .week-timegrid-scroll { border-radius:var(--radius-sm); }
+  .week-time-label { color:var(--text-3); font-weight:600; }
+  .week-event { border-radius:8px; padding:2px 4px; }
+}
+
   </style>
 </head>
 <body>
