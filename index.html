@@ -3142,12 +3142,12 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
             id="untitledInput-${log.id}"
             class="untitled-input"
             placeholder="自由入力（例：通学中にMOS）"
-            oninput="syncUntitledInput(${log.id})"
+            oninput="syncUntitledInput('${log.id}')"
           >
 
           <button
             class="untitled-save-btn"
-            onclick="saveUntitledLog(${log.id})"
+            onclick="saveUntitledLog('${log.id}')"
           >
             この内容で保存
           </button>
@@ -3205,12 +3205,12 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
       let html=scopeHeader + `<div class="review-date-row"><input type="date" id="reviewDatePicker" class="review-date-input" value="${selectedDate}" onchange="if(this.value)showReview(this.value)" aria-label="振り返る日付を選択"><span class="review-date-suffix">の振り返り</span></div><div class="actions"><button class="blue" onclick="showPlanForm('${selectedDate}')">予定を追加</button><button class="green" onclick="showActualForm('${selectedDate}')">行動を追加</button></div>`;
       html+=buildPieChart(logs)+buildGapPrompts(logs,selectedDate);
       if(!logs.length) html+=`<div class="empty">この日はまだ何も記録されていません。</div>`;
-      logs.forEach(log=>{ const cat=getCategoryById(log.categoryId||"none"), label=log.type==="plan"?"予定":"行動", cls=log.type==="plan"?"plan":"actual"; html+=`<div class="log-item ${cls} log-tappable" onclick="showLogEditor(${log.id})" role="button" tabindex="0"><div class="log-content-row"><div class="log-main"><div class="log-meta">${log.start}〜${log.end} / ${label}</div><div class="log-title">${escapeHtml(log.text)}</div><span class="category-pill"><span class="category-dot" style="background:${cat.color}"></span>${escapeHtml(cat.name)}</span>${log.repeat?`<span class="detail-badge">繰り返し</span>`:""}${log.detail?`<span class="detail-badge">詳細あり</span>`:""}${renderUntitledHelper(log)}</div></div></div>`; });
+      logs.forEach(log=>{ const cat=getCategoryById(log.categoryId||"none"), label=log.type==="plan"?"予定":"行動", cls=log.type==="plan"?"plan":"actual"; html+=`<div class="log-item ${cls} log-tappable" onclick="showLogEditor('${log.id}')" role="button" tabindex="0"><div class="log-content-row"><div class="log-main"><div class="log-meta">${log.start}〜${log.end} / ${label}</div><div class="log-title">${escapeHtml(log.text)}</div><span class="category-pill"><span class="category-dot" style="background:${cat.color}"></span>${escapeHtml(cat.name)}</span>${log.repeat?`<span class="detail-badge">繰り返し</span>`:""}${log.detail?`<span class="detail-badge">詳細あり</span>`:""}${renderUntitledHelper(log)}</div></div></div>`; });
       html+=`<div class="actions"><button class="light" onclick="showMenu()">戻る</button><button class="danger" onclick="clearDateLogs('${selectedDate}')">この日の記録を全削除</button></div>`; r.innerHTML=html;
       attachReviewSwipe();
     }
     function getDayLogs(date){ return loadLogs().filter(l=>l.date===date).sort((a,b)=>a.start.localeCompare(b.start)); }
-    function getLogById(id){ return loadLogs().find(l=>l.id===id); }
+    function getLogById(id){ return loadLogs().find(l=>l.id==id); }
     function showLogMenu(id){ showLogEditor(id); }
     function showEditLogForm(id){ showLogEditor(id); }
     function showDetail(id){ showLogEditor(id); }
@@ -3223,7 +3223,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
       const textLabel = log.type === "plan" ? "予定" : "行動";
       const gcalBadge = log.gcalEventId ? ` <span class="gcal-synced-badge" style="font-size:11px;font-weight:600;">📅 GCal同期済み</span>` : "";
       const gcalBtn = (log.type === "plan" && isGcalAuthenticated())
-        ? `<button class="green" onclick="sendSingleLogToGcal(${id})">📅 ${log.gcalEventId ? "Googleカレンダーで更新" : "Googleカレンダーに送る"}</button>`
+        ? `<button class="green" onclick="sendSingleLogToGcal('${id}')">📅 ${log.gcalEventId ? "Googleカレンダーで更新" : "Googleカレンダーに送る"}</button>`
         : "";
       f.innerHTML = `
         <h2 class="form-title">${title}${gcalBadge}</h2>
@@ -3266,9 +3266,9 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
         </div>
         <p class="small">ハッシュタグを入れると振り返りノートで検索できます。</p>
         <div class="actions">
-          <button onclick="saveLogEditor(${id})">保存</button>
+          <button onclick="saveLogEditor('${id}')">保存</button>
           ${gcalBtn}
-          <button class="danger" onclick="confirmDeleteLog(${id})">削除</button>
+          <button class="danger" onclick="confirmDeleteLog('${id}')">削除</button>
           <button class="light" onclick="navigateAfterSave('${log.date}')">戻る</button>
         </div>`;
     }
@@ -3281,7 +3281,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
       const categoryId = editCategory.value;
       const detail = (document.getElementById("detailText") ? detailText.value : "").trim();
       if(!date || !text || !start || !end || end <= start){ alert("入力を確認して！"); return; }
-      saveLogs(loadLogs().map(l => l.id === id ? {...l, date, text, start, end, categoryId, detail, updatedAt: new Date().toISOString()} : l));
+      saveLogs(loadLogs().map(l => l.id == id ? {...l, date, text, start, end, categoryId, detail, updatedAt: new Date().toISOString()} : l));
       // 触覚フィードバック（端末対応時のみ）
       try { if(navigator.vibrate) navigator.vibrate(20); } catch(_){}
       // 視覚フィードバック：チェックマーク付きトースト＋表示時間を長めに
@@ -3300,7 +3300,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
     function deleteLog(id){
       const log = getLogById(id);
       if(!log) return;
-      saveLogs(loadLogs().filter(l => l.id !== id));
+      saveLogs(loadLogs().filter(l => l.id != id));
       showReview(log.date);
     }
     function clearDateLogs(date){
@@ -3393,7 +3393,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
         const endAngle = (log.endMin / 1440) * 360;
         const d = describeDonutArc(center, center, rOuter, rInner, startAngle, endAngle);
         if(!d) return "";
-        return `<path d="${d}" fill="rgba(0,0,0,0)" class="clock-click-segment" onclick="showLogMenu(${log.id})" data-log-id="${log.id}"></path>`;
+        return `<path d="${d}" fill="rgba(0,0,0,0)" class="clock-click-segment" onclick="showLogMenu('${log.id}')" data-log-id="${log.id}"></path>`;
       }).join("");
       return `<div class="clock-wrap"><h2>24時間リング表示</h2><div class="clock-ring-area"><div class="clock-wrapper">${labels}<div class="clock-ring" style="background:conic-gradient(${segs.join(",")});"></div><svg class="clock-overlay" width="${wrapperSize}" height="${wrapperSize}" viewBox="0 0 ${wrapperSize} ${wrapperSize}">${clickPaths}</svg></div></div><p class="small">灰色は未記録時間。色付き部分をタップすると、その記録を編集できます。</p></div>`;
     }
@@ -3406,8 +3406,8 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
       return { totalMinutes: total, rate };
     }
 
-    function renderScoreBar(id,current=null){ let html=`<div class="score-bar">`; for(let i=0;i<=10;i++){ html+=`<div class="score-cell ${current!==null&&i<=current?"active":""}" onclick="setFulfillmentScore(${id},${i})" id="score-${id}-${i}">${i}</div>`; } return html+`</div>`; }
-    function setFulfillmentScore(id,score){ const logs=loadLogs(), log=logs.find(l=>l.id===id); if(!log) return; log.fulfillmentScore=score; saveLogs(logs); for(let i=0;i<=10;i++){ const el=document.getElementById(`score-${id}-${i}`); if(el) el.classList.toggle("active", i<=score); } }
+    function renderScoreBar(id,current=null){ let html=`<div class="score-bar">`; for(let i=0;i<=10;i++){ html+=`<div class="score-cell ${current!==null&&i<=current?"active":""}" onclick="setFulfillmentScore('${id}',${i})" id="score-${id}-${i}">${i}</div>`; } return html+`</div>`; }
+    function setFulfillmentScore(id,score){ const logs=loadLogs(), log=logs.find(l=>l.id==id); if(!log) return; log.fulfillmentScore=score; saveLogs(logs); for(let i=0;i<=10;i++){ const el=document.getElementById(`score-${id}-${i}`); if(el) el.classList.toggle("active", i<=score); } }
     function renderMiniReflect(log, currentScore){
       if(log.detail && log.detail.trim()) return "";
 
@@ -3427,9 +3427,9 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
       return `
         <div class="mini-reflect-box">
           <div class="mini-reflect-text">${message}</div>
-          <button class="mini-reflect-btn" onclick="toggleMiniReflect(${log.id})">ひとこと書く</button>
+          <button class="mini-reflect-btn" onclick="toggleMiniReflect('${log.id}')">ひとこと書く</button>
           <div id="miniReflect-${log.id}" class="mini-reflect-input">
-            <textarea id="miniReflectArea-${log.id}" placeholder="${placeholder}" oninput="saveMiniReflect(${log.id}, this.value)"></textarea>
+            <textarea id="miniReflectArea-${log.id}" placeholder="${placeholder}" oninput="saveMiniReflect('${log.id}', this.value)"></textarea>
             <div class="mic-row">
               <button type="button" class="mic-btn" onclick="toggleVoiceInput('miniReflectArea-${log.id}', ${log.id})" id="micBtn-${log.id}" aria-label="音声入力">🎤<span class="mic-label">音声</span></button>
               <p class="small" style="margin:0;flex:1;">保存は自動。#集中 #反省 で振り返りノート検索可。</p>
@@ -3580,7 +3580,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
 
     function saveMiniReflect(id,value){
       const logs=loadLogs();
-      const target=logs.find(l=>l.id===id);
+      const target=logs.find(l=>l.id==id);
       if(!target) return;
       target.detail=value;
       saveLogs(logs);
@@ -3827,7 +3827,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
 
     function extractTags(text){ return [...new Set(String(text||"").replace(/\n/g," ").split(" ").filter(w=>w.startsWith("#")&&w.length>1))]; }
     function getAllTaggedLogs(){ return loadLogs().filter(l=>l.detail&&extractTags(l.detail).length).map(l=>({...l,tags:extractTags(l.detail)})).sort((a,b)=>a.date!==b.date?a.date.localeCompare(b.date):a.start.localeCompare(b.start)); }
-    function showReflectionNotebook(searchTag=""){ hideRightPanels(); closeQuickMenu(); const tagged=getAllTaggedLogs(), counts={}; tagged.forEach(l=>l.tags.forEach(t=>counts[t]=(counts[t]||0)+1)); const tags=Object.entries(counts).sort((a,b)=>b[1]-a[1]); const normalized=String(searchTag||"").trim(), target=normalized&&!normalized.startsWith("#")?"#"+normalized:normalized; const results=target?tagged.filter(l=>l.tags.includes(target)):[]; const r=document.getElementById("reviewScreen"); r.style.display="block"; let html=`<h2>振り返りノート</h2><p class="small">詳細メモの #タグ で過去の予定・行動を検索できます。</p><label>ハッシュタグ検索</label><div class="category-row"><input id="tagSearchInput" type="text" placeholder="#集中、#反省 など" value="${escapeHtml(target)}"><button class="blue" onclick="showReflectionNotebook(tagSearchInput.value)">検索</button></div>`; if(tags.length){ html+=`<div class="tag-cloud">${tags.map(([t,c])=>`<button class="tag-chip" data-tag="${escapeHtml(t)}" onclick="openTag(this)">${escapeHtml(t)} ${c}</button>`).join("")}</div>`; } else html+=`<div class="empty">まだハッシュタグ付きの詳細メモがありません。</div>`; if(!target&&tags.length) html+=`<div class="empty">検索前は本文を表示しません。タグをクリックすると該当メモだけ表示します。</div>`; if(target) html+=`<div class="date-title">検索中：${escapeHtml(target)} / ${results.length}件</div>`; results.forEach(log=>{ const cat=getCategoryById(log.categoryId||"none"), label=log.type==="plan"?"予定":"行動"; html+=`<div class="notebook-result"><div class="log-meta">${formatDateJapanese(log.date)} / ${log.start}〜${log.end} / ${label}</div><div class="log-title">${escapeHtml(log.text)}</div><span class="category-pill"><span class="category-dot" style="background:${cat.color}"></span>${escapeHtml(cat.name)}</span><div class="notebook-detail">${escapeHtml(log.detail)}</div><div class="notebook-tags">${log.tags.map(t=>`<button class="tag-chip" data-tag="${escapeHtml(t)}" onclick="openTag(this)">${escapeHtml(t)}</button>`).join("")}</div><div class="actions"><button class="blue" onclick="showDetail(${log.id})">詳細を編集</button><button class="light" onclick="showReview('${log.date}')">この日を見る</button></div></div>`; }); if(target&&!results.length) html+=`<div class="empty">${escapeHtml(target)} が付いた詳細メモはまだありません。</div>`; html+=`<div class="actions"><button class="light" onclick="showMenu()">戻る</button></div>`; r.innerHTML=html; }
+    function showReflectionNotebook(searchTag=""){ hideRightPanels(); closeQuickMenu(); const tagged=getAllTaggedLogs(), counts={}; tagged.forEach(l=>l.tags.forEach(t=>counts[t]=(counts[t]||0)+1)); const tags=Object.entries(counts).sort((a,b)=>b[1]-a[1]); const normalized=String(searchTag||"").trim(), target=normalized&&!normalized.startsWith("#")?"#"+normalized:normalized; const results=target?tagged.filter(l=>l.tags.includes(target)):[]; const r=document.getElementById("reviewScreen"); r.style.display="block"; let html=`<h2>振り返りノート</h2><p class="small">詳細メモの #タグ で過去の予定・行動を検索できます。</p><label>ハッシュタグ検索</label><div class="category-row"><input id="tagSearchInput" type="text" placeholder="#集中、#反省 など" value="${escapeHtml(target)}"><button class="blue" onclick="showReflectionNotebook(tagSearchInput.value)">検索</button></div>`; if(tags.length){ html+=`<div class="tag-cloud">${tags.map(([t,c])=>`<button class="tag-chip" data-tag="${escapeHtml(t)}" onclick="openTag(this)">${escapeHtml(t)} ${c}</button>`).join("")}</div>`; } else html+=`<div class="empty">まだハッシュタグ付きの詳細メモがありません。</div>`; if(!target&&tags.length) html+=`<div class="empty">検索前は本文を表示しません。タグをクリックすると該当メモだけ表示します。</div>`; if(target) html+=`<div class="date-title">検索中：${escapeHtml(target)} / ${results.length}件</div>`; results.forEach(log=>{ const cat=getCategoryById(log.categoryId||"none"), label=log.type==="plan"?"予定":"行動"; html+=`<div class="notebook-result"><div class="log-meta">${formatDateJapanese(log.date)} / ${log.start}〜${log.end} / ${label}</div><div class="log-title">${escapeHtml(log.text)}</div><span class="category-pill"><span class="category-dot" style="background:${cat.color}"></span>${escapeHtml(cat.name)}</span><div class="notebook-detail">${escapeHtml(log.detail)}</div><div class="notebook-tags">${log.tags.map(t=>`<button class="tag-chip" data-tag="${escapeHtml(t)}" onclick="openTag(this)">${escapeHtml(t)}</button>`).join("")}</div><div class="actions"><button class="blue" onclick="showDetail('${log.id}')">詳細を編集</button><button class="light" onclick="showReview('${log.date}')">この日を見る</button></div></div>`; }); if(target&&!results.length) html+=`<div class="empty">${escapeHtml(target)} が付いた詳細メモはまだありません。</div>`; html+=`<div class="actions"><button class="light" onclick="showMenu()">戻る</button></div>`; r.innerHTML=html; }
 
     // ============================================================
     // やめたことログ（独立した記録領域）
@@ -3860,7 +3860,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
     }
     function showQuitForm(id=null){
       hideRightPanels();
-      const item = id ? loadQuitList().find(q=>q.id===id) : { text:"", startedDate:"", quitDate: todayString(), reason:"" };
+      const item = id ? loadQuitList().find(q=>q.id==id) : { text:"", startedDate:"", quitDate: todayString(), reason:"" };
       if(!item) return;
       const f = document.getElementById("formScreen"); f.style.display = "block";
       f.innerHTML = `<h2>${id?"やめたことを編集":"やめたことを追加"}</h2>
@@ -3885,7 +3885,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
       if(!text){ alert("「やめたこと」を入力してください"); return; }
       const list = loadQuitList();
       if(id){
-        const idx = list.findIndex(q=>q.id===id);
+        const idx = list.findIndex(q=>q.id==id);
         if(idx>=0) list[idx] = { ...list[idx], text, startedDate, quitDate, reason, updatedAt:new Date().toISOString() };
       } else {
         list.push({ id:newId(), text, startedDate, quitDate, reason, updatedAt:new Date().toISOString() });
@@ -3895,10 +3895,10 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
       showQuitList();
     }
     function deleteQuitItem(id){
-      const item = loadQuitList().find(q=>q.id===id);
+      const item = loadQuitList().find(q=>q.id==id);
       if(!item) return;
       if(!confirm(`「${item.text}」を削除しますか？`)) return;
-      saveQuitList(loadQuitList().filter(q=>q.id!==id));
+      saveQuitList(loadQuitList().filter(q=>q.id!=id));
       showQuitList();
     }
 
@@ -4548,7 +4548,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
     }
     function executeMergeLogs(idA, idB, keep, pairIdx){
       const logs = loadLogs();
-      const a = logs.find(l=>l.id===idA), b = logs.find(l=>l.id===idB);
+      const a = logs.find(l=>l.id==idA), b = logs.find(l=>l.id==idB);
       if(!a || !b) return;
       const keepLog = keep === "A" ? a : b;
       const removeLog = keep === "A" ? b : a;
@@ -4851,7 +4851,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
           `<div class="agenda-add"><button class="plan" onclick="showPlanForm('${date}')">＋予定</button><button onclick="showActualForm('${date}')">＋行動</button></div></div>`;
       logs.forEach(log=>{
         const cat=byId(log.categoryId||"none"), label=log.type==="plan"?"予定":"行動", cls=log.type==="plan"?"plan":"actual";
-        html+=`<div class="log-item ${cls} log-tappable" style="--evt:${cat.color}" onclick="showLogEditor(${log.id})" role="button" tabindex="0"><div class="log-content-row"><div class="log-main"><div class="log-meta">${log.start}〜${log.end} / ${label}</div><div class="log-title">${escapeHtml(log.text)}</div><span class="category-pill"><span class="category-dot" style="background:${cat.color}"></span>${escapeHtml(cat.name)}</span>${log.repeat?`<span class="detail-badge">繰り返し</span>`:""}${log.detail?`<span class="detail-badge">詳細あり</span>`:""}${renderUntitledHelper(log)}</div></div></div>`;
+        html+=`<div class="log-item ${cls} log-tappable" style="--evt:${cat.color}" onclick="showLogEditor('${log.id}')" role="button" tabindex="0"><div class="log-content-row"><div class="log-main"><div class="log-meta">${log.start}〜${log.end} / ${label}</div><div class="log-title">${escapeHtml(log.text)}</div><span class="category-pill"><span class="category-dot" style="background:${cat.color}"></span>${escapeHtml(cat.name)}</span>${log.repeat?`<span class="detail-badge">繰り返し</span>`:""}${log.detail?`<span class="detail-badge">詳細あり</span>`:""}${renderUntitledHelper(log)}</div></div></div>`;
       });
       agendaEl.innerHTML = html;
     }
@@ -5108,7 +5108,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
           if(top + height < 0 || top > bodyHeight) return;
           const cat=getCategoryById(l.categoryId||"none");
           const typeMark=l.type==="plan"?"予":"行";
-          html+=`<div class="week-event ${l.type}" style="top:${top}px; height:${height}px; background:${cat.color};" onclick="event.stopPropagation(); showLogMenu(${l.id})">
+          html+=`<div class="week-event ${l.type}" style="top:${top}px; height:${height}px; background:${cat.color};" onclick="event.stopPropagation(); showLogMenu('${l.id}')">
             <div class="week-event-time">${typeMark} ${l.start}〜${l.end}</div>
             <div class="week-event-text">${escapeHtml(l.text)}</div>
           </div>`;
@@ -5712,7 +5712,6 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
     document.body.dataset.showReview = "false";
     document.getElementById("menuScreen").style.display = "none";
 
-    migrateNumericIds();
     updateTodayBar();
     renderCalendar();
     updateLiveStopwatchBar();
