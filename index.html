@@ -2920,12 +2920,15 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
           const logs2=loadLogs(); logs2.push(...entries); saveLogs(logs2); selectedDate=date; currentCalendarDate=new Date(date+"T00:00:00");
           showSaveToast(`繰り返し予定を${entries.length}件作成しました`);
           navigateAfterSave(date);
+          autoPushPlansToGcal(entries);
           return;
         }
       }
-      const logs=loadLogs(); logs.push({id:newId(), date, type, text, start, end, categoryId, detail:"", updatedAt:new Date().toISOString()}); saveLogs(logs); selectedDate=date; currentCalendarDate=new Date(date+"T00:00:00");
+      const nid=newId();
+      const logs=loadLogs(); logs.push({id:nid, date, type, text, start, end, categoryId, detail:"", updatedAt:new Date().toISOString()}); saveLogs(logs); selectedDate=date; currentCalendarDate=new Date(date+"T00:00:00");
       showSaveToast(type==="plan" ? "予定を保存しました" : "行動を保存しました");
       navigateAfterSave(date);
+      if(type==="plan") autoPushPlanToGcal({ id:nid, type:"plan", date, start, end, text, detail:"" });
     }
     // 確認ダイアログをトーストに置換
     function showSaveToast(message, duration=1800){
@@ -5329,6 +5332,22 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
         console.error(e);
         return { ok: false, reason: e.message };
       }
+    }
+
+    // 予定作成時にGoogleカレンダーへ自動反映（連携時のみ・バックグラウンド・失敗は無視）
+    async function autoPushPlanToGcal(log){
+      if(!isGcalAuthenticated() || !log || log.type !== "plan") return;
+      try { const r = await sendLogToGcal(log); if(r && r.ok) showSaveToast("📅 Googleカレンダーにも追加しました"); }
+      catch(_) {}
+    }
+    async function autoPushPlansToGcal(list){
+      if(!isGcalAuthenticated() || !Array.isArray(list) || !list.length) return;
+      let ok = 0;
+      for(const e of list){
+        try { const r = await sendLogToGcal({ id:e.id, type:"plan", date:e.date, start:e.start, end:e.end, text:e.text, detail:e.detail||"" }); if(r && r.ok) ok++; }
+        catch(_) {}
+      }
+      if(ok) showSaveToast(`📅 Googleカレンダーに${ok}件追加しました`);
     }
 
     async function syncAllPlansToGcal(){
