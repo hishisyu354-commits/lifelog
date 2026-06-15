@@ -2067,7 +2067,21 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
 
     function todayString(){ const d=new Date(); return toDateString(d); }
     // 衝突しない一意ID（Date.now()は同一msで衝突しデータ消失の原因になる）
-    function newId(){ return (typeof crypto!=="undefined" && crypto.randomUUID) ? crypto.randomUUID() : (Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,10)); }
+    let _idSeq = 0;
+    // 一意な数値ID。多数の onclick が ID を引用符なしで埋め込む（fn(${id})）ため、ID は必ず数値にする
+    // （文字列だと onclick が不正JSになりタップ無反応になる）。Date.now()*1000 + 連番で同一ms衝突も回避。
+    function newId(){ return Date.now() * 1000 + (_idSeq++ % 1000); }
+    // 旧版で UUID(文字列) として作られた ID を数値へ移行（タップ無反応の修復）
+    function migrateNumericIds(){
+      try {
+        const logs = loadLogs(); let changed = false;
+        logs.forEach(l => { if(l && (typeof l.id !== "number" || !isFinite(l.id))){ l.id = newId(); changed = true; } });
+        if(changed) saveLogs(logs);
+        const quits = loadQuitList(); let qch = false;
+        quits.forEach(q => { if(q && (typeof q.id !== "number" || !isFinite(q.id))){ q.id = newId(); qch = true; } });
+        if(qch) saveQuitList(quits);
+      } catch(e){ console.warn("id migration skipped:", e); }
+    }
     // タグチップ用：data-tag を読んで検索（onclickに生のタグ文字列を埋め込まない）
     function openTag(el){ if(el && el.dataset) showReflectionNotebook(el.dataset.tag||""); }
     function toDateString(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
@@ -5698,6 +5712,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
     document.body.dataset.showReview = "false";
     document.getElementById("menuScreen").style.display = "none";
 
+    migrateNumericIds();
     updateTodayBar();
     renderCalendar();
     updateLiveStopwatchBar();
