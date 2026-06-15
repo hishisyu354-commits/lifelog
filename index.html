@@ -1892,6 +1892,18 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
     .ai-report-q li{ color:var(--accent); font-weight:600; }
     .ai-report-foot{ font-size:11px; color:var(--muted); margin-top:10px; line-height:1.5; }
     /* 横向きガード：スマホを横にしてもレイアウトを崩さず縦向き利用を促す（iOSはWebから向きロック不可のため） */
+    /* 充填率リング（振り返り画面） */
+    .fillrate-wrap{ text-align:center; }
+    .fillrate-ring-area{ position:relative; width:190px; height:190px; margin:12px auto 4px; }
+    .fillrate-ring{ width:100%; height:100%; border-radius:50%; box-shadow:0 2px 10px rgba(20,18,16,.06); -webkit-mask:radial-gradient(closest-side,#0000 60%,#000 61%); mask:radial-gradient(closest-side,#0000 60%,#000 61%); }
+    .fillrate-center{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:none; }
+    .fr-rate{ font-size:32px; font-weight:800; color:var(--text); line-height:1; font-variant-numeric:tabular-nums; letter-spacing:-.02em; }
+    .fr-sub{ font-size:11.5px; color:var(--muted); font-weight:600; margin-top:4px; }
+    .fillrate-legend{ max-width:280px; margin:10px auto 0; }
+    .fr-legend-row{ display:flex; align-items:center; gap:8px; padding:3px 2px; font-size:12.5px; color:var(--text); }
+    .fr-dot{ width:10px; height:10px; border-radius:3px; flex:0 0 auto; }
+    .fr-name{ flex:1; min-width:0; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; }
+    .fr-time{ color:var(--muted); font-weight:700; font-variant-numeric:tabular-nums; }
     .rotate-guard{ display:none; }
     @media screen and (orientation: landscape) and (max-height: 500px){
       .rotate-guard{
@@ -3369,7 +3381,27 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
 
     function buildPieChart(logs){
       const valid=logs.map(logWithMinutes).filter(l=>l.duration>0);
-      return buildDayActionCard(logs, selectedDate) + buildClockChart(valid);
+      return buildDayActionCard(logs, selectedDate) + buildFillRateRing(valid);
+    }
+
+    // 充填率リング（振り返り画面）：12時位置から時計回りにカテゴリ色で連続充填、残りグレー、中央に%と記録時間
+    function buildFillRateRing(valid){
+      const parts = Object.values(valid.reduce((a,l)=>{ const k=l.categoryId||"none"; (a[k]=a[k]||{color:l.color,mn:0,name:l.categoryName}).mn+=l.duration; return a; },{})).sort((x,y)=>y.mn-x.mn);
+      const totalMin = parts.reduce((s,p)=>s+p.mn,0);
+      const denom = Math.max(1440, totalMin);
+      let segs=[], acc=0;
+      parts.forEach(p=>{ segs.push(`${p.color} ${(acc/denom*360).toFixed(2)}deg ${((acc+p.mn)/denom*360).toFixed(2)}deg`); acc+=p.mn; });
+      if(acc<denom) segs.push(`#ebe8e3 ${(acc/denom*360).toFixed(2)}deg 360deg`);
+      const rate = Math.round(Math.min(100, totalMin/1440*100));
+      const legend = parts.slice(0,5).map(p=>`<div class="fr-legend-row"><span class="fr-dot" style="background:${p.color}"></span><span class="fr-name">${escapeHtml(p.name||"カテゴリなし")}</span><span class="fr-time">${minutesToHourText(p.mn)}</span></div>`).join("");
+      return `<div class="fillrate-wrap"><h2>24時間の充填率</h2>
+        <div class="fillrate-ring-area">
+          <div class="fillrate-ring" style="background:conic-gradient(from 0deg, ${segs.join(",")})"></div>
+          <div class="fillrate-center"><span class="fr-rate">${rate}%</span><span class="fr-sub">${minutesToHourText(totalMin)} / 24時間</span></div>
+        </div>
+        ${legend?`<div class="fillrate-legend">${legend}</div>`:""}
+        <p class="small">記録済み時間が1日に占める割合（12時位置から時計回り）。色はカテゴリ。</p>
+      </div>`;
     }
 
     // 24時間リング用：極座標→直交座標変換（0度=12時方向、時計回り）
@@ -4842,14 +4874,12 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
       const cats = loadCategories();
       const byId = id => cats.find(c=>c.id===id) || cats[0];
       const valid = logs.map(logWithMinutes).filter(l=>l.duration>0);
-      // 充填率リング：12時位置(上)から時計回りに記録済み分を連続で充填。カテゴリ別に色分け、残りはグレー。
-      // （時刻対応の24hリングは振り返り画面にあるためここでは使わない）
-      const ringParts = Object.values(valid.reduce((acc,l)=>{ const k=l.categoryId||"none"; (acc[k]=acc[k]||{color:l.color,mn:0}).mn+=l.duration; return acc; },{})).sort((a,b)=>b.mn-a.mn);
-      const ringTotal = ringParts.reduce((s,p)=>s+p.mn,0);
-      const ringDenom = Math.max(1440, ringTotal);
-      let segs=[], _acc=0;
-      ringParts.forEach(p=>{ segs.push(`${p.color} ${(_acc/ringDenom*360).toFixed(2)}deg ${((_acc+p.mn)/ringDenom*360).toFixed(2)}deg`); _acc+=p.mn; });
-      if(_acc < ringDenom) segs.push(`#ebe8e3 ${(_acc/ringDenom*360).toFixed(2)}deg 360deg`);
+      // 時刻対応リング：その分に活動していたカテゴリ色で塗る（未記録はグレー）。0:00が真上、時計回り。
+      // （充填率リングは振り返り画面に配置）
+      const mins = new Array(1440).fill("#ebe8e3");
+      valid.forEach(l=>{ for(let i=Math.max(0,l.startMin); i<Math.min(1440,l.endMin); i++) mins[i]=l.color; });
+      let segs=[], cur=mins[0], st=0;
+      for(let i=1;i<=1440;i++){ if(i===1440||mins[i]!==cur){ segs.push(`${cur} ${(st/1440*360).toFixed(2)}deg ${(i/1440*360).toFixed(2)}deg`); cur=mins[i]; st=i; } }
       const fr = calculateFillRate(date);
       const total = fr.totalMinutes;
       const centerVal = total<60 ? `${total}` : (total%60===0 ? `${total/60}` : (total/60).toFixed(1));
