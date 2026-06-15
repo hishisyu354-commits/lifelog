@@ -5065,7 +5065,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
         if(endNeeded > endHour && endNeeded <= 24) endHour=endNeeded;
       });
       const hourCount=endHour-startHour;
-      const hourHeight=56; // 1時間 = 56px
+      const hourHeight=30; // 1時間 = 30px（6:00〜24:00の全体像が1画面に収まる高さ）
       const bodyHeight=hourCount*hourHeight;
 
       grid.className="week-grid";
@@ -5129,7 +5129,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
           const em=timeToMinutes(l.end);
           if(em<=sm) return;
           const top=(sm - startHour*60) / 60 * hourHeight;
-          const height=Math.max(22, (em - sm) / 60 * hourHeight - 2);
+          const height=Math.max(16, (em - sm) / 60 * hourHeight - 2);
           if(top + height < 0 || top > bodyHeight) return;
           const cat=getCategoryById(l.categoryId||"none");
           const typeMark=l.type==="plan"?"予":"行";
@@ -5164,7 +5164,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
       const col=event.currentTarget;
       const rect=col.getBoundingClientRect();
       const y=event.clientY - rect.top;
-      const hourHeight=56; // CSSと一致
+      const hourHeight=30; // CSSと一致
       const startHourOfView=parseInt(col.dataset.startHour||"6");
       const totalMin=y / hourHeight * 60 + startHourOfView * 60;
       // 15分単位に丸める
