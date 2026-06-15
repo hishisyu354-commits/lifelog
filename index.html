@@ -3103,7 +3103,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
           <input
             type="checkbox"
             value="${escapeHtml(text)}"
-            onchange="updateUntitledTitle(${logId})"
+            onchange="updateUntitledTitle('${logId}')"
           >
           <span>${escapeHtml(text)}</span>
           ${label ? `<span class="untitled-score-label">${label}</span>` : ""}
@@ -3849,8 +3849,8 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
             ${period ? `<div class="quit-period">${escapeHtml(period)}</div>` : ""}
             ${item.reason ? `<div class="quit-reason">${escapeHtml(item.reason)}</div>` : ""}
             <div class="mini-actions">
-              <button class="light" onclick="showQuitForm(${item.id})">編集</button>
-              <button class="danger" onclick="deleteQuitItem(${item.id})">削除</button>
+              <button class="light" onclick="showQuitForm('${item.id}')">編集</button>
+              <button class="danger" onclick="deleteQuitItem('${item.id}')">削除</button>
             </div>
           </div>`;
         });
@@ -4528,13 +4528,13 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
                 <div class="dup-meta">A: ${a.start}〜${a.end}</div>
                 <span class="category-pill"><span class="category-dot" style="background:${catA.color}"></span>${escapeHtml(catA.name)}</span>
                 ${a.detail ? `<div class="dup-detail">${escapeHtml(a.detail).substring(0,80)}${a.detail.length>80?"…":""}</div>` : `<div class="dup-detail-empty">詳細メモなし</div>`}
-                <button class="blue mini-button" onclick="executeMergeLogs(${a.id},${b.id},'A',${i})">Aを残してマージ</button>
+                <button class="blue mini-button" onclick="executeMergeLogs('${a.id}','${b.id}','A',${i})">Aを残してマージ</button>
               </div>
               <div class="dup-side">
                 <div class="dup-meta">B: ${b.start}〜${b.end}</div>
                 <span class="category-pill"><span class="category-dot" style="background:${catB.color}"></span>${escapeHtml(catB.name)}</span>
                 ${b.detail ? `<div class="dup-detail">${escapeHtml(b.detail).substring(0,80)}${b.detail.length>80?"…":""}</div>` : `<div class="dup-detail-empty">詳細メモなし</div>`}
-                <button class="blue mini-button" onclick="executeMergeLogs(${a.id},${b.id},'B',${i})">Bを残してマージ</button>
+                <button class="blue mini-button" onclick="executeMergeLogs('${a.id}','${b.id}','B',${i})">Bを残してマージ</button>
               </div>
             </div>
             <div class="mini-actions" style="margin-top:6px;">
