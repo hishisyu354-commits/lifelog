@@ -1869,6 +1869,17 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
     .review-date-input::-webkit-calendar-picker-indicator{ opacity:.55; cursor:pointer; }
     body[data-theme$="-dark"] .review-date-input::-webkit-calendar-picker-indicator{ filter:invert(1); opacity:.6; }
     .review-date-suffix{ font-size:17px; font-weight:800; color:var(--text); }
+    /* ============================================================
+       AI（Gemini）カテゴリ提案UI
+       ============================================================ */
+    .ai-suggest-field{ margin-top:2px; }
+    .ai-suggest-btn{ background:var(--accent-soft); color:var(--accent); border:1px solid var(--accent-line); border-radius:999px; font-size:12.5px; font-weight:700; padding:8px 14px; min-height:36px; -webkit-appearance:none; }
+    .ai-suggest-btn:active{ transform:scale(.96); background:var(--accent-line); }
+    .ai-note{ font-size:12px; color:var(--muted); margin-top:6px; line-height:1.5; }
+    .ai-note strong{ color:var(--accent); }
+    .ai-tags{ margin-top:6px; display:flex; flex-wrap:wrap; gap:6px; align-items:center; font-size:11.5px; color:var(--muted); }
+    @keyframes aiSpin{ to{ transform:rotate(360deg); } }
+    .ai-spin{ display:inline-block; animation:aiSpin 1s linear infinite; }
   </style>
 </head>
 <body>
@@ -1935,6 +1946,9 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
 
           <h3 class="menu-section-title">Googleカレンダー連携</h3>
           <div id="gcalSection"></div>
+
+          <h3 class="menu-section-title">AI（Gemini）連携</h3>
+          <div id="geminiSection"></div>
 
           <h3 class="menu-section-title">記録・振り返り</h3>
           <div class="menu" style="margin-top:14px;">
@@ -2023,6 +2037,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
     const GCAL_USER_KEY = "dailyLifeGcalUserV1";
     const QUIT_KEY = "dailyLifeQuitItemsV1";
     const WEEKLY_INTENT_KEY = "dailyLifeWeeklyIntentsV1";
+    const GEMINI_KEY = "dailyLifeGeminiKeyV1";
     const THEME_KEY = "dailyLifeThemeV1";
     const DEFAULT_CATEGORIES = [
       { id:"none", name:"カテゴリなし", color:"#95a5a6" },
@@ -2085,6 +2100,114 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
 
     function getCategoryById(id){ return loadCategories().find(c=>c.id===id) || loadCategories()[0]; }
     function categoryOptions(selected="none"){ return loadCategories().map(c=>`<option value="${c.id}" ${c.id===selected?"selected":""}>${escapeHtml(c.name)}</option>`).join(""); }
+
+    // ============================================================
+    // AI（Gemini）連携：BYOK（各自のAPIキー）。本文からカテゴリ/タグを「提案」する（自動確定はしない）
+    // ============================================================
+    function loadGeminiKey(){ try { return localStorage.getItem(GEMINI_KEY) || ""; } catch { return ""; } }
+    function saveGeminiKeyValue(k){ try { if(k) localStorage.setItem(GEMINI_KEY, k); else localStorage.removeItem(GEMINI_KEY); } catch {} }
+    function hasGeminiKey(){ return !!loadGeminiKey(); }
+
+    async function callGemini(prompt, schema, opts={}){
+      const key = loadGeminiKey();
+      if(!key) throw new Error("NO_KEY");
+      const model = opts.model || "gemini-2.5-flash";
+      const body = { contents:[{ parts:[{ text: prompt }] }] };
+      const gen = {};
+      if(schema){ gen.responseMimeType = "application/json"; gen.responseSchema = schema; }
+      if(opts.temperature != null) gen.temperature = opts.temperature;
+      if(Object.keys(gen).length) body.generationConfig = gen;
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`, {
+        method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(body)
+      });
+      if(!res.ok){ const t = await res.text().catch(()=> ""); throw new Error("Gemini " + res.status + (res.status===429?"（無料枠の上限かもしれません）":"") + (t?(": "+t.slice(0,140)):"")); }
+      const data = await res.json();
+      const parts = ((((data.candidates||[])[0]||{}).content)||{}).parts || [];
+      const text = parts.map(p=>p.text||"").join("");
+      if(!schema) return text;
+      try { return JSON.parse(text); } catch(e){ throw new Error("AI応答の解析に失敗しました"); }
+    }
+
+    const _AI_CAT_SCHEMA = { type:"object", properties:{
+      categoryId:{ type:"string" },
+      confidence:{ type:"string", enum:["high","medium","low"] },
+      tags:{ type:"array", items:{ type:"string" } },
+      newCategory:{ type:"string" }
+    }, required:["categoryId","confidence"] };
+
+    async function suggestCategoryAI(){
+      const textEl = document.getElementById("logText");
+      const sel = document.getElementById("categorySelect");
+      const note = document.getElementById("aiCatNote");
+      if(!textEl || !sel) return;
+      const text = (textEl.value||"").trim();
+      const detailEl = document.getElementById("detailText");
+      const detail = detailEl ? (detailEl.value||"").trim() : "";
+      if(!text && !detail){ if(note) note.textContent = "本文を入力してから提案できます。"; return; }
+      const cats = loadCategories();
+      if(note) note.innerHTML = `<span class="ai-spin">✨</span> AIが提案を考えています…`;
+      try {
+        const prompt = `あなたは生活ログアプリの分類アシスタントです。次の記録を、用意されたカテゴリのどれかに分類してください。\nカテゴリ一覧(idと名前):\n${cats.map(c=>`- ${c.id}: ${c.name}`).join("\n")}\n\n記録本文: ${text}\n詳細メモ: ${detail||"(なし)"}\n\n出力ルール:\n- categoryId は必ず上記idのいずれか。どれにも当てはまらない場合のみ categoryId を "none" にし、newCategory に短い日本語の新カテゴリ名を入れる。\n- confidence は high/medium/low。\n- tags は内容に合う日本語ハッシュタグ(先頭#)を最大3つ。無ければ空配列。`;
+        const r = await callGemini(prompt, _AI_CAT_SCHEMA, { temperature: 0.2 });
+        applyCategorySuggestion(r);
+      } catch(e){
+        if(note) note.textContent = e.message==="NO_KEY" ? "メニューで Gemini APIキーを設定してください。" : ("提案できませんでした：" + e.message);
+      }
+    }
+
+    function applyCategorySuggestion(r){
+      const sel = document.getElementById("categorySelect");
+      const note = document.getElementById("aiCatNote");
+      const tagsWrap = document.getElementById("aiTagSuggest");
+      if(!sel || !r) return;
+      const cats = loadCategories();
+      const conf = { high:"高", medium:"中", low:"低" }[r.confidence] || "";
+      let applied = null;
+      if(r.categoryId && r.categoryId !== "none" && cats.some(c=>c.id===r.categoryId)){
+        sel.value = r.categoryId; applied = cats.find(c=>c.id===r.categoryId);
+      }
+      if(note){
+        if(applied) note.innerHTML = `✨ AI提案：<strong>${escapeHtml(applied.name)}</strong>（確信度 ${conf}）— 必要なら変更できます`;
+        else if(r.newCategory) note.innerHTML = `✨ AI提案：新カテゴリ「<strong>${escapeHtml(r.newCategory)}</strong>」が合いそうです（＋で追加）`;
+        else note.textContent = "ぴったりのカテゴリは見つかりませんでした。";
+      }
+      if(tagsWrap){
+        const tags = Array.isArray(r.tags) ? r.tags.filter(Boolean).slice(0,3) : [];
+        tagsWrap.innerHTML = tags.length ? `提案タグ：${tags.map(t=>`<button type="button" class="tag-chip" data-tag="${escapeHtml(t)}" onclick="appendDetailTag(this.dataset.tag)">${escapeHtml(t)}</button>`).join(" ")}` : "";
+      }
+    }
+
+    function appendDetailTag(tag){
+      const d = document.getElementById("detailText") || document.getElementById("logText");
+      if(!d || !tag) return;
+      const t = tag.startsWith("#") ? tag : "#" + tag;
+      d.value = (d.value && !d.value.endsWith(" ") ? d.value + " " : d.value) + t + " ";
+      d.focus();
+    }
+
+    // 本文入力後に一度だけ自動提案（ユーザーが既にカテゴリを選んでいれば尊重）
+    function aiAutoSuggestCategory(){
+      if(!hasGeminiKey()) return;
+      const sel = document.getElementById("categorySelect");
+      const t = document.getElementById("logText");
+      if(!sel || !t) return;
+      if(sel.value && sel.value !== "none") return;
+      const v = (t.value||"").trim();
+      if(v.length < 3) return;
+      if(t.dataset.aiSuggestedFor === v) return;
+      t.dataset.aiSuggestedFor = v;
+      suggestCategoryAI();
+    }
+
+    function renderGeminiSection(){
+      const el = document.getElementById("geminiSection");
+      if(!el) return;
+      el.innerHTML = hasGeminiKey()
+        ? `<div class="gcal-info-row">✅ Gemini連携 設定済み。記録の本文からカテゴリ・タグを提案します（確定はあなた）。</div><div class="actions"><button class="light" onclick="clearGeminiKeyUI()">キーを更新 / 解除</button></div>`
+        : `<div class="gcal-info-row">記録の本文からカテゴリやタグをAIが提案します。無料の Gemini API キーが必要です（<a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">取得はこちら</a>）。<br><strong>注意：</strong>本文が Google に送信されます（無料枠は内容が学習に使われ得ます）。</div><div class="compact-row" style="margin-top:8px;"><input id="geminiKeyInput" type="password" class="compact-input" placeholder="Gemini API キーを貼り付け" autocomplete="off"><button class="blue" onclick="saveGeminiKeyUI()">保存</button></div>`;
+    }
+    function saveGeminiKeyUI(){ const i=document.getElementById("geminiKeyInput"); const k=i?i.value.trim():""; if(!k){ alert("APIキーを入力してください"); return; } saveGeminiKeyValue(k); showSaveToast("Gemini連携を保存しました"); renderGeminiSection(); }
+    function clearGeminiKeyUI(){ customConfirm("Gemini連携を解除しますか？（保存したAPIキーを削除します）", ()=>{ saveGeminiKeyValue(""); renderGeminiSection(); }, "解除"); }
     function frequentPlanOptions(){ return loadFrequentPlans().map(p=>`<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join(""); }
     function frequentTagOptions(){ return loadFrequentTags().map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join(""); }
 
@@ -2194,6 +2317,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
           break;
         case "menu":
           document.getElementById("menuScreen").style.display = "block";
+          renderGeminiSection();
           break;
       }
       scrollToTopMobile();
@@ -2571,7 +2695,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
           </div>
           <div class="form-field">
             <label class="mini-label">${label}</label>
-            <textarea id="logText" class="compact-textarea" placeholder="${placeholder}">${escapeHtml(text)}</textarea>
+            <textarea id="logText" class="compact-textarea" placeholder="${placeholder}" onblur="aiAutoSuggestCategory()">${escapeHtml(text)}</textarea>
           </div>
           ${tplBlock}
           <div class="form-field">
@@ -2582,6 +2706,11 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
               <button class="icon-button danger" type="button" onclick="deleteSelectedCategory('categorySelect')" title="選択中のカテゴリを削除" aria-label="削除">×</button>
             </div>
           </div>
+          ${hasGeminiKey() ? `<div class="form-field ai-suggest-field">
+            <button type="button" class="ai-suggest-btn" onclick="suggestCategoryAI()">✨ AIにカテゴリ・タグを提案してもらう</button>
+            <div id="aiCatNote" class="ai-note"></div>
+            <div id="aiTagSuggest" class="ai-tags"></div>
+          </div>` : ""}
           <div class="time-row">
             <div class="form-field"><label class="mini-label">開始時刻</label><input id="startTime" type="time" value="${start}" class="compact-input"></div>
             <div class="form-field"><label class="mini-label">終了時刻</label><input id="endTime" type="time" value="${end}" class="compact-input"></div>
