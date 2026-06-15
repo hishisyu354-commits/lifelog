@@ -1883,6 +1883,14 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
     .ai-q-field{ margin-top:10px; }
     .ai-q-text{ font-size:13.5px; font-weight:700; color:var(--text); line-height:1.55; }
     .ai-q-actions{ display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+    .ai-report{ background:var(--accent-soft); border:1px solid var(--accent-line); border-radius:var(--radius-md); padding:14px 16px; margin-top:12px; }
+    .ai-report-head{ font-size:13.5px; font-weight:800; color:var(--accent); margin-bottom:8px; }
+    .ai-report-summary{ font-size:13px; color:var(--text); line-height:1.6; margin:0 0 10px; white-space:pre-wrap; }
+    .ai-report-sub{ font-size:11.5px; font-weight:800; color:var(--muted); letter-spacing:.04em; margin:10px 0 4px; }
+    .ai-report-list{ margin:0; padding-left:18px; }
+    .ai-report-list li{ font-size:13px; color:var(--text); line-height:1.6; margin:3px 0; }
+    .ai-report-q li{ color:var(--accent); font-weight:600; }
+    .ai-report-foot{ font-size:11px; color:var(--muted); margin-top:10px; line-height:1.5; }
   </style>
 </head>
 <body>
@@ -2243,6 +2251,69 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
       d.value = (d.value && !d.value.endsWith("\n") ? d.value + "\n" : d.value) + `Q: ${q}\nA: `;
       d.focus();
       try { d.selectionStart = d.selectionEnd = d.value.length; } catch(_) {}
+    }
+
+    // 傾向分析レポート：個別記録ではなく「集計」をGeminiへ送り、観察と内省の問いを返す
+    function aggregatePeriodData(startDate){
+      const logs = loadLogs().filter(l => !startDate || l.date >= startDate);
+      const actuals = logs.filter(l=>l.type==="actual").map(logWithMinutes).filter(l=>l.duration>0);
+      const plans = logs.filter(l=>l.type==="plan");
+      const catMin = {};
+      actuals.forEach(l=>{ const k=l.categoryName||"カテゴリなし"; catMin[k]=(catMin[k]||0)+l.duration; });
+      const totalMin = actuals.reduce((s,l)=>s+l.duration,0);
+      const categoryDistribution = Object.entries(catMin).sort((a,b)=>b[1]-a[1])
+        .map(([name,m])=>({ category:name, hours:+(m/60).toFixed(1), pct: totalMin?Math.round(m/totalMin*100):0 }));
+      const days = new Set(actuals.map(l=>l.date));
+      const sums = loadDailySummaries().filter(s=>!startDate || s.date>=startDate).sort((a,b)=>a.date.localeCompare(b.date));
+      const fulfillmentAvg = sums.length ? +(sums.reduce((s,d)=>s+d.totalFulfillment,0)/sums.length).toFixed(1) : null;
+      const fulfillmentChange = sums.length>=2 ? +(sums[sums.length-1].totalFulfillment - sums[0].totalFulfillment).toFixed(1) : null;
+      const tagCounts = {};
+      logs.forEach(l=>{ extractTags(l.detail||"").forEach(t=>{ tagCounts[t]=(tagCounts[t]||0)+1; }); });
+      const topTags = Object.entries(tagCounts).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([tag,count])=>({tag,count}));
+      const weeklyIntents = loadWeeklyIntents().filter(w=>!startDate || (w.weekStartDate||"")>=startDate)
+        .map(w=>({ week:w.weekStartDate, intent:String(w.text||"").slice(0,200), keywords:w.keywords||[] }));
+      const quitItems = loadQuitList().slice(-5).map(q=>({ title:q.text, reason:String(q.reason||"").slice(0,120) }));
+      return { periodStart:startDate||"(全期間)", periodEnd:todayString(), recordedHours:+(totalMin/60).toFixed(1),
+        activeDays:days.size, actualCount:actuals.length, planCount:plans.length, categoryDistribution,
+        fulfillmentAvg, fulfillmentChange, topTags, weeklyIntents, quitItems };
+    }
+
+    const _AI_REPORT_SCHEMA = { type:"object", properties:{
+      summary:{ type:"string" },
+      observations:{ type:"array", items:{ type:"string" } },
+      questions:{ type:"array", items:{ type:"string" } }
+    }, required:["summary","observations","questions"] };
+
+    async function generateAIReport(range){
+      const area = document.getElementById("aiReportArea");
+      if(!area) return;
+      if(!hasGeminiKey()){ area.innerHTML = `<div class="ai-note">メニューで Gemini APIキーを設定してください。</div>`; return; }
+      const startDate = getTrendStartDate(range);
+      const data = aggregatePeriodData(startDate);
+      if(!data.actualCount && !data.planCount){ area.innerHTML = `<div class="ai-note">この期間の記録がまだありません。</div>`; return; }
+      area.innerHTML = `<div class="ai-note"><span class="ai-spin">✨</span> ${rangeLabel(range)}の傾向をまとめています…</div>`;
+      try {
+        const prompt = `あなたは生活ログの振り返りパートナーです。以下は個別の記録ではなく「集計データ」です。これを基に、ユーザー自身の内省を助けるレポートを作ってください。\n方針(重要): あなたは結論・評価・採点・助言・指示を断定しないこと。役割は「事実から読み取れる観察」と「本人が考えるための問い」を提供することだけです。\n出力(日本語):\n- summary: 2〜3文。この期間の事実の要約(評価語を避け淡々と)。\n- observations: 3〜5個。データから読み取れる傾向・偏り・変化を各1文(「〜の傾向」など断定しすぎない)。\n- questions: 3〜4個。本人が深掘りするための問い(あなたは答えない)。\n集計データ(JSON):\n${JSON.stringify(data)}`;
+        const r = await callGemini(prompt, _AI_REPORT_SCHEMA, { temperature: 0.6 });
+        renderAIReport(r, range, data);
+      } catch(e){
+        area.innerHTML = `<div class="ai-note">レポートを作れませんでした：${escapeHtml(e.message)}</div>`;
+      }
+    }
+
+    function renderAIReport(r, range, data){
+      const area = document.getElementById("aiReportArea");
+      if(!area || !r) return;
+      const obs = (r.observations||[]).map(o=>`<li>${escapeHtml(o)}</li>`).join("");
+      const qs = (r.questions||[]).map(q=>`<li>${escapeHtml(q)}</li>`).join("");
+      area.innerHTML = `<div class="ai-report">
+        <div class="ai-report-head">✨ AIレポート（${escapeHtml(rangeLabel(range))}・${data.recordedHours}h / ${data.activeDays}日）</div>
+        <p class="ai-report-summary">${escapeHtml(r.summary||"")}</p>
+        ${obs?`<div class="ai-report-sub">観察された傾向</div><ul class="ai-report-list">${obs}</ul>`:""}
+        ${qs?`<div class="ai-report-sub">深掘りの問い</div><ul class="ai-report-list ai-report-q">${qs}</ul>`:""}
+        <div class="ai-report-foot">※ AIによる観察と問いです。結論はあなたが出すためのたたき台です。</div>
+        <div class="actions"><button class="light" onclick="generateAIReport('${range}')">作り直す</button></div>
+      </div>`;
     }
     function frequentPlanOptions(){ return loadFrequentPlans().map(p=>`<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join(""); }
     function frequentTagOptions(){ return loadFrequentTags().map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join(""); }
@@ -4545,6 +4616,8 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
         `;
       }
 
+      if(hasGeminiKey()) html+=`<div class="actions" style="margin-top:6px;"><button class="blue" onclick="generateAIReport('${range}')">✨ AIで傾向をレポート</button></div>`;
+      html+=`<div id="aiReportArea"></div>`;
       html+=`<div class="actions"><button class="light" onclick="showMenu()">戻る</button></div>`;
       r.innerHTML=html;
     }
