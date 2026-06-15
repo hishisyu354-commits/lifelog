@@ -1880,6 +1880,9 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
     .ai-tags{ margin-top:6px; display:flex; flex-wrap:wrap; gap:6px; align-items:center; font-size:11.5px; color:var(--muted); }
     @keyframes aiSpin{ to{ transform:rotate(360deg); } }
     .ai-spin{ display:inline-block; animation:aiSpin 1s linear infinite; }
+    .ai-q-field{ margin-top:10px; }
+    .ai-q-text{ font-size:13.5px; font-weight:700; color:var(--text); line-height:1.55; }
+    .ai-q-actions{ display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
   </style>
 </head>
 <body>
@@ -2208,6 +2211,39 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
     }
     function saveGeminiKeyUI(){ const i=document.getElementById("geminiKeyInput"); const k=i?i.value.trim():""; if(!k){ alert("APIキーを入力してください"); return; } saveGeminiKeyValue(k); showSaveToast("Gemini連携を保存しました"); renderGeminiSection(); }
     function clearGeminiKeyUI(){ customConfirm("Gemini連携を解除しますか？（保存したAPIキーを削除します）", ()=>{ saveGeminiKeyValue(""); renderGeminiSection(); }, "解除"); }
+
+    // ワンモアクエスチョン：いま書いている内容に基づき“問い”を1つ返す（答えは出さない＝思考の足場）
+    async function oneMoreQuestionAI(){
+      const note = document.getElementById("aiQNote");
+      if(!note) return;
+      const textEl = document.getElementById("editText");
+      const detailEl = document.getElementById("detailText");
+      const catEl = document.getElementById("editCategory");
+      const text = textEl ? (textEl.value||"").trim() : "";
+      const detail = detailEl ? (detailEl.value||"").trim() : "";
+      if(!text && !detail){ note.textContent = "本文か詳細メモを書いてから試してください。"; return; }
+      const catName = (loadCategories().find(c=>c.id===(catEl?catEl.value:"none"))||{}).name || "";
+      note.innerHTML = `<span class="ai-spin">✨</span> 問いを考えています…`;
+      try {
+        const prompt = `あなたは内省を助けるコーチです。ユーザーが生活ログの「詳細メモ」を書いています。記録の解像度（具体性・気づき）が上がるように、いまの内容に基づいて“問い”を1つだけ返してください。あなたが答えや解釈・助言を述べてはいけません。問いだけです。\n条件:\n- 日本語で1文、40字以内、具体的で答えやすい。\n- すでに書かれている内容を繰り返さない。書かれていない側面（理由・感情・次の一手・状況のいずれか）を1つ掘る。\n記録本文: ${text||"(なし)"}（カテゴリ: ${catName||"なし"}）\n詳細メモの下書き: ${detail||"(まだ空)"}\n出力は問いの本文のみ（前置き・引用符・箇条書き・記号は不要）。`;
+        let q = (await callGemini(prompt, null, { temperature: 0.9 }) || "").trim();
+        q = q.split("\n")[0].replace(/^[\s"「『・\-*]+/, "").replace(/["」』]+$/, "").trim();
+        if(!q){ note.textContent = "うまく問いを作れませんでした。もう一度お試しください。"; return; }
+        note.dataset.q = q;
+        note.innerHTML = `<div class="ai-q-text">❓ ${escapeHtml(q)}</div><div class="ai-q-actions"><button type="button" class="tag-chip" onclick="useQuestion()">この問いを書き込む</button><button type="button" class="tag-chip" onclick="oneMoreQuestionAI()">別の問い</button></div>`;
+      } catch(e){
+        note.textContent = e.message==="NO_KEY" ? "メニューで Gemini APIキーを設定してください。" : ("問いを出せませんでした：" + e.message);
+      }
+    }
+    function useQuestion(){
+      const note = document.getElementById("aiQNote"), d = document.getElementById("detailText");
+      if(!note || !d) return;
+      const q = note.dataset.q || "";
+      if(!q) return;
+      d.value = (d.value && !d.value.endsWith("\n") ? d.value + "\n" : d.value) + `Q: ${q}\nA: `;
+      d.focus();
+      try { d.selectionStart = d.selectionEnd = d.value.length; } catch(_) {}
+    }
     function frequentPlanOptions(){ return loadFrequentPlans().map(p=>`<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join(""); }
     function frequentTagOptions(){ return loadFrequentTags().map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join(""); }
 
@@ -3133,6 +3169,10 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
         <div class="mic-row">
           <button type="button" class="mic-btn" onclick="toggleVoiceInput('detailText','detail')" id="micBtn-detail" aria-label="音声入力">🎤<span class="mic-label">音声</span></button>
         </div>
+        ${hasGeminiKey() ? `<div class="ai-q-field">
+          <button type="button" class="ai-suggest-btn" onclick="oneMoreQuestionAI()">✨ もう一問（記録を深める）</button>
+          <div id="aiQNote" class="ai-note"></div>
+        </div>` : ""}
         <div class="tag-template-row">
           <select id="frequentTagSelect">${frequentTagOptions()}</select>
           <button class="mini-button" onclick="insertFrequentTag()">使う</button>
