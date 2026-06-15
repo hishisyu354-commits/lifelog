@@ -3117,7 +3117,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
       const candidates = getUntitledCandidateTemplates(log);
 
       return `
-        <div class="untitled-helper">
+        <div class="untitled-helper" onclick="event.stopPropagation()">
           <div class="untitled-title">この時間、何してた？</div>
           <div class="untitled-sub">タップで選択（複数可）／下に直接入力もOK</div>
 
