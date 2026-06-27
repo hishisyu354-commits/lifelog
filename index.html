@@ -5061,6 +5061,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
       const grid=document.getElementById("calendarGrid");
       if(monthArea) monthArea.style.display = "none";
       if(grid) grid.style.display = "";
+      attachWeekSwipe(); // 週送りスワイプを一度だけ付与
       renderDayHome(selectedDate);
       const title=document.getElementById("calendarTitle");
       const logs=loadLogs();
@@ -5188,6 +5189,8 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
     }
 
     function onWeekDayColClick(event, dateStr){
+      // スワイプ直後に発火する誤クリックを抑制（週送りのときに予定フォームが開かないように）
+      if(Date.now() < _swipeSuppressClickUntil) return;
       // 予定ブロックのクリックはstopPropagationで止めている → ここに来るのは空白タップのみ
       const col=event.currentTarget;
       const rect=col.getBoundingClientRect();
@@ -5213,10 +5216,77 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
     }
 
     function onWeekDayClick(dateStr){
+      // スワイプ直後の誤クリックで振り返り画面に飛ばないように抑制
+      if(Date.now() < _swipeSuppressClickUntil) return;
       selectedDate=dateStr;
       currentCalendarDate=new Date(dateStr+"T00:00:00");
       document.body.dataset.showReview="true";
       showReview(dateStr);
+    }
+
+    // 週間ビューのスワイプ（左右で前後の週へ）。月間と同じ軸ロック＋誤タップ抑止を流用。
+    // リスナは永続要素 #calendarGrid に一度だけ付与（renderWeekViewのinnerHTML差し替えでも生存）。
+    let _weekSwipeAttached=false;
+    function attachWeekSwipe(){
+      if(_weekSwipeAttached) return;
+      const grid=document.getElementById("calendarGrid");
+      if(!grid) return;
+      _weekSwipeAttached=true;
+      let sx=null, sy=null, st=0, isDragging=false, axisLocked=null, gridW=0;
+
+      grid.addEventListener("touchstart",(e)=>{
+        // 週ビュー非表示中（月間表示中）は無視
+        if(grid.style.display==="none"){ sx=null; return; }
+        if(e.touches.length!==1){ sx=null; return; }
+        const t=e.touches[0]; sx=t.clientX; sy=t.clientY; st=Date.now();
+        isDragging=false; axisLocked=null;
+        gridW=grid.offsetWidth||1;
+      },{passive:true});
+
+      grid.addEventListener("touchmove",(e)=>{
+        if(sx===null) return;
+        const t=e.touches[0];
+        const dx=t.clientX-sx, dy=t.clientY-sy;
+        if(axisLocked===null){
+          if(Math.abs(dx)>8 || Math.abs(dy)>8){
+            axisLocked = Math.abs(dx) > Math.abs(dy) ? "h" : "v";
+          } else { return; }
+        }
+        if(axisLocked!=="h") return; // 縦方向はタイムグリッドの縦スクロールに任せる
+        isDragging=true;
+        const inner=grid.querySelector(".week-timegrid");
+        if(inner){
+          inner.style.transition="none";
+          inner.style.transform=`translateX(${dx*0.4}px)`; // 軽い指追従（抵抗感あり）
+        }
+      },{passive:true});
+
+      const endHandler=(e)=>{
+        if(sx===null) return;
+        const t=(e.changedTouches && e.changedTouches[0]) || null;
+        const dx=t ? (t.clientX - sx) : 0;
+        const dt=Date.now() - st;
+        sx=null;
+        if(!isDragging) return;
+        const inner=grid.querySelector(".week-timegrid");
+        const ratio=dx / gridW;
+        const velocity=Math.abs(dx) / Math.max(dt,1); // px/ms
+        const goNext = ratio < -0.25 || (ratio < -0.04 && velocity > 0.4);
+        const goPrev = ratio >  0.25 || (ratio >  0.04 && velocity > 0.4);
+        _swipeSuppressClickUntil = Date.now() + 450;
+        if(inner) inner.style.transition="transform .16s ease-out";
+        if(goNext || goPrev){
+          if(inner) inner.style.transform=`translateX(${(goNext?-1:1) * gridW * 0.3}px)`;
+          setTimeout(()=>{
+            currentCalendarDate.setDate(currentCalendarDate.getDate() + (goNext?7:-7));
+            renderWeekView(); // innerHTML差し替えでtransformはリセットされる
+          }, 130);
+        } else {
+          if(inner) inner.style.transform="translateX(0)"; // スナップバック
+        }
+      };
+      grid.addEventListener("touchend", endHandler, {passive:true});
+      grid.addEventListener("touchcancel", endHandler, {passive:true});
     }
 
     // ============================================================
