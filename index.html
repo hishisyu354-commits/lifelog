@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="生活ログ" />
-  <meta name="theme-color" content="#8b0026" />
+  <meta name="apple-mobile-web-app-title" content="Tsumugi" />
+  <meta name="theme-color" content="#f6f4ef" />
   <meta name="format-detection" content="telephone=no" />
   <meta name="mobile-web-app-capable" content="yes" />
-  <title>Lifelog</title>
+  <title>Tsumugi（紡ぎ） — 話すだけで育つ内省日記</title>
   <!-- PWA -->
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./apple-touch-icon.png">
@@ -25,7 +25,7 @@
     body[data-theme="blue-light"] { --main:#1f5fa8; --sub:#15467f; --bg:#f0f4fa; --card:#fff; --text:#1a1a1a; --muted:#666; --border:#dde4ee; --soft-bg:#f7faff; --notice-bg:#eff5ff; --notice-border:#a8c5e8; }
     body[data-theme="green-light"] { --main:#1e7a48; --sub:#155a35; --bg:#f1f7f3; --card:#fff; --text:#1a1a1a; --muted:#666; --border:#dde8e0; --soft-bg:#f7fcf8; --notice-bg:#eef9f2; --notice-border:#a8d8b8; }
     body[data-theme="mono-light"] { --main:#333; --sub:#222; --bg:#f5f5f5; --card:#fff; --text:#1a1a1a; --muted:#666; --border:#e0e0e0; --soft-bg:#f9f9f9; --notice-bg:#f5f5f5; --notice-border:#bbb; }
-    body[data-theme="red-dark"] { --main:#c93a52; --sub:#a82d40; --bg:#161616; --card:#222; --text:#e8e8e8; --muted:#aaa; --border:#3a3a3a; --soft-bg:#2a2a2a; --notice-bg:#3a2e15; --notice-border:#8a7335; }
+    body[data-theme="red-dark"] { --main:#8aa4d6; --sub:#a6bce4; --bg:#151412; --card:#1d1b17; --text:#e8e4dc; --muted:#8b857a; --border:#302c25; --soft-bg:#23201b; --notice-bg:#2a2418; --notice-border:#6b5f3f; }
     body[data-theme="blue-dark"] { --main:#5b9bd5; --sub:#3f7ab5; --bg:#101620; --card:#1e2632; --text:#e8e8e8; --muted:#aaa; --border:#34404e; --soft-bg:#252e3c; --notice-bg:#1f2c3e; --notice-border:#3f5670; }
     body[data-theme="green-dark"] { --main:#46c47a; --sub:#38a564; --bg:#0f1815; --card:#1d2622; --text:#e8e8e8; --muted:#aaa; --border:#324038; --soft-bg:#252e29; --notice-bg:#1a2e22; --notice-border:#3f6651; }
     body[data-theme="mono-dark"] { --main:#bbb; --sub:#999; --bg:#121212; --card:#1e1e1e; --text:#e8e8e8; --muted:#999; --border:#333; --soft-bg:#262626; --notice-bg:#2a2a2a; --notice-border:#555; }
@@ -268,7 +268,7 @@
     .actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; }
     .actions button { flex:1; min-width:130px; }
     label { display:block; margin:12px 0 6px; font-weight:700; }    input, select, textarea { width:100%; padding:13px; border:1px solid #ccc; border-radius:10px; font-size:16px; background:#fff; -webkit-appearance:none; appearance:none; font-family:inherit; }
-    input:focus, select:focus, textarea:focus { outline:none; border-color:var(--main); box-shadow:0 0 0 3px rgba(139,0,38,.15); }
+    input:focus, select:focus, textarea:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
     textarea { min-height:58px; resize:vertical; }
     .row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
     .inline-row, .category-row, .template-row, .tag-template-row { display:flex; gap:8px; align-items:center; margin-top:8px; flex-wrap:wrap; }
@@ -379,7 +379,7 @@
       border-right:1px solid #eee;
       min-height:100%;
     }
-    .week-day-col.today { background:rgba(139,0,38,.018); }
+    .week-day-col.today { background:rgba(64,96,143,.018); }
     .week-day-col:last-child { border-right:none; }
     .week-hour-line {
       position:absolute;
@@ -503,7 +503,7 @@
     .score-bar { display:flex; gap:4px; flex-wrap:nowrap; width:100%; }
     .score-cell { flex:1 1 0; min-width:0; height:38px; border-radius:8px; border:1px solid #ccc; background:#fff; display:flex; justify-content:center; align-items:center; cursor:pointer; font-size:13px; font-weight:800; transition:.15s; padding:0; }
     .score-cell:hover { transform:scale(1.08); } .score-cell:active { transform:scale(.94); } .score-cell.active { background:var(--main); color:#fff; border-color:var(--main); }
-    .score-result { margin-top:24px; padding:24px; border-radius:18px; background:linear-gradient(135deg,#8b0026,#b8003c); color:#fff; text-align:center; }
+    .score-result { margin-top:24px; padding:24px; border-radius:18px; background:linear-gradient(135deg,#40608f,#35527d); color:#fff; text-align:center; }
     .score-result-value { font-size:52px; font-weight:900; margin-top:8px; }
     .mini-reflect-box { margin-top:14px; padding-top:10px; border-top:1px dashed #ddd; }
     .mini-reflect-text { font-size:13px; color:#666; margin-bottom:8px; line-height:1.6; }
@@ -522,7 +522,7 @@
     .chart-dot { fill:var(--main); stroke:white; stroke-width:2; }
     .summary-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:12px; }
     .summary-box { background:#fafafa; border-radius:12px; padding:12px; text-align:center; }
-    .summary-num { font-size:24px; font-weight:900; color:#8b0026; }
+    .summary-num { font-size:24px; font-weight:900; color:var(--accent); }
     .highlight-list { display:grid; gap:10px; margin-top:14px; }
     .highlight-card { background:#fafafa; border-left:7px solid var(--main); border-radius:12px; padding:12px; }
     .highlight-date { font-size:13px; color:#666; font-weight:800; margin-bottom:4px; }
@@ -604,7 +604,7 @@
       background:var(--main);
       color:white;
       font-weight:800;
-      box-shadow:0 6px 18px rgba(139,0,38,.4);
+      box-shadow:0 6px 18px rgba(64,96,143,.4);
       display:flex;
       align-items:center;
       justify-content:center;
@@ -742,12 +742,12 @@
       display:none; /* 過剰な説明なので非表示 */
     }
     .untitled-option.smart-top{
-      border-color:#f0a6b8;
-      background:#fff1f4;
+      border-color:var(--accent-line);
+      background:var(--accent-soft);
     }
     .untitled-score-label{
       font-size:9px;
-      color:#8b0026;
+      color:var(--accent);
       font-weight:900;
       margin-left:1px;
     }
@@ -755,7 +755,7 @@
     .untitled-section-title{
       font-size:11px;
       font-weight:900;
-      color:#8b0026;
+      color:var(--accent);
       margin:8px 0 4px;
       letter-spacing:.02em;
     }
@@ -934,12 +934,13 @@
     /* 既定テーマ（赤・ライト）を上質なニュートラル基調に再調整 */
     :root,
     body[data-theme="red-light"] {
-      --main:#8b0026; --sub:#74001f;
-      --bg:#f3f2ef; --card:#ffffff;
-      --text:#1c1a18; --muted:#8c8884;
-      --border:#ebe9e4; --soft-bg:#f7f6f3;
-      --accent:#9b1230; --accent-soft:#f7eaed; --accent-line:#ead4da;
-      --notice-bg:#fbf7ec; --notice-border:#e7dcc0;
+      --main:#40608f; --sub:#35527d;
+      --bg:#f6f4ef; --card:#fdfcfa;
+      --text:#22201d; --muted:#7c766c;
+      --border:#e7e3db; --soft-bg:#f1eee7;
+      --accent:#40608f; --accent-strong:#35527d; --accent-soft:#e9edf4; --accent-line:#d3dbe8; --on-accent:#fdfcfa;
+      --ink-2:#55514b; --good:#5a8f6f; --warn:#b0803f;
+      --notice-bg:#f4f1ea; --notice-border:#d9cfb8;
     }
 
     /* --- ページ地 --- */
@@ -1020,7 +1021,7 @@
 body[data-theme="blue-light"] { --accent:#1f5fa8; --accent-soft:#eaf1fb; --accent-line:#cfe0f3; }
 body[data-theme="green-light"]{ --accent:#1e7a48; --accent-soft:#e9f6ee; --accent-line:#cfe9d8; }
 body[data-theme="mono-light"] { --accent:#2b2b2b; --accent-soft:#efefef; --accent-line:#dcdcdc; }
-body[data-theme="red-dark"]   { --accent:#e0668a; --accent-soft:#2a1820; --accent-line:#4a2230; }
+body[data-theme="red-dark"]   { --accent:#8aa4d6; --accent-strong:#a6bce4; --accent-soft:#23262f; --accent-line:#3a4256; --on-accent:#14161c; --ink-2:#b4aea3; }
 body[data-theme="blue-dark"]  { --accent:#5ea0e6; --accent-soft:#152333; --accent-line:#244055; }
 body[data-theme="green-dark"] { --accent:#56c98a; --accent-soft:#13261b; --accent-line:#214733; }
 body[data-theme="mono-dark"]  { --accent:#d6d6d6; --accent-soft:#1e1e1e; --accent-line:#3a3a3a; }
@@ -1096,7 +1097,7 @@ body[data-theme="mono-dark"]  { --accent:#d6d6d6; --accent-soft:#1e1e1e; --accen
 #dayHero.is-empty .hero-cta{
   display:inline-flex; align-items:center; gap:6px; background:var(--accent); color:#fff; border:none;
   border-radius:999px; padding:11px 18px; font-size:13.5px; font-weight:700;
-  box-shadow:0 6px 16px rgba(139,0,38,.22); transition:transform .16s var(--ease);
+  box-shadow:0 6px 16px rgba(64,96,143,.22); transition:transform .16s var(--ease);
 }
 #dayHero.is-empty .hero-cta:active{ transform:scale(.95); }
 
@@ -1212,7 +1213,7 @@ body[data-theme="mono-dark"]  { --accent:#d6d6d6; --accent-soft:#1e1e1e; --accen
 .agenda-empty-cta{
   display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding:0 24px; border-radius:999px;
   background:var(--accent); color:#fff; font-size:14px; font-weight:700; letter-spacing:.02em; border:none;
-  box-shadow:0 6px 18px rgba(139,0,38,.22); transition:transform .16s var(--ease);
+  box-shadow:0 6px 18px rgba(64,96,143,.22); transition:transform .16s var(--ease);
 }
 .agenda-empty-cta:active{ transform:scale(.96); }
 
@@ -1220,7 +1221,7 @@ body[data-theme="mono-dark"]  { --accent:#d6d6d6; --accent-soft:#1e1e1e; --accen
 .left-pane p.small{ color:var(--text-3) !important; }
 
 /* --- FAB (unchanged from override) --- */
-.fab { box-shadow:0 8px 22px rgba(139,0,38,.32); }
+.fab { box-shadow:0 8px 22px rgba(64,96,143,.32); }
 .fab-menu { border-radius:18px; box-shadow:var(--shadow-lg); border:1px solid var(--border); }
 
     /* ============================================================
@@ -1242,7 +1243,7 @@ body[data-theme="mono-dark"]  { --accent:#d6d6d6; --accent-soft:#1e1e1e; --accen
      header/today-bar/.bottom-nav/.nav-tab, .card, base button),
      which retain id-level specificity and therefore still win on
      the home screen. Nothing here re-declares those scoped rules.
-   - Fixed crimson emphasis glows (rgba(139,0,38,…)) match the
+   - Fixed crimson emphasis glows (rgba(64,96,143,…)) match the
      existing .fab pattern and are intentional across all themes.
    ============================================================ */
 
@@ -1482,7 +1483,7 @@ body[data-theme="mono-dark"]  { --accent:#d6d6d6; --accent-soft:#1e1e1e; --accen
 .score-cell:hover { transform:scale(1.06); border-color:var(--accent-line); }
 .score-cell.active {
   background:var(--accent); color:#fff; border-color:var(--accent);
-  box-shadow:0 4px 12px rgba(139,0,38,.22); /* fixed crimson emphasis */
+  box-shadow:0 4px 12px rgba(64,96,143,.22); /* fixed crimson emphasis */
 }
 
 /* --- Gap prompts: quiet card + restrained CTA --- */
@@ -1783,7 +1784,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
 
 /* today circle: accent disc, soft fixed-crimson lift */
 .week-day-col-header.today .week-day-col-num {
-  background:var(--accent); color:#fff; box-shadow:0 2px 6px rgba(139,0,38,.22);
+  background:var(--accent); color:#fff; box-shadow:0 2px 6px rgba(64,96,143,.22);
 }
 
 /* time labels: tertiary tier, tabular */
@@ -1923,14 +1924,15 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
     <div class="rotate-guard-inner">
       <div class="rotate-guard-icon">📱</div>
       <div class="rotate-guard-title">画面を縦向きにしてください</div>
-      <div class="rotate-guard-sub">Lifelog は縦画面に最適化されています。端末を縦に戻すと続けられます。</div>
+      <div class="rotate-guard-sub">Tsumugi は縦画面に最適化されています。端末を縦に戻すと続けられます。</div>
     </div>
   </div>
   <header>
-    <span class="header-title">Lifelog</span>
+    <span class="header-title">Tsumugi</span>
     <span id="syncBadge" class="sync-badge" style="display:none;"></span>
   </header>
   <div id="todayBar" class="today-bar"></div>
+  <div id="goalHeader" class="goal-header" aria-live="polite"></div>
 
   <div id="liveStopwatchBar" class="live-stopwatch-bar">
     <div class="live-left">
@@ -2050,6 +2052,10 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
       <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16" rx="3.2"/><path d="M3 9.2h18"/><path d="M8 2.6v3.6"/><path d="M16 2.6v3.6"/></svg></span>
       <span class="nav-label">カレンダー</span>
     </button>
+    <button class="nav-tab" data-tab="dialogue" onclick="switchTab('dialogue')">
+      <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="11" rx="2.6"/><path d="M8 16v3.2l4.2-3.2"/></svg></span>
+      <span class="nav-label">対話</span>
+    </button>
     <button class="nav-tab" data-tab="today" onclick="switchTab('today')">
       <span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.4"/><circle cx="12" cy="12" r="3.4"/></svg></span>
       <span class="nav-label">振り返り</span>
@@ -2082,6 +2088,8 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
     const WEEKLY_INTENT_KEY = "dailyLifeWeeklyIntentsV1";
     const GEMINI_KEY = "dailyLifeGeminiKeyV1";
     const THEME_KEY = "dailyLifeThemeV1";
+    const DIALOGUE_KEY = "tsumugiDialoguesV1"; // Tsumugi: 対話セッション（端末ローカルのみ・非同期）
+    const MONTH_GOAL_KEY = "tsumugiMonthGoalsV1"; // Tsumugi: 月目標（月→週→日の最上位。週目標=weeklyIntent再利用）
     const DEFAULT_CATEGORIES = [
       { id:"none", name:"カテゴリなし", color:"#95a5a6" },
       { id:"study", name:"勉強", color:"#3498db" },
@@ -2152,6 +2160,80 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
       const item = { weekStartDate, text, keywords, updatedAt: new Date().toISOString() };
       if(idx >= 0) all[idx] = item; else all.push(item);
       saveWeeklyIntents(all);
+    }
+    // ── Tsumugi: 目標階層（月→週→日）。週目標＝既存weeklyIntentを再利用、月目標＝新規。──
+    function loadMonthGoals(){ return loadJSON(MONTH_GOAL_KEY, []); }
+    function saveMonthGoals(list){ saveJSON(MONTH_GOAL_KEY, list); }
+    function monthKeyOf(dateStr){ return String(dateStr||todayString()).slice(0,7); } // "YYYY-MM"
+    function getMonthGoal(ym){ return loadMonthGoals().find(g=>g.month===ym) || null; }
+    function upsertMonthGoal(ym, text){
+      const all=loadMonthGoals(), idx=all.findIndex(g=>g.month===ym);
+      const item={ month:ym, text:String(text||"").trim(), updatedAt:new Date().toISOString() };
+      if(idx>=0) all[idx]=item; else all.push(item);
+      saveMonthGoals(all);
+    }
+    function currentWeekStartStr(){ return toDateString(getMondayOfWeek(new Date())); }
+    function _goalInjectStyle(){
+      if(document.getElementById("goalHeaderStyle")) return;
+      const s=document.createElement("style"); s.id="goalHeaderStyle";
+      s.textContent=".goal-header{display:flex;gap:8px;padding:8px 12px 2px;}"+
+        ".goal-set-btn{width:100%;border:1px dashed var(--border,#d8d3ca);background:var(--soft-bg,#f1eee7);color:var(--muted,#7c766c);border-radius:12px;padding:10px 12px;font-size:12.5px;font-weight:700;cursor:pointer;}"+
+        ".goal-chip{flex:1;min-width:0;text-align:left;border:1px solid var(--border,#e7e3db);background:var(--card,#fdfcfa);border-radius:12px;padding:7px 11px;cursor:pointer;display:flex;flex-direction:column;gap:2px;}"+
+        ".goal-chip .goal-k{font-size:10px;font-weight:800;letter-spacing:.04em;color:var(--muted,#7c766c);}"+
+        ".goal-chip .goal-v{font-size:12.5px;font-weight:700;color:var(--text,#22201d);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}"+
+        ".goal-chip.goal-month{border-left:3px solid var(--accent,#40608f);}"+
+        ".goal-chip.goal-week{border-left:3px solid var(--accent-line,#d3dbe8);}";
+      document.head.appendChild(s);
+    }
+    function renderGoalHeader(){
+      const el=document.getElementById("goalHeader"); if(!el) return;
+      _goalInjectStyle();
+      const ym=monthKeyOf(todayString()), mg=getMonthGoal(ym);
+      const wi=getWeeklyIntent(currentWeekStartStr());
+      const mText=mg&&mg.text?escapeHtml(mg.text):"", wText=wi&&wi.text?escapeHtml(wi.text):"";
+      if(!mText && !wText){
+        el.className="goal-header is-empty";
+        el.innerHTML=`<button class="goal-set-btn" onclick="openGoalEditor()">🎯 今月・今週の目標を決める</button>`;
+        return;
+      }
+      el.className="goal-header";
+      el.innerHTML=
+        `<button class="goal-chip goal-month" onclick="openGoalEditor()"><span class="goal-k">今月</span><span class="goal-v">${mText||"＋ 設定する"}</span></button>`+
+        `<button class="goal-chip goal-week" onclick="openGoalEditor()"><span class="goal-k">今週</span><span class="goal-v">${wText||"＋ 設定する"}</span></button>`;
+    }
+    function openGoalEditor(){
+      hideRightPanels(); const f=document.getElementById("formScreen"); f.style.display="block";
+      const ym=monthKeyOf(todayString()), mg=getMonthGoal(ym), wi=getWeeklyIntent(currentWeekStartStr());
+      const mLabel=`${Number(ym.split("-")[1])}月`;
+      f.innerHTML=`
+        <h2 class="form-title">目標を決める</h2>
+        <p class="small">大きな方向（月）から今週やることへ。毎日画面の上に表示され、予定と振り返りの軸になります。</p>
+        <div class="form-grid">
+          <div class="form-field">
+            <label class="mini-label">今月の目標（${mLabel}）</label>
+            <textarea id="monthGoalInput" class="compact-textarea" placeholder="例：簿記2級の範囲を一周する／自炊を習慣化">${mg?escapeHtml(mg.text):""}</textarea>
+          </div>
+          <div class="form-field">
+            <label class="mini-label">今週の目標</label>
+            <textarea id="weekGoalInput" class="compact-textarea" placeholder="例：平日は毎朝30分勉強／水曜までに課題提出">${wi?escapeHtml(wi.text):""}</textarea>
+          </div>
+        </div>
+        <div class="form-actions-compact">
+          <button onclick="saveGoalEditor()">保存</button>
+          <button class="light" onclick="showMenu()">戻る</button>
+        </div>`;
+      if(typeof scrollToRightPanelMobile==="function") scrollToRightPanelMobile();
+    }
+    function saveGoalEditor(){
+      const ym=monthKeyOf(todayString());
+      const mText=(document.getElementById("monthGoalInput")||{}).value||"";
+      const wText=(document.getElementById("weekGoalInput")||{}).value||"";
+      upsertMonthGoal(ym, mText);
+      const wk=currentWeekStartStr(), existing=getWeeklyIntent(wk);
+      upsertWeeklyIntent(wk, String(wText).trim(), existing&&existing.keywords?existing.keywords:[]);
+      renderGoalHeader();
+      showSaveToast("目標を保存しました");
+      showMenu();
     }
     function saveFrequentTags(t){ saveJSON(TAG_KEY,t); }
 
@@ -2361,7 +2443,9 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
         <div class="actions"><button class="light" onclick="generateAIReport('${range}')">作り直す</button></div>
       </div>`;
     }
-    function frequentPlanOptions(){ return loadFrequentPlans().map(p=>`<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join(""); }
+    function _freqName(p){ return typeof p==="string" ? p : (p&&p.name)||""; }
+    function _freqCat(p){ return typeof p==="string" ? "" : (p&&p.categoryId)||""; }
+    function frequentPlanOptions(){ return loadFrequentPlans().map(p=>{ const n=_freqName(p), c=_freqCat(p), cat=c?getCategoryById(c):null; return `<option value="${escapeHtml(n)}" data-cat="${escapeHtml(c)}">${escapeHtml(n)}${cat&&cat.id!=="none"?" ・"+escapeHtml(cat.name):""}</option>`; }).join(""); }
     function frequentTagOptions(){ return loadFrequentTags().map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join(""); }
 
 
@@ -2429,6 +2513,284 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
 
 
     function updateTodayBar(){ document.getElementById("todayBar").textContent = `今日：${formatDateJapanese(todayString())}`; }
+    // ============================================================
+    // Tsumugi：対話ループ（話すだけで思考を深める）＋自動タグ→蓄積。callGemini(BYOK)を再利用。
+    // データは DIALOGUE_KEY に端末ローカル保存（Drive非同期＝プライバシー既定）。
+    // ============================================================
+    function loadDialogues(){ return loadJSON(DIALOGUE_KEY, []); }
+    function saveDialogues(list){ saveJSON(DIALOGUE_KEY, list); }
+    let _activeDialogue = null;   // 進行中セッション
+    let _dialogueBusy = false;
+    let _dialogueFilterTag = "";  // 履歴のタグ絞り込み
+
+    function _tsuLine(s){ return String(s||"").split("\n")[0].replace(/^[\s"「『・\-*>❓]+/,"").replace(/["」』]+$/,"").trim(); }
+    function _tsuDaysAgo(n){ const d=new Date(); d.setDate(d.getDate()-n); return toDateString(d); }
+    function _tsuUserTurns(d){ return ((d&&d.messages)||[]).filter(m=>m.role==="user").length; }
+    function _tsuTranscript(){ return (_activeDialogue.messages||[]).map(m=>(m.role==="ai"?"コーチの問い: ":"あなた: ")+m.text).join("\n"); }
+    function _tsuContextLine(){
+      try {
+        const d = aggregatePeriodData(_tsuDaysAgo(7));
+        const tags = (d.topTags||[]).slice(0,4).map(t=>t.tag).join(" ");
+        const cat = (d.categoryDistribution||[])[0];
+        const bits = [];
+        if(tags) bits.push("最近よく付くタグ:"+tags);
+        if(cat) bits.push("時間が多い活動:"+cat.category);
+        return bits.join(" / ").slice(0,120);
+      } catch(_) { return ""; }
+    }
+
+    function _tsuInjectStyle(){
+      if(document.getElementById("tsu-style")) return;
+      const s = document.createElement("style");
+      s.id = "tsu-style";
+      s.textContent = `
+        .tsu-wrap{display:flex;flex-direction:column;gap:12px}
+        .tsu-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+        .tsu-title{font-weight:700;font-size:18px}
+        .tsu-sub{color:var(--muted);font-size:12px}
+        .tsu-thread{display:flex;flex-direction:column;gap:10px;margin:2px 0 6px;max-height:52vh;overflow-y:auto}
+        .tsu-msg{max-width:88%;padding:10px 13px;border-radius:14px;line-height:1.65;font-size:14px;white-space:pre-wrap;word-break:break-word}
+        .tsu-ai{align-self:flex-start;background:var(--soft-bg);border:1px solid var(--border);border-bottom-left-radius:4px}
+        .tsu-user{align-self:flex-end;background:var(--main);color:#fff;border-bottom-right-radius:4px}
+        .tsu-input-row{display:flex;gap:8px;align-items:flex-end}
+        .tsu-input{flex:1;min-height:46px;max-height:140px;resize:vertical;padding:10px 12px;border:1px solid var(--border);border-radius:12px;font-size:14px;font-family:inherit;background:var(--card);color:var(--text)}
+        .tsu-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:2px;align-items:center}
+        .tsu-hint{color:var(--muted);font-size:11px}
+        .tsu-hist{margin-top:16px;border-top:1px solid var(--border);padding-top:12px}
+        .tsu-hist-card{border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:8px;background:var(--card);cursor:pointer}
+        .tsu-hist-card:hover{background:var(--soft-bg)}
+        .tsu-hist-title{font-weight:600;font-size:14px}
+        .tsu-hist-meta{color:var(--muted);font-size:11px;margin-top:3px}
+        .tsu-tags{margin-top:6px;display:flex;gap:6px;flex-wrap:wrap}
+        .tsu-spin{display:inline-block;animation:tsuSpin 1s linear infinite}
+        @keyframes tsuSpin{to{transform:rotate(360deg)}}
+        .tsu-empty{color:var(--muted);font-size:13px;padding:8px 0}
+      `;
+      document.head.appendChild(s);
+    }
+
+    function _tsuOpenPane(){
+      _tsuInjectStyle();
+      hideRightPanels();
+      const el = document.getElementById("reviewScreen");
+      if(el){ el.style.display = "block"; document.body.dataset.showReview = "true"; }
+      return el;
+    }
+
+    // 対話ホーム（タブ入口）
+    function renderDialogue(){
+      const el = _tsuOpenPane();
+      if(!el) return;
+      if(!hasGeminiKey()){
+        el.innerHTML = `<div class="tsu-wrap">
+          <div class="tsu-head"><span class="tsu-title">🧶 Tsumugi 対話</span></div>
+          <p class="tsu-sub">AIと話しながら、今日の考えを一段深める内省日記です。最初にAIが問いかけ、あなたは話す／一行返すだけ。</p>
+          <div class="ai-note">対話には無料の Gemini API キーが必要です（<a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">取得はこちら</a>）。</div>
+          <div class="tsu-actions"><button class="blue" onclick="switchTab('menu')">メニューでキーを設定</button></div>
+          <p class="tsu-hint">🔒 キーはこの端末にだけ保存。送信もあなたのキー経由で、作り手はデータを見ません。</p>
+        </div>`;
+        scrollToTopMobile();
+        return;
+      }
+      el.innerHTML = `<div class="tsu-wrap">
+        <div class="tsu-head">
+          <span class="tsu-title">🧶 Tsumugi 対話</span>
+          <button class="light" onclick="startDialogue(true)">＋ 新しい対話</button>
+        </div>
+        <div id="tsuThread" class="tsu-thread"></div>
+        <div id="tsuComposer"></div>
+        <div id="tsuHistory" class="tsu-hist"></div>
+      </div>`;
+      if(_activeDialogue && !_activeDialogue.done){ renderDialogueThread(); setDialogueComposer("input"); }
+      else { startDialogue(false); }
+      renderDialogueHistory();
+      scrollToTopMobile();
+    }
+
+    async function startDialogue(force){
+      if(_dialogueBusy) return;
+      _activeDialogue = { id:newId(), date:todayString(), startedAt:new Date().toISOString(), messages:[], tags:[], title:"", insight:"", done:false, updatedAt:new Date().toISOString() };
+      if(!document.getElementById("tsuThread")){ renderDialogue(); return; }
+      renderDialogueThread();
+      setDialogueComposer("loading");
+      _dialogueBusy = true;
+      try {
+        const ctx = _tsuContextLine();
+        const prompt = `あなたは内省を助ける対話コーチ「Tsumugi」です。ユーザーは今日の日記を、書くのではなく“話す”ことで思考を深めます。いまから対話を始める最初の問いを1つだけ返してください。あなたは答え・助言・評価をしません。問いだけです。\n条件:\n- 日本語で1文、40字以内。答えやすく具体的で、今日一日に向き合える問い。\n- 定型（「今日はどんな一日でしたか？」等）を避け、少しだけ角度のある問いにする。\n${ctx?`- 参考（本人の最近の傾向・集計のみ。話題の押し付けはしない）: ${ctx}\n`:""}出力は問い本文のみ（前置き・引用符・記号なし）。`;
+        let q = _tsuLine(await callGemini(prompt, null, { temperature: 0.9 }));
+        if(!q) q = "今日、いちばん心が動いたのはどんな瞬間でしたか？";
+        _pushDialogue("ai", q);
+      } catch(e){
+        _pushDialogue("ai", "今日はどんなことを考えていますか？　まずは一言からで大丈夫です。");
+      } finally {
+        _dialogueBusy = false;
+        renderDialogueThread();
+        setDialogueComposer("input");
+      }
+    }
+
+    function _pushDialogue(role, text){
+      if(!_activeDialogue) return;
+      _activeDialogue.messages.push({ role, text, ts:new Date().toISOString() });
+      _activeDialogue.updatedAt = new Date().toISOString();
+      _persistActiveDialogue();
+    }
+    function _persistActiveDialogue(){
+      if(!_activeDialogue) return;
+      const all = loadDialogues();
+      const i = all.findIndex(d=>d.id===_activeDialogue.id);
+      if(i>=0) all[i] = _activeDialogue; else all.push(_activeDialogue);
+      saveDialogues(all);
+    }
+
+    function renderDialogueThread(){
+      const t = document.getElementById("tsuThread");
+      if(!t) return;
+      const msgs = (_activeDialogue && _activeDialogue.messages) || [];
+      t.innerHTML = msgs.map(m=>{
+        const cls = m.role==="ai" ? "tsu-ai" : "tsu-user";
+        const pre = m.role==="ai" ? "❓ " : "";
+        return `<div class="tsu-msg ${cls}">${pre}${escapeHtml(m.text)}</div>`;
+      }).join("");
+      t.scrollTop = t.scrollHeight;
+    }
+
+    function setDialogueComposer(state){
+      const c = document.getElementById("tsuComposer");
+      if(!c) return;
+      if(state==="loading"){ c.innerHTML = `<div class="ai-note"><span class="tsu-spin">✨</span> 問いを考えています…</div>`; return; }
+      if(state==="finishing"){ c.innerHTML = `<div class="ai-note"><span class="tsu-spin">✨</span> 今日の対話をタグ付けして保存しています…</div>`; return; }
+      const turns = _tsuUserTurns(_activeDialogue);
+      c.innerHTML = `
+        <div class="tsu-input-row">
+          <textarea id="tsuInput" class="tsu-input" placeholder="話すように、思ったままを…" rows="2"></textarea>
+          <button class="blue" onclick="sendDialogueTurn()">送信</button>
+        </div>
+        <div class="tsu-actions">
+          <button class="light" onclick="finishDialogue()">今日はここまで（保存）</button>
+          ${turns>=4?`<span class="tsu-hint">十分掘れています。保存すると振り返りに残ります。</span>`:``}
+        </div>
+        <p class="tsu-hint">🔒 送信はあなたのGeminiキー経由・保存はこの端末のみ。⌘/Ctrl+Enterで送信。</p>`;
+      const ta = document.getElementById("tsuInput");
+      if(ta){ try{ ta.focus(); }catch(_){}
+        ta.addEventListener("keydown", e=>{ if((e.metaKey||e.ctrlKey)&&e.key==="Enter"){ e.preventDefault(); sendDialogueTurn(); } });
+      }
+    }
+
+    async function sendDialogueTurn(){
+      if(_dialogueBusy || !_activeDialogue) return;
+      const ta = document.getElementById("tsuInput");
+      const val = ta ? ta.value.trim() : "";
+      if(!val) return;
+      _pushDialogue("user", val);
+      renderDialogueThread();
+      setDialogueComposer("loading");
+      _dialogueBusy = true;
+      try {
+        const prompt = `あなたは内省を深める対話コーチ「Tsumugi」です。以下はユーザーとの対話です。次に返す“問い”を1つだけ作ってください。あなたは答え・助言・評価・要約・共感の言葉を述べず、問いだけを返します。\n狙い: ユーザーが自分の思考を一段深められること。直前の発言に本当に反応し、まだ言語化されていない前提・理由・感情・具体・次の一手のどれか1つを掘る。ときどき（3〜4往復に一度程度）は、本人が当然視している前提をやさしく突く／これまでの発言との食い違いを指摘する問いにする。\n条件:\n- 日本語で1文、50字以内。answerではなくquestion。\n- 直前までの発言の繰り返し・言い換えにしない。\n- 説教・断定・「〜すべき」を避ける。\n\n対話:\n${_tsuTranscript()}\n\n出力は次の問いの本文のみ（前置き・引用符・記号なし）。`;
+        let q = _tsuLine(await callGemini(prompt, null, { temperature: 0.85 }));
+        if(!q) q = "それは、あなたにとって何が大切だからそう感じたのでしょう？";
+        _pushDialogue("ai", q);
+      } catch(e){
+        _pushDialogue("ai", (e && e.message==="NO_KEY") ? "メニューでGeminiキーを設定すると深掘りを続けられます。" : "うまく問いを作れませんでした。もう少し続けてみますか？");
+      } finally {
+        _dialogueBusy = false;
+        renderDialogueThread();
+        setDialogueComposer("input");
+      }
+    }
+
+    const _TSU_TAG_SCHEMA = { type:"object", properties:{
+      title:{ type:"string" },
+      tags:{ type:"array", items:{ type:"string" } },
+      insight:{ type:"string" }
+    }, required:["title","tags"] };
+
+    async function finishDialogue(){
+      if(!_activeDialogue){ renderDialogue(); return; }
+      if(_tsuUserTurns(_activeDialogue)===0){ _activeDialogue=null; renderDialogue(); return; }
+      if(_dialogueBusy) return;
+      setDialogueComposer("finishing");
+      _dialogueBusy = true;
+      try {
+        const knownTags = loadFrequentTags().join(" ");
+        const prompt = `次は内省対話の記録です。後で見返せるよう整理してください（日本語・JSON）。\n- title: この対話を一言で表すタイトル（15字以内、体言止め可）。\n- tags: 内容に合う日本語ハッシュタグ（先頭#）を2〜4個。可能なら次の既存タグを優先: ${knownTags}。無ければ新しく作ってよい。\n- insight: この対話で本人が得た気づきを1文で（本人の言葉に寄せ、評価や助言はしない）。\n対話:\n${_tsuTranscript()}`;
+        const r = await callGemini(prompt, _TSU_TAG_SCHEMA, { temperature: 0.3 });
+        _activeDialogue.title = _tsuLine(r.title) || "今日の対話";
+        _activeDialogue.tags = (Array.isArray(r.tags)?r.tags:[]).map(t=>String(t).startsWith("#")?String(t):"#"+t).filter(Boolean).slice(0,5);
+        _activeDialogue.insight = String(r.insight||"").trim();
+      } catch(e){
+        _activeDialogue.title = _activeDialogue.title || "今日の対話";
+      }
+      _activeDialogue.done = true;
+      _activeDialogue.updatedAt = new Date().toISOString();
+      _persistActiveDialogue();
+      const finished = _activeDialogue;
+      _activeDialogue = null;
+      _dialogueBusy = false;
+      if(typeof showSaveToast==="function") showSaveToast("対話を保存しました");
+      _renderDialogueSaved(finished);
+    }
+
+    function _renderDialogueSaved(d){
+      const el = _tsuOpenPane();
+      if(!el) return;
+      el.innerHTML = `<div class="tsu-wrap">
+        <div class="tsu-head"><span class="tsu-title">🧶 保存しました</span></div>
+        <div class="tsu-hist-card" style="cursor:default">
+          <div class="tsu-hist-title">${escapeHtml(d.title||"今日の対話")}</div>
+          ${d.insight?`<p class="tsu-sub" style="margin:6px 0 0">💡 ${escapeHtml(d.insight)}</p>`:""}
+          <div class="tsu-tags">${(d.tags||[]).map(t=>`<button class="tag-chip" onclick="filterDialogues('${escapeHtml(t)}')">${escapeHtml(t)}</button>`).join(" ")}</div>
+          <div class="tsu-hist-meta">${_tsuUserTurns(d)}往復・${escapeHtml(d.date||"")}</div>
+        </div>
+        <div class="tsu-actions">
+          <button class="blue" onclick="startDialogue(true)">＋ もう一つ対話する</button>
+          <button class="light" onclick="renderDialogue()">対話ホームへ</button>
+        </div>
+        <div id="tsuHistory" class="tsu-hist"></div>
+      </div>`;
+      renderDialogueHistory();
+      scrollToTopMobile();
+    }
+
+    function renderDialogueHistory(){
+      const h = document.getElementById("tsuHistory");
+      if(!h) return;
+      let list = loadDialogues().filter(d=>d.done).sort((a,b)=>String(b.updatedAt||"").localeCompare(String(a.updatedAt||"")));
+      if(_dialogueFilterTag) list = list.filter(d=>(d.tags||[]).includes(_dialogueFilterTag));
+      const head = `<div class="tsu-head"><span class="tsu-sub">これまでの対話${_dialogueFilterTag?`（${escapeHtml(_dialogueFilterTag)}）`:""}</span>${_dialogueFilterTag?`<button class="light" onclick="filterDialogues('')">絞り込み解除</button>`:""}</div>`;
+      if(!list.length){ h.innerHTML = head + `<p class="tsu-empty">まだ保存された対話はありません。上で今日の対話を続けてみましょう。</p>`; return; }
+      h.innerHTML = head + list.slice(0,50).map(d=>`
+        <div class="tsu-hist-card" onclick="viewDialogue(${d.id})">
+          <div class="tsu-hist-title">${escapeHtml(d.title||"対話")}</div>
+          ${d.insight?`<div class="tsu-hist-meta">💡 ${escapeHtml(d.insight)}</div>`:""}
+          <div class="tsu-tags">${(d.tags||[]).map(t=>`<span class="tag-chip">${escapeHtml(t)}</span>`).join(" ")}</div>
+          <div class="tsu-hist-meta">${escapeHtml(d.date||"")}・${_tsuUserTurns(d)}往復</div>
+        </div>`).join("");
+    }
+    function filterDialogues(tag){ _dialogueFilterTag = tag||""; renderDialogueHistory(); }
+
+    function viewDialogue(id){
+      const d = loadDialogues().find(x=>x.id===id);
+      if(!d) return;
+      const el = _tsuOpenPane();
+      if(!el) return;
+      el.innerHTML = `<div class="tsu-wrap">
+        <div class="tsu-head"><span class="tsu-title">${escapeHtml(d.title||"対話")}</span><button class="light" onclick="renderDialogue()">← 対話ホーム</button></div>
+        <div class="tsu-hist-meta">${escapeHtml(d.date||"")}</div>
+        ${d.insight?`<p class="tsu-sub">💡 ${escapeHtml(d.insight)}</p>`:""}
+        <div class="tsu-tags">${(d.tags||[]).map(t=>`<button class="tag-chip" onclick="filterDialogues('${escapeHtml(t)}');renderDialogue()">${escapeHtml(t)}</button>`).join(" ")}</div>
+        <div class="tsu-thread" style="margin-top:10px;max-height:none">${(d.messages||[]).map(m=>`<div class="tsu-msg ${m.role==='ai'?'tsu-ai':'tsu-user'}">${m.role==='ai'?'❓ ':''}${escapeHtml(m.text)}</div>`).join("")}</div>
+        <div class="tsu-actions"><button class="light" onclick="deleteDialogue(${d.id})">この対話を削除</button></div>
+      </div>`;
+      scrollToTopMobile();
+    }
+    function deleteDialogue(id){
+      const del = ()=>{ saveDialogues(loadDialogues().filter(d=>d.id!==id)); renderDialogue(); };
+      if(typeof customConfirm==="function") customConfirm("この対話を削除しますか？", del, "削除");
+      else del();
+    }
+
     function hideRightPanels(){ ["menuScreen","formScreen","reviewScreen"].forEach(id=>document.getElementById(id).style.display="none"); }
 
     // ボトムタブ切替（メイン画面ナビゲーション）
@@ -2449,6 +2811,9 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
         case "calendar":
           document.getElementById("menuScreen").style.display = "none";
           renderCalendar();
+          break;
+        case "dialogue":
+          renderDialogue();
           break;
         case "today":
           {
@@ -2804,9 +3169,9 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
       saveLogs(loadLogs().map(l=>l.categoryId===sel.value ? {...l, categoryId:"none"} : l));
       sel.innerHTML=categoryOptions("none"); renderCalendar();
     }
-    function applyFrequentPlan(){ const sel=document.getElementById("frequentPlanSelect"), t=document.getElementById("logText"); if(sel&&t) t.value=sel.value; }
-    function addFrequentPlan(){ const name=prompt("よく使う予定を追加してください"); if(!name?.trim()) return; const plans=loadFrequentPlans(); if(!plans.includes(name.trim())) plans.push(name.trim()); saveFrequentPlans(plans); document.getElementById("frequentPlanSelect").innerHTML=frequentPlanOptions(); }
-    function deleteSelectedFrequentPlan(){ const sel=document.getElementById("frequentPlanSelect"); if(!sel?.value) return; if(!confirm(`「${sel.value}」を削除しますか？`)) return; saveFrequentPlans(loadFrequentPlans().filter(p=>p!==sel.value)); sel.innerHTML=frequentPlanOptions(); }
+    function applyFrequentPlan(){ const sel=document.getElementById("frequentPlanSelect"), t=document.getElementById("logText"); if(!sel||!t||!sel.value) return; t.value=sel.value; const opt=sel.options[sel.selectedIndex], c=opt&&opt.dataset?opt.dataset.cat:"", cs=document.getElementById("categorySelect"); if(c&&cs){ cs.value=c; } t.focus(); }
+    function addFrequentPlan(){ const t=document.getElementById("logText"), cs=document.getElementById("categorySelect"); const name=prompt("よく使う予定を追加します（短い名前がおすすめ）", t?t.value.trim():""); if(!name?.trim()) return; const categoryId=cs&&cs.value?cs.value:""; const plans=loadFrequentPlans(); if(!plans.some(p=>_freqName(p)===name.trim())) plans.push({name:name.trim(), categoryId}); saveFrequentPlans(plans); const psel=document.getElementById("frequentPlanSelect"); if(psel){ psel.innerHTML=frequentPlanOptions(); psel.value=name.trim(); } }
+    function deleteSelectedFrequentPlan(){ const sel=document.getElementById("frequentPlanSelect"); if(!sel?.value) return; if(!confirm(`「${sel.value}」を削除しますか？`)) return; saveFrequentPlans(loadFrequentPlans().filter(p=>_freqName(p)!==sel.value)); sel.innerHTML=frequentPlanOptions(); }
     function insertFrequentTag(){ const sel=document.getElementById("frequentTagSelect"), t=document.getElementById("detailText"); if(!sel||!t) return; t.value = t.value.trim() ? `${t.value.trim()} ${sel.value}` : sel.value; t.focus(); }
     function addFrequentTag(){ let tag=prompt("よく使う#を追加してください。例：#集中"); if(!tag?.trim()) return; tag=tag.trim().startsWith("#")?tag.trim():"#"+tag.trim(); const tags=loadFrequentTags(); if(!tags.includes(tag)) tags.push(tag); saveFrequentTags(tags); document.getElementById("frequentTagSelect").innerHTML=frequentTagOptions(); }
     function deleteSelectedFrequentTag(){ const sel=document.getElementById("frequentTagSelect"); if(!sel?.value) return; if(!confirm(`「${sel.value}」を削除しますか？`)) return; saveFrequentTags(loadFrequentTags().filter(t=>t!==sel.value)); sel.innerHTML=frequentTagOptions(); }
@@ -2865,8 +3230,8 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
             <div id="aiTagSuggest" class="ai-tags"></div>
           </div>` : ""}
           <div class="time-row">
-            <div class="form-field"><label class="mini-label">開始時刻</label><input id="startTime" type="time" value="${start}" class="compact-input"></div>
-            <div class="form-field"><label class="mini-label">終了時刻</label><input id="endTime" type="time" value="${end}" class="compact-input"></div>
+            <div class="form-field"><label class="mini-label">開始時刻</label><input id="startTime" type="time" step="300" value="${start}" class="compact-input"></div>
+            <div class="form-field"><label class="mini-label">終了時刻</label><input id="endTime" type="time" step="300" value="${end}" class="compact-input"></div>
           </div>
           ${repeatBlock}
         </div>
@@ -2875,30 +3240,32 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
           <button class="light" onclick="navigateAfterSave('${date}')">戻る</button>
         </div>`;
     }
-    function getSmartDefaultTimes(date){
-      const today=todayString();
-      let sh,sm;
-      if(date===today){
-        const now=new Date();
-        let h=now.getHours(), m=now.getMinutes();
-        m=Math.ceil(m/15)*15;
-        if(m>=60){ h+=1; m=0; }
-        if(h>=24){ h=23; m=45; }
-        sh=h; sm=m;
-      } else {
-        sh=9; sm=0;
-      }
-      let eh=sh+1, em=sm;
-      if(eh>=24){ eh=23; em=59; }
+    function getSmartDefaultTimes(date, type){
       const pad=n=>String(n).padStart(2,"0");
-      return { start:`${pad(sh)}:${pad(sm)}`, end:`${pad(eh)}:${pad(em)}` };
+      const round5=t=>Math.ceil(t/5)*5;
+      const toStr=m=>`${pad(Math.floor(m/60)%24)}:${pad(m%60)}`;
+      let startMin;
+      // 入力負荷を下げる：その日の「前のタスクの終了時刻」から続ける（同じ種類の記録を優先）。
+      const same=getDayLogs(date).map(logWithMinutes).filter(l=>l.endMin>l.startMin && (!type||l.type===type));
+      const pool=same.length ? same : getDayLogs(date).map(logWithMinutes).filter(l=>l.endMin>l.startMin);
+      if(pool.length){
+        startMin=round5(Math.max(...pool.map(l=>l.endMin)));
+      } else if(date===todayString()){
+        const now=new Date();
+        startMin=round5(now.getHours()*60+now.getMinutes());
+      } else {
+        startMin=9*60;
+      }
+      if(startMin>23*60+55) startMin=23*60+55;
+      const endMin=Math.min(24*60-1, startMin+60);
+      return { start:toStr(startMin), end:toStr(endMin) };
     }
     function showPlanForm(date=selectedDate||todayString(), start="", end=""){
-      if(!start||!end){ const d=getSmartDefaultTimes(date); if(!start) start=d.start; if(!end) end=d.end; }
+      if(!start||!end){ const d=getSmartDefaultTimes(date,"plan"); if(!start) start=d.start; if(!end) end=d.end; }
       formBase("予定の入力",date,"予定を教えてください","例：数学の課題、友達と飯、MOS資格勉強","plan",start,end);
     }
     function showActualForm(date=selectedDate||todayString(), start="", end=""){
-      if(!start||!end){ const d=getSmartDefaultTimes(date); if(!start) start=d.start; if(!end) end=d.end; }
+      if(!start||!end){ const d=getSmartDefaultTimes(date,"actual"); if(!start) start=d.start; if(!end) end=d.end; }
       formBase("行動を追加",date,"いつ・何をしましたか？","例：電車でMOS資格勉強、予定外に友達と話した","actual",start,end);
     }
     function showGapFillForm(date,start,end){ formBase("ここ何してた？",date,`${start}〜${end} に何をしていましたか？`,"例：移動、SNS、休憩","actual",start,end); }
@@ -3452,7 +3819,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
       }).join("");
       return `<div class="clock-wrap"><h2>24時間リング表示</h2><div class="clock-ring-area"><div class="clock-wrapper">${labels}<div class="clock-ring" style="background:conic-gradient(${segs.join(",")});"></div><svg class="clock-overlay" width="${wrapperSize}" height="${wrapperSize}" viewBox="0 0 ${wrapperSize} ${wrapperSize}">${clickPaths}</svg></div></div><p class="small">灰色は未記録時間。色付き部分をタップすると、その記録を編集できます。</p></div>`;
     }
-    function buildGapPrompts(logs,date){ const arr=logs.map(logWithMinutes).filter(l=>l.duration>0).sort((a,b)=>a.startMin-b.startMin); const gaps=[]; for(let i=0;i<arr.length-1;i++){ const gap=arr[i+1].startMin-arr[i].endMin; if(gap>0&&gap<=60) gaps.push({start:arr[i].end,end:arr[i+1].start,min:gap}); } if(!gaps.length) return ""; return `<div class="gap-wrap"><h2>ここ何してた？</h2><p class="small">1時間以下の未記録時間です。</p>${gaps.map(g=>`<div class="gap-card"><div class="log-title">${g.min}分の空白</div><div class="log-meta">${g.start}〜${g.end}</div><button class="blue" onclick="showGapFillForm('${date}','${g.start}','${g.end}')">この時間を埋める</button></div>`).join("")}</div>`; }
+    function buildGapPrompts(logs,date){ const arr=logs.map(logWithMinutes).filter(l=>l.duration>0).sort((a,b)=>a.startMin-b.startMin); const gaps=[]; for(let i=0;i<arr.length-1;i++){ const gap=arr[i+1].startMin-arr[i].endMin; if(gap>=60) gaps.push({start:arr[i].end,end:arr[i+1].start,min:gap}); } if(!gaps.length) return ""; return `<div class="gap-wrap"><h2>ここ何してた？</h2><p class="small">1時間以上の未記録時間です。まとめて振り返れます。</p>${gaps.map(g=>`<div class="gap-card"><div class="log-title">${minutesToHourText(g.min)}の空白</div><div class="log-meta">${g.start}〜${g.end}</div><button class="blue" onclick="showGapFillForm('${date}','${g.start}','${g.end}')">この時間を埋める</button></div>`).join("")}</div>`; }
 
     function calculateFillRate(date){
       const logs=getDayLogs(date).map(logWithMinutes).filter(l=>l.duration>0);
@@ -3961,8 +4328,8 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
     // 配色テーマ
     // ============================================================
     const THEME_OPTIONS = [
-      { id:"red-light", name:"赤・ライト", swatch:"#8b0026" },
-      { id:"red-dark", name:"赤・ダーク", swatch:"#c93a52" },
+      { id:"red-light", name:"藍・ライト", swatch:"#40608f" },
+      { id:"red-dark", name:"藍・ダーク", swatch:"#8aa4d6" },
       { id:"blue-light", name:"青・ライト", swatch:"#1f5fa8" },
       { id:"blue-dark", name:"青・ダーク", swatch:"#5b9bd5" },
       { id:"green-light", name:"緑・ライト", swatch:"#1e7a48" },
@@ -5199,7 +5566,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
       const startHourOfView=parseInt(col.dataset.startHour||"6");
       const totalMin=y / hourHeight * 60 + startHourOfView * 60;
       // 15分単位に丸める
-      const roundedMin=Math.max(0, Math.min(23*60+45, Math.floor(totalMin / 15) * 15));
+      const roundedMin=Math.max(0, Math.min(23*60+55, Math.round(totalMin / 5) * 5));
       const startTime=minutesToTimeString(roundedMin);
       const endMin=Math.min(24*60-1, roundedMin + 60);
       const endTime=minutesToTimeString(endMin);
@@ -5553,7 +5920,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
     // Google Drive 自動同期（v56）
     // データを Drive の appDataFolder に lifelog-data.json として保存
     // ============================================================
-    const SYNC_KEYS = [STORAGE_KEY, CATEGORY_KEY, TEMPLATE_KEY, TAG_KEY, SUMMARY_KEY, QUIT_KEY, WEEKLY_INTENT_KEY];
+    const SYNC_KEYS = [STORAGE_KEY, CATEGORY_KEY, TEMPLATE_KEY, TAG_KEY, SUMMARY_KEY, QUIT_KEY, WEEKLY_INTENT_KEY, MONTH_GOAL_KEY];
     const SYNC_FILE_NAME = "lifelog-data.json";
     let _driveFileId = null;
     let _syncStatus = "idle"; // idle, syncing, synced, error, not_connected
@@ -5655,7 +6022,8 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
         tags: loadFrequentTags(),
         summaries: loadDailySummaries(),
         quitList: loadQuitList(),
-        weeklyIntents: loadWeeklyIntents()
+        weeklyIntents: loadWeeklyIntents(),
+        monthGoals: loadMonthGoals()
       };
     }
 
@@ -5669,6 +6037,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
         if(Array.isArray(data.summaries)) saveDailySummaries(data.summaries);
         if(Array.isArray(data.quitList)) saveQuitList(data.quitList);
         if(Array.isArray(data.weeklyIntents)) saveWeeklyIntents(data.weeklyIntents);
+        if(Array.isArray(data.monthGoals)) saveMonthGoals(data.monthGoals);
       } finally {
         _suppressSyncTrigger = false;
       }
@@ -5705,16 +6074,27 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
 
     function mergeAllData(local, remote){
       // weeklyIntentsはweekStartDateを一意キーとしてマージ
-      const mergeWeeklyIntents = (a, b) => {
+      const mergeByKeyTs = (a, b, key) => {
         const map = {};
-        (b||[]).forEach(x => { if(x && x.weekStartDate) map[x.weekStartDate] = x; });
+        (b||[]).forEach(x => { if(x && x[key]!=null) map[x[key]] = x; });
         (a||[]).forEach(x => {
-          if(!x || !x.weekStartDate) return;
-          const r = map[x.weekStartDate];
-          if(!r){ map[x.weekStartDate] = x; return; }
+          if(!x || x[key]==null) return;
+          const r = map[x[key]];
+          if(!r){ map[x[key]] = x; return; }
           const lt = new Date(x.updatedAt || 0).getTime();
           const rt = new Date(r.updatedAt || 0).getTime();
-          map[x.weekStartDate] = lt >= rt ? x : r;
+          map[x[key]] = lt >= rt ? x : r;
+        });
+        return Object.values(map);
+      };
+      // 頻用予定は文字列/オブジェクト混在。name一意でマージし、カテゴリ紐づけ(オブジェクト)を優先。
+      const mergeTemplatesByName = (a, b) => {
+        const map = {};
+        [...(a||[]), ...(b||[])].forEach(p => {
+          const n = (typeof p==="string" ? p : (p&&p.name)||"").trim();
+          if(!n) return;
+          const hasCat = typeof p==="object" && p && p.categoryId;
+          if(!(n in map) || (hasCat && !(typeof map[n]==="object" && map[n] && map[n].categoryId))) map[n] = p;
         });
         return Object.values(map);
       };
@@ -5723,11 +6103,12 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
         updatedAt: new Date().toISOString(),
         logs: mergeArraysById(local.logs, remote.logs, "id", "updatedAt"),
         categories: mergeArraysById(local.categories, remote.categories, "id", "updatedAt"),
-        templates: Array.from(new Set([...(local.templates||[]), ...(remote.templates||[])])),
+        templates: mergeTemplatesByName(local.templates, remote.templates),
         tags: Array.from(new Set([...(local.tags||[]), ...(remote.tags||[])])),
         summaries: mergeSummariesByDate(local.summaries, remote.summaries),
         quitList: mergeArraysById(local.quitList, remote.quitList, "id", "updatedAt"),
-        weeklyIntents: mergeWeeklyIntents(local.weeklyIntents, remote.weeklyIntents)
+        weeklyIntents: mergeByKeyTs(local.weeklyIntents, remote.weeklyIntents, "weekStartDate"),
+        monthGoals: mergeByKeyTs(local.monthGoals, remote.monthGoals, "month")
       };
     }
 
@@ -5755,6 +6136,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
             if(tab === "calendar") renderCalendar();
             else if(tab === "today" && typeof updateTodayBar === "function") updateTodayBar();
             renderGcalSection();
+            if(typeof renderGoalHeader==="function") renderGoalHeader();
           } catch(e){ console.warn("UI refresh after sync failed:", e); }
         }
         setSyncStatus("synced");
@@ -5795,6 +6177,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
               const tab = document.body.dataset.activeTab || "calendar";
               if(tab === "calendar") renderCalendar();
               else if(tab === "today" && typeof updateTodayBar === "function") updateTodayBar();
+              if(typeof renderGoalHeader==="function") renderGoalHeader();
             } catch(_) {}
           } else {
             const created = await driveUploadSyncFile(null, local);
@@ -5852,6 +6235,7 @@ body[data-theme$="-dark"] button.blue   { background:#5390c9; }
     document.getElementById("menuScreen").style.display = "none";
 
     updateTodayBar();
+    renderGoalHeader();
     renderCalendar();
     updateLiveStopwatchBar();
     setInterval(updateLiveStopwatchBar,1000);

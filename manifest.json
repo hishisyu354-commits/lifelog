@@ -1,12 +1,12 @@
 {
-  "name": "Lifelog",
-  "short_name": "Lifelog",
+  "name": "Tsumugi",
+  "short_name": "Tsumugi",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#f3f2ef",
-  "theme_color": "#8b0026",
+  "background_color": "#f6f4ef",
+  "theme_color": "#f6f4ef",
   "icons": [
     {
       "src": "./icon-192.png",
